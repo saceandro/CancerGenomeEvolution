@@ -41,7 +41,7 @@ double calc_mu(Vuint& a)
   return it / MAX_SUBTYPE / TOTAL_CN;
 }
 
-double lik_sub(read& re, state& st, Vuint& cns, Vdouble& kappa, int& curr_subtype)
+double lik_sub(read& re, state& st, Vuint& cns, Vdouble& kappa, int curr_subtype)
 {
   double sum = 0;
   if (st->nxt)
@@ -65,12 +65,17 @@ double lik_sub(read& re, state& st, Vuint& cns, Vdouble& kappa, int& curr_subtyp
   return sum;
 }
 
+double calc_lik(read& re, state& st, Vuint& cns, Vdouble& kappa)
+{
+  return lik_sub(re, st, cns, kappa, 0);
+}
+
 double calc_llik(read& re, state& st, Vuint& cns, Vdouble& kappa)
 {
   return log(lik_sub(re, st, cns, kappa, 0));
 }
 
-double d_kappa_llik_sub(read& re, state& st, Vuint& cns, Vdouble& kappa, int& curr_subtype)
+double d_kappa_lik_sub(read& re, state& st, Vuint& cns, Vdouble& kappa, unsigned int r)
 {
   double sum = 0;
   if (st->nxt)
@@ -102,21 +107,35 @@ double d_kappa_llik_sub(read& re, state& st, Vuint& cns, Vdouble& kappa, int& cu
             }
 
           double kappa_c = 1;
-          for (int i=0; i<TOTAL_CN; ++i)
+          for (int i=1; i<TOTAL_CN; ++i)
             kappa_c -=  kappa[i];
           
-          double factor;
-          factor = - bin[TOTAL_CN] * (1 - 
+          double prod1 = bin[TOTAL_CN] * pow(kappa_c, bin[TOTAL_CN] - 1);
+          for (int i=1; i<TOTAL_CN; ++i)
+            prod1 *= pow(kappa[i], bin[i]);
+          
+          double prod2 = pow(kappa_c, bin[TOTAL_CN]);
+          for (int i=1; i<TOTAL_CN; ++i)
+            {
+              if (i == r)
+                prod2 *= bin[i] * pow(kappa[i], bin[i] - 1);
+              else
+                prod2 *= pow(kappa[i], bin[i]);
+            }
+
+          sum += (-prod1 + prod2) * gsl_ran_binomial_pdf(re.first, mu, re.second);
         }
     }
   return sum;
 }
 
-double d_kappa_llik(read& re, state& st, Vuint& cns, Vdouble& kappa, unsigned int r)
+double calc_d_kappa_llik(read& re, state& st, Vuint& cns, Vdouble& kappa, unsigned int r)
 {
-  double llik = calc_llik(re, st, cns, kappa);
-
+  double lik = calc_lik(re, st, cns, kappa);
   
+  double d_kappa_lik = d_kappa_lik_sub(re, st, cns, kappa, r);
+
+  return d_kappa_lik / lik;
 }
 
 double my_f (const gsl_vector *v, void *params)
