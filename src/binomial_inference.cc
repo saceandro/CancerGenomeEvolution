@@ -29,7 +29,7 @@ double my_f (const gsl_vector *v, void *params)
   return -log(gsl_ran_binomial_pdf(p[0], mu, p[1]));
 }
 
-/* The gradient of f, df = (df/dx, df/dy). */
+/* The gradient of f, df = (df/dx). */
 void my_df (const gsl_vector *v, void *params, gsl_vector *df)
 {
   unsigned int *p = (unsigned int *)params;
