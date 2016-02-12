@@ -1,0 +1,5 @@
+*.in
+*.out
+src/Makefile
+src/binomial_generate
+src/binomial_inference
