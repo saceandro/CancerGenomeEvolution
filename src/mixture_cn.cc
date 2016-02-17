@@ -12,12 +12,13 @@ using namespace std;
 typedef vector<double> Vdouble;
 typedef vector<unsigned int> Vuint;
 typedef pair<unsigned int, unsigned int> READ;
+typedef vector<READ*> READS;
 
 typedef struct _state
 {
   unsigned int MAX_SUBTYPE;
   unsigned int TOTAL_CN;
-  READ re;
+  READS res;
 }
   state;
 
@@ -29,9 +30,8 @@ double calc_sum(Vdouble& x)
   return sum;
 }
 
-void write_vector(ofstream& f, state& st, Vdouble& x)
+void write_vector(ofstream& f, Vdouble& x)
 {
-  f << st.re.first << "\t" << st.re.second << endl;
   for (Vdouble::iterator it=x.begin(); it!=x.end(); ++it)
     f << *it << " ";
   f << endl;
@@ -104,10 +104,15 @@ double calc_lik(READ& re, Vdouble& kappa, unsigned int MAX_SUBTYPE, unsigned int
   return lik_sub(re, cns, kappa, 0, MAX_SUBTYPE, TOTAL_CN);
 }
 
-double calc_llik(READ& re, Vdouble& kappa, unsigned int MAX_SUBTYPE, unsigned int TOTAL_CN)
+double calc_llik(READS& res, Vdouble& kappa, unsigned int MAX_SUBTYPE, unsigned int TOTAL_CN)
 {
   Vuint cns (MAX_SUBTYPE+1, 0);
-  return log(lik_sub(re, cns, kappa, 0, MAX_SUBTYPE, TOTAL_CN));
+  double lik = 0;
+
+  for (int k=0; k<res.size(); ++k)
+    lik += log(lik_sub(*res[k], cns, kappa, 0, MAX_SUBTYPE, TOTAL_CN));
+  
+  return lik;
 }
 
 double d_kappa_lik_sub(READ& re, Vuint& cns, Vdouble& kappa, unsigned int r, unsigned int curr_subtype, unsigned int MAX_SUBTYPE, unsigned int TOTAL_CN)
@@ -156,15 +161,21 @@ double d_kappa_lik_sub(READ& re, Vuint& cns, Vdouble& kappa, unsigned int r, uns
   return sum;
 }
 
-double calc_d_kappa_llik(READ& re, Vdouble& kappa, unsigned int r, unsigned int MAX_SUBTYPE, unsigned int TOTAL_CN)
+double calc_d_kappa_llik(READS& res, Vdouble& kappa, unsigned int r, unsigned int MAX_SUBTYPE, unsigned int TOTAL_CN)
 {
   Vuint cns (MAX_SUBTYPE+1, 0);
-  
-  double lik = calc_lik(re, kappa, MAX_SUBTYPE, TOTAL_CN);
-  
-  double d_kappa_lik = d_kappa_lik_sub(re, cns, kappa, r, 0, MAX_SUBTYPE, TOTAL_CN);
 
-  return d_kappa_lik / lik;
+  double d_lik = 0;
+
+  for (int k=0; k<res.size(); ++k)
+    {
+      double lik = calc_lik(*res[k], kappa, MAX_SUBTYPE, TOTAL_CN);
+      double d_kappa_lik = d_kappa_lik_sub(*res[k], cns, kappa, r, 0, MAX_SUBTYPE, TOTAL_CN);
+      
+      d_lik += d_kappa_lik / lik;
+    }
+  
+  return d_lik;
 }
 
 
@@ -175,7 +186,7 @@ double my_f (const gsl_vector *v, void *params)
   Vdouble kappa (p->TOTAL_CN+1, 0);
   calc_kappa(v, kappa, p->MAX_SUBTYPE);
 
-  return -calc_llik(p->re, kappa, p->MAX_SUBTYPE, p->TOTAL_CN);
+  return -calc_llik(p->res, kappa, p->MAX_SUBTYPE, p->TOTAL_CN);
 }
 
 /* The gradient of f, df = (df/dx). */
@@ -188,7 +199,7 @@ void my_df (const gsl_vector *v, void *params, gsl_vector *df)
 
   Vdouble d_kappa (p->TOTAL_CN+1, 0);
   for (int r=1; r<=p->TOTAL_CN; ++r)
-    d_kappa[r] = calc_d_kappa_llik(p->re, kappa, r, p->MAX_SUBTYPE, p->TOTAL_CN);
+    d_kappa[r] = calc_d_kappa_llik(p->res, kappa, r, p->MAX_SUBTYPE, p->TOTAL_CN);
 
   for (int s=1; s<=p->TOTAL_CN; ++s)
     {
@@ -288,7 +299,7 @@ int main(int argc, char** argv)
   st.MAX_SUBTYPE = atoi(argv[1]);
   st.TOTAL_CN = atoi(argv[2]);
   n = atoi(argv[3]);
-
+  
   ifstream f (argv[4]);
   ofstream g (argv[5]);
   g << scientific;
@@ -296,15 +307,17 @@ int main(int argc, char** argv)
   Vdouble kappa (st.TOTAL_CN + 1, 0);
   for (int i=0; i<n; ++i)
     {
-      f >> st.re.first >> st.re.second;
-      cerr << "m: " << st.re.first << endl;
-      cerr << "M: " << st.re.second << endl;
-      
-      minimize(st, kappa);
-      write_vector(g, st, kappa);
-      g << endl;
+      READ *re = new READ;
+      f >> re->first >> re->second;
+      st.res.push_back(re);
     }
+  
+  minimize(st, kappa);
+  write_vector(g, kappa);
 
+  for (int i=0; i<n; ++i)
+    delete st.res[i];
+  
   f.close();
   g.close();
   
