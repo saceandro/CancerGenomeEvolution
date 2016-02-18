@@ -239,7 +239,7 @@ void minimize(state& st, Vdouble& kappa)
   for (int r=1; r<=st.TOTAL_CN; ++r)
     gsl_vector_set (x, r-1, 0); // initiate
   
-  cerr << scientific;
+  //cerr << scientific;
   
   T = gsl_multimin_fdfminimizer_conjugate_fr;
   s = gsl_multimin_fdfminimizer_alloc (T, st.TOTAL_CN);
@@ -255,7 +255,7 @@ void minimize(state& st, Vdouble& kappa)
         {
           if (status == GSL_ENOPROG)
             {
-              cerr << "No more improvement can be made for current estimate" << endl << endl;
+              //cerr << "No more improvement can be made for current estimate" << endl << endl;
               calc_kappa(s->x, kappa, st.MAX_SUBTYPE);
             }
           break;
@@ -266,15 +266,15 @@ void minimize(state& st, Vdouble& kappa)
       status = gsl_multimin_test_gradient (s->gradient, 1e-3);
       if (status == GSL_SUCCESS)
         {
-          cerr << "Minimum found at:" << endl;
+          //cerr << "Minimum found at:" << endl;
         }
 
-      cerr << "iter: " << iter << endl;
-      cerr << "kappa\tgrad: " << endl;
-      for (int r=1; r<=st.TOTAL_CN; ++r)
-        cerr << kappa[r] << "\t" << -gsl_vector_get(s->gradient, r-1) << endl;
+      //cerr << "iter: " << iter << endl;
+      //cerr << "kappa\tgrad: " << endl;
+      //for (int r=1; r<=st.TOTAL_CN; ++r)
+        //cerr << kappa[r] << "\t" << -gsl_vector_get(s->gradient, r-1) << endl;
 
-      cerr << "llik: " << -s->f << endl << endl;
+      //cerr << "llik: " << -s->f << endl << endl;
     }
   while (status == GSL_CONTINUE && iter < 100);
 
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
   
   if (argc != 7)
     {
-      cerr << "usage: ./mixture_cn max_subtype total_cn n (infile) (outfile) (kappa_answer_file)" << endl;
+      //cerr << "usage: ./mixture_cn max_subtype total_cn n (infile) (outfile) (kappa_answer_file)" << endl;
       exit(EXIT_FAILURE);
     }
 

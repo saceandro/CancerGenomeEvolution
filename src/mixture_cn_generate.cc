@@ -28,12 +28,12 @@ void generate_binom(ofstream& f, Vdouble& kappa, unsigned int M, unsigned int n,
       kappa_cum[r] = kappa[r];
     }
 
-  cerr << kappa_cum[0] << endl;
-  cerr << kappa_cum[1] << endl;
+  //cerr << kappa_cum[0] << endl;
+  //cerr << kappa_cum[1] << endl;
   for (int r=2; r<=total_cn; ++r)
     {
       kappa_cum[r] = kappa_cum[r-1] + kappa_cum[r];
-      cerr << kappa_cum[r] << endl;
+      //cerr << kappa_cum[r] << endl;
     }
 
   init_genrand64(1);
@@ -54,21 +54,21 @@ void generate_binom(ofstream& f, Vdouble& kappa, unsigned int M, unsigned int n,
       for (int i=0; i<=max_subtype; ++i)
         {
           double x = genrand64_real2();
-          cerr << x << endl;
+          //cerr << x << endl;
           for (int r=1; r<=total_cn; ++r)
             {
               if (x < kappa_cum[r])
                 {
                   cns[i] = r;
-                  cerr << cns[i] << " ";
+                  //cerr << cns[i] << " ";
                   break;
                 }
             }
-          cerr << endl;
+          //cerr << endl;
         }
 
       double mu = calc_mu(cns, total_cn, max_subtype);
-      cerr << "mu: " << mu << endl;
+      //cerr << "mu: " << mu << endl;
       
       unsigned int m = gsl_ran_binomial(r, mu, M);
       f << m << "\t" << M << endl;
@@ -83,7 +83,7 @@ int main(int argc, char** argv)
   
   if (argc != 6)
     {
-      cerr << "usage: ./mixture_cn_generate (outfile) M n max_subtype (infile)" << endl;
+      //cerr << "usage: ./mixture_cn_generate (outfile) M n max_subtype (infile)" << endl;
       exit(EXIT_FAILURE);
     }
   
