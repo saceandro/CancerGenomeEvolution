@@ -30,10 +30,16 @@ double calc_sum(Vdouble& x)
   return sum;
 }
 
-void write_diff(ofstream& f, Vdouble& x, Vdouble& ans)
+void write_diff(ofstream& f, Vdouble& x, Vdouble& ans, ofstream& g, unsigned int n)
 {
+  double sum = 0;
   for (int i=1; i<x.size(); ++i)
-    f << x[i] << "\t" << pow(x[i] - ans[i], 2.0) << endl;
+    {
+      double diff = pow(x[i] - ans[i], 2.0);
+      f << x[i] << "\t" << diff << endl;
+      sum += diff;
+    }
+  g << n << "\t" << sum << endl;
 }
 
 void calc_kappa(const gsl_vector* x, Vdouble& kappa, unsigned int MAX_SUBTYPE)
@@ -288,7 +294,7 @@ int main(int argc, char** argv)
   
   if (argc != 7)
     {
-      //cerr << "usage: ./mixture_cn max_subtype total_cn n (infile) (outfile) (kappa_answer_file)" << endl;
+      //cerr << "usage: ./mixture_cn max_subtype total_cn n (infile) (outfile) (kappa_answer_file) (accuracy_file)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -317,9 +323,11 @@ int main(int argc, char** argv)
       f >> re->first >> re->second;
       st.res.push_back(re);
     }
+
+  ofstream j (argv[7], ofstream::app);
   
   minimize(st, kappa);
-  write_diff(g, kappa, kappa_ans);
+  write_diff(g, kappa, kappa_ans, j, n);
 
   for (int i=0; i<n; ++i)
     delete st.res[i];
@@ -327,6 +335,7 @@ int main(int argc, char** argv)
   f.close();
   g.close();
   h.close();
+  j.close();
   
   return 0;
 }
