@@ -306,7 +306,7 @@ int main(int argc, char** argv)
   n = atoi(argv[3]);
   
   ifstream f (argv[4]);
-  ofstream g (argv[5], ofstream::app);
+  ofstream g (argv[5]);
   g << scientific;
 
   ifstream h (argv[6]);
