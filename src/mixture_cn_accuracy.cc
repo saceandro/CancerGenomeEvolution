@@ -292,7 +292,7 @@ int main(int argc, char** argv)
 {
   // feenableexcept(FE_INVALID | FE_OVERFLOW);
   
-  if (argc != 7)
+  if (argc != 8)
     {
       //cerr << "usage: ./mixture_cn max_subtype total_cn n (infile) (outfile) (kappa_answer_file) (accuracy_file)" << endl;
       exit(EXIT_FAILURE);
