@@ -292,7 +292,7 @@ int main(int argc, char** argv)
   
   if (argc != 8)
     {
-      //cerr << "usage: ./mixture_cn max_subtype total_cn n (infile) (kappa_answer_file) (accuracy_file)" << endl;
+      cerr << "usage: ./mixture_cn_accuracy_randomseed max_subtype total_cn n (infile) (kappa_answer_file) (accuracy_file)" << endl;
       exit(EXIT_FAILURE);
     }
 
