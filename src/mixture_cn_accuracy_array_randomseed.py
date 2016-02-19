@@ -3,7 +3,7 @@
 dic = {}
 count = {}
 for i in range(100):
-    f = open("mixture_cn_accuracy_randomseed.accuracy" + str(i+1), "r")
+    f = open("./mixture_cn_io/mixture_cn_accuracy_randomseed.accuracy" + str(i+1), "r")
     for line in f.readlines():
         item = line.rstrip('\n').split('\t')
         n = int(item[0])
