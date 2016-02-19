@@ -20,7 +20,7 @@ double calc_mu(Vuint& a, unsigned int total_cn, unsigned int max_subtype)
   return ((double) sum) / (max_subtype + 1) / total_cn;
 }
 
-void generate_binom(ofstream& f, Vdouble& kappa, unsigned int M, unsigned int n, unsigned int total_cn, unsigned int max_subtype)
+void generate_binom(ofstream& f, Vdouble& kappa, unsigned int M, unsigned int n, unsigned int total_cn, unsigned int max_subtype, unsigned int seed_index)
 {
   Vdouble kappa_cum (kappa.size(), 0);
   
@@ -37,7 +37,7 @@ void generate_binom(ofstream& f, Vdouble& kappa, unsigned int M, unsigned int n,
       //cerr << kappa_cum[r] << endl;
     }
 
-  init_genrand64(time(NULL));
+  init_genrand64(time(NULL) + seed_index);
 
   Vuint cns (max_subtype+1, 0);
   
@@ -82,9 +82,9 @@ int main(int argc, char** argv)
 {
   // feenableexcept(FE_INVALID | FE_OVERFLOW);
   
-  if (argc != 6)
+  if (argc != 7)
     {
-      //cerr << "usage: ./mixture_cn_generate (outfile) M n max_subtype (infile)" << endl;
+      cerr << "usage: ./mixture_cn_generate (outfile) M n max_subtype (infile) seed_index" << endl;
       exit(EXIT_FAILURE);
     }
   
@@ -97,6 +97,8 @@ int main(int argc, char** argv)
   max_subtype = atoi(argv[4]);
   ifstream g (argv[5]);
 
+  unsigned int seed_index = atoi(argv[6]);
+  
   g >> total_cn;
   
   kappa.assign(total_cn, 0);
@@ -104,7 +106,7 @@ int main(int argc, char** argv)
   for (int r=1; r<=total_cn; ++r)
     g >> kappa[r];
   
-  generate_binom(f, kappa, M, n, total_cn, max_subtype);
+  generate_binom(f, kappa, M, n, total_cn, max_subtype, seed_index);
   f.close();
   
   return 0;
