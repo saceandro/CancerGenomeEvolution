@@ -12,5 +12,5 @@ echo SGE_TASK_LAST:$SGE_TASK_LAST
 echo SGE_TASK_STEPSIZE:$SGE_TASK_STEPSIZE
 
 n=$(2 ** $SGE_TASK_ID)
-./mixture_cn_generate `printf "./mixture_cn_io/mixture_cn_generate.out%d" $n` 100000 $n 4 kappa.txt
-./mixture_cn_accuracy 4 4 $n `printf "./mixture_cn_io/mixture_cn_generate.out%d" $n` `printf "./mixture_cn_io/mixture_cn_accuracy.out%d" $n` kappa.txt `printf "./mixture_cn_io/mixture_cn_accuracy.accuracy%d" $n`
+./mixture_cn_generate `printf "./mixture_cn_io/mixture_cn_generate.out%d" $n` 100000 $n 5 kappa.txt
+./mixture_cn_accuracy 5 4 $n `printf "./mixture_cn_io/mixture_cn_generate.out%d" $n` `printf "./mixture_cn_io/mixture_cn_accuracy.out%d" $n` kappa.txt `printf "./mixture_cn_io/mixture_cn_accuracy.accuracy%d" $n`
