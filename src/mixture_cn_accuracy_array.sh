@@ -3,7 +3,7 @@
 #$ -cwd
 #$ -N mixture_cn_accuracy
 
-source ~/.bashrc
+source ~/.zshrc
 echo SGE_TASK_ID:$SGE_TASK_ID
 echo SGE_TASK_FIRST:$SGE_TASK_FIRST
 echo SGE_TASK_LAST:$SGE_TASK_LAST
