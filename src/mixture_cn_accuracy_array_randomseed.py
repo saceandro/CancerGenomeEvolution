@@ -7,7 +7,7 @@ dic = {}
 lines = f.readlines()
 num = len(lines)
 for line in lines:
-    item = line.split("\t").rstrip()
+    item = line.split('\t').rstrip('\n')
     n = froat(item[0])
     err = froat(item[1])
     if n in dic:
