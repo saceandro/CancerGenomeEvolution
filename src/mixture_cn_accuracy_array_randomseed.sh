@@ -2,6 +2,8 @@
 #$ -S /bin/zsh
 #$ -cwd
 #$ -N mixture_cn_accuracy
+#$ -o ./mixture_cn_io
+#$ -e ./mixture_cn_io
 
 source ~/.zshrc
 echo SGE_TASK_ID:$SGE_TASK_ID
