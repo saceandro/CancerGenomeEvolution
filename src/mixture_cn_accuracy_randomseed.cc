@@ -290,7 +290,7 @@ int main(int argc, char** argv)
 {
   // feenableexcept(FE_INVALID | FE_OVERFLOW);
   
-  if (argc != 8)
+  if (argc != 7)
     {
       cerr << "usage: ./mixture_cn_accuracy_randomseed max_subtype total_cn n (infile) (kappa_answer_file) (accuracy_file)" << endl;
       exit(EXIT_FAILURE);
