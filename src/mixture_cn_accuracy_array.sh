@@ -1,9 +1,9 @@
-#!/usr/local/bin/zsh
-#$ -S /usr/local/bin/zsh
+#!/bin/zsh
+#$ -S /bin/zsh
 #$ -cwd
 #$ -N mixture_cn_accuracy
-#$ -l s_vmem=8G,mem_req=8G
 
+source ~/.bashrc
 echo SGE_TASK_ID:$SGE_TASK_ID
 echo SGE_TASK_FIRST:$SGE_TASK_FIRST
 echo SGE_TASK_LAST:$SGE_TASK_LAST
