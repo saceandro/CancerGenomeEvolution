@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from math import pow
-g = open("mixture_cn_accuracy_randomseed.accuracy.mean", "w")
+g = open("mixture_cn_accuracy_fact.accuracy.mean", "w")
 dic = {}
 count = {}
 for i in range(10):
