@@ -320,7 +320,7 @@ int main(int argc, char** argv)
       st.res.push_back(re);
     }
 
-  ofstream g (argv[6], ofstream::app);
+  ofstream g (argv[6]);
   
   minimize(st, kappa);
   write_diff(g, kappa, kappa_ans, n);
