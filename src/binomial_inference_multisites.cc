@@ -158,7 +158,7 @@ int main(int argc, char** argv)
   minimize(res, mu);
 
   for (int i=0; i<n; ++i)
-    delete st.res[i];
+    delete res[i];
   
   return 0;
 }
