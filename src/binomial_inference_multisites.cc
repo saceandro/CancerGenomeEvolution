@@ -53,13 +53,15 @@ void my_df (const gsl_vector *v, void *params, gsl_vector *df)
 
   double grad = 0;
 
+  double dx_sigm = calc_dx_sigmoid(x);
+  
   for (READS::iterator it = p->begin(); it != p->end(); ++it)
     {
-      grad += (*it)->first/mu - ((*it)->second - (*it)->first)/(1-mu);
+      grad += dx_sigm * ((*it)->first/mu - ((*it)->second - (*it)->first)/(1-mu));
       cerr << grad << endl;
     }
   
-  gsl_vector_set(df, 0, -calc_dx_sigmoid(x) * grad);
+  gsl_vector_set(df, 0, -grad);
 }
 
 
