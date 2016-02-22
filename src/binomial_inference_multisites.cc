@@ -156,7 +156,8 @@ int main(int argc, char** argv)
   f.close();
   
   minimize(res, mu);
-
+  cout << mu << endl;
+  
   for (int i=0; i<n; ++i)
     delete res[i];
   
