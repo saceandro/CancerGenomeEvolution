@@ -55,7 +55,7 @@ void my_df (const gsl_vector *v, void *params, gsl_vector *df)
 
   for (READS::iterator it = p->begin(); it != p->end(); ++it)
     {
-      cout << (*it)->first << "\t" (*it)->second << endl;
+      cout << (*it)->first << "\t" << (*it)->second << endl;
       grad +=  ((*it)->first/mu - ((*it)->second - (*it)->first)/(1-mu));
     }
   
