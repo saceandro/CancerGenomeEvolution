@@ -34,10 +34,9 @@ double my_f (const gsl_vector *v, void *params)
 
   double llik = 0;
 
-  for (READS::iterator it=p->begin(); it!=p->end(); ++it)
+  for (int i=0; i<p.size(); ++i)
     {
-      READ re = *it;
-      llik += log(gsl_ran_binomial_pdf(re.first, mu, re.second));
+      llik += log(gsl_ran_binomial_pdf(p[i]->first, mu, p[i]->second));
     }
   
   return -llik;
@@ -54,10 +53,9 @@ void my_df (const gsl_vector *v, void *params, gsl_vector *df)
 
   double grad = 0;
 
-  for (READS::iterator it=p->begin(); it!=p->end(); ++it)
+  for (int i=0; i<p.size(); ++i)
     {
-      READ re = *it;
-      grad +=  (re.first/mu - (re.second - re.first)/(1-mu));
+      grad +=  (p[i]->first/mu - (p[i]->second - p[i]->first)/(1-mu));
     }
   
   gsl_vector_set(df, 0, -calc_dx_sigmoid(x) * grad);
@@ -153,7 +151,7 @@ int main(int argc, char** argv)
     {
       READ *re = new READ;
       f >> re->first >> re->second;
-      st.res.push_back(re);
+      res.push_back(re);
     }
   f.close();
   
