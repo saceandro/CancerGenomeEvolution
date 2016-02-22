@@ -134,9 +134,9 @@ int main(int argc, char** argv)
 {
   feenableexcept(FE_INVALID | FE_OVERFLOW);
   
-  if (argc != 4)
+  if (argc != 3)
     {
-      cerr << "usage: ./binomial_inference n (infile)" << endl;
+      cerr << "usage: ./binomial_inference_multisites n (infile)" << endl;
       exit(EXIT_FAILURE);
     }
   
