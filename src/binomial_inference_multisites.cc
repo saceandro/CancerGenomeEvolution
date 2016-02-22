@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <math.h>
 #include <fenv.h>
 #include <gsl/gsl_randist.h>
@@ -7,6 +8,11 @@
 using namespace std;
 
 #define calc_sigmoid(x) (((x) < 0) ? (exp(x) / (exp(x) + 1.0)) : (1.0 / (exp(-(x)) + 1.0)))
+
+typedef vector<double> Vdouble;
+typedef vector<unsigned int> Vuint;
+typedef pair<unsigned int, unsigned int> READ;
+typedef vector<READ*> READS;
 
 double calc_dx_sigmoid(double x)
 {
@@ -20,27 +26,35 @@ double calc_dx_sigmoid(double x)
 
 double my_f (const gsl_vector *v, void *params)
 {
-  unsigned int *p = (unsigned int *) params;
+  READS *p = (READS *) params;
 
   double x = gsl_vector_get(v, 0);
 
   double mu = calc_sigmoid(x);
 
-  return -log(gsl_ran_binomial_pdf(p[0], mu, p[1]));
+  double llik = 0;
+
+  for (READS::iterator it=p->begin(); it!=p->end(); ++it)
+    llik += log(gsl_ran_binomial_pdf(it->first, mu, it->second));
+  
+  return -llik;
 }
 
 /* The gradient of f, df = (df/dx). */
 void my_df (const gsl_vector *v, void *params, gsl_vector *df)
 {
-  unsigned int *p = (unsigned int *)params;
+  READS *p = (READS *)params;
 
   double x = gsl_vector_get(v, 0);
 
   double mu = calc_sigmoid(x);
 
-  double grad = -calc_dx_sigmoid(x) * (p[0]/mu - (p[1]-p[0])/(1-mu));
+  double grad = 0;
+
+  for (READS::iterator it=p->begin(); it!=p->end(); ++it)
+    grad +=  (it->first/mu - (it->second - it->first)/(1-mu));
   
-  gsl_vector_set(df, 0, grad);
+  gsl_vector_set(df, 0, -calc_dx_sigmoid(x) * grad);
 }
 
 
@@ -52,17 +66,13 @@ void my_fdf (const gsl_vector *x, void *params, double *f, gsl_vector *df)
   my_df(x, params, df);
 }
 
-void minimize(int m, int M, double& mu)
+void minimize(READS& res, double& mu)
 {
   size_t iter = 0;
   int status;
 
   const gsl_multimin_fdfminimizer_type *T;
   gsl_multimin_fdfminimizer *s;
-
-  unsigned int par[2];
-  par[0] = m;
-  par[1] = M;
 
   gsl_vector *x;
   gsl_multimin_function_fdf my_func;
@@ -71,20 +81,13 @@ void minimize(int m, int M, double& mu)
   my_func.f = my_f;
   my_func.df = my_df;
   my_func.fdf = my_fdf;
-  my_func.params = par;
+  my_func.params = &res;
 
   x = gsl_vector_alloc (1);
   gsl_vector_set (x, 0, 0); // initiate with x
   
   cerr << scientific;
   
-  double x0 = 0;
-  double mu0 = calc_sigmoid(x0);
-  double grad0 = calc_dx_sigmoid(x0) * (par[0]/mu0 - (par[1]-par[0])/(1-mu0));
-  double llk = log(gsl_ran_binomial_pdf(par[0], mu0, par[1]));
-  
-  cerr << iter << " " << x0 << " " << mu0 << " " << grad0 <<  " " << llk << endl << endl;
-
   T = gsl_multimin_fdfminimizer_conjugate_fr;
   s = gsl_multimin_fdfminimizer_alloc (T, 1);
 
@@ -107,8 +110,6 @@ void minimize(int m, int M, double& mu)
 
       double x_star = gsl_vector_get(s->x, 0);
       double mu_star = calc_sigmoid(x_star);
-      double grad_star = calc_dx_sigmoid(x_star) * (par[0]/mu_star - (par[1]-par[0])/(1-mu_star));
-      double llk = log(gsl_ran_binomial_pdf(par[0], mu_star, par[1]));
       
       status = gsl_multimin_test_gradient (s->gradient, 1e-3);
       if (status == GSL_SUCCESS)
@@ -117,7 +118,7 @@ void minimize(int m, int M, double& mu)
           mu = mu_star;
         }
       
-      cerr << iter << " " << x_star << " " << mu_star << " " << grad_star << " " << -s->f << endl << endl;
+      cerr << iter << " " << x_star << " " << mu_star << " " << -gsl_vector_get(s->gradient, 0) << " " << -s->f << endl << endl;
     }
   while (status == GSL_CONTINUE && iter < 100);
 
@@ -131,30 +132,29 @@ int main(int argc, char** argv)
   
   if (argc != 4)
     {
-      cerr << "usage: ./binomial_inference (infile) n (outfile)" << endl;
+      cerr << "usage: ./binomial_inference n (infile)" << endl;
       exit(EXIT_FAILURE);
     }
   
   ifstream f (argv[1]);
   unsigned int n;
-  n = atoi(argv[2]);
-  ofstream g (argv[3]);
-  g << scientific;
+  double mu = -1;
   
-  unsigned int m, M;
+  n = atoi(argv[1]);
+  
+  READS res;
   for (int i=0; i<n; ++i)
     {
-      double mu = -1;
-      f >> m >> M;
-      cerr << "m: " << m << endl;
-      cerr << "M: " << M << endl;
-      
-      minimize(m, M, mu);
-      g << ((double) m) / M << "\t" << mu << endl;
+      READ *re = new READ;
+      f >> re->first >> re->second;
+      st.res.push_back(re);
     }
-
   f.close();
-  g.close();
+  
+  minimize(res, mu);
+
+  for (int i=0; i<n; ++i)
+    delete st.res[i];
   
   return 0;
 }
