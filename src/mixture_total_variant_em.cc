@@ -10,6 +10,7 @@
 using namespace std;
 
 typedef vector<double> Vdouble;
+typedef vector<Vdouble> VVdouble;
 typedef vector<unsigned int> Vuint;
 typedef pair<unsigned int, unsigned int> READ;
 typedef vector<READ*> READS;
@@ -27,7 +28,7 @@ public:
   // state (int, std::vector<int>, std::vector<int>, double);
 };
 
-typedef std::vector<state> states;
+typedef std::vector<state*> states;
 
 class params
 {
@@ -46,20 +47,92 @@ typedef struct _hyperparams
 }
   hyperparams;
 
-double sum_square_error(Vdouble& kappa, Vdouble& kappa_ans)
+void write_params(std::ofstream& f, params& pa)
 {
-  double kappa_sum = 0;
-  for (int r=1; r<kappa.size(); ++r)
+  f << endl << "pi" << endl;
+  for (int c=1; c<pa.pi.size(); ++c)
+    f << pa.pi[c] << "\t";
+  f << endl;
+
+  f << endl << "kappa" << endl;
+  for (int c=1; c<pa.pi.size(); ++c)
     {
-      kappa_sum += pow(kappa[r], 2.0);
+      for (int d=1; d<=c; ++d)
+        f << pa.kappa[c][d] << "\t";
+      f << endl;
+    }
+  return;
+}
+
+void copy_params(params& from, params& target)
+{
+  for (int l=1; l<from.pi.size(); ++l)
+    {
+      target.pi[l] = from.pi[l];
+      for (int r=1; r<=l; ++r)
+        {
+          target.kappa[l][r] = from.kappa[l][r];
+        }
+    }
+}
+
+void init_state(state& st, hyperparams& hpa)
+{
+  st.total_cn.assign(hpa.MAX_SUBTYPE + 1, 0);
+  st.variant_cn.assign(hpa.MAX_SUBTYPE + 1, 0);
+}
+
+void init_params(params& pa, hyperparams& hpa)
+{
+  pa.pi.assign(hpa.TOTAL_CN + 1, 0);
+  pa.kappa.assign(hpa.TOTAL_CN + 1, Vdouble (hpa.TOTAL_CN + 1, 0));
+}
+
+void clear_params(params& pa, hyperparams& hpa)
+{
+  for (int l=1; l<=hpa.TOTAL_CN; ++l)
+    {
+      pa.pi[l] = 0;
+      for (int r=1; r<=hpa.TOTAL_CN; ++r)
+        pa.kappa[l][r] = 0;
+    }
+}
+
+bool check_tol(params& pa, params& pa_ans, double tol)
+{
+  bool ret = true;
+  
+  double pi_sum = 0;
+  for (int l=1; l<pa.pi.size(); ++l)
+    {
+      pi_sum += pow(pa.pi[l], 2.0);
     }
   
   double sum = 0;
-  for (int r=1; r<kappa.size(); ++r)
+  for (int l=1; l<pa.pi.size(); ++l)
     {
-      sum += pow(kappa[r] - kappa_ans[r], 2.0);
+      sum += pow(pa.pi[l] - pa_ans.pi[l], 2.0);
     }
-  return sum / kappa_sum;
+  
+  ret = ret && (sum / pi_sum < tol*tol);
+
+  for (int l=1; l<pa.pi.size(); ++l)
+    {
+      double kappa_sum = 0;
+      for (int r=1; r<pa.kappa.size(); ++r)
+        {
+          kappa_sum += pow(pa.kappa[l][r], 2.0);
+        }
+  
+      double diff_sum = 0;
+      for (int r=1; r<pa.kappa.size(); ++r)
+        {
+          diff_sum += pow(pa.kappa[l][r] - pa_ans.kappa[l][r], 2.0);
+        }
+      
+      ret = ret && (diff_sum / kappa_sum < tol*tol);
+    }
+  return ret;
 }
 
 void write_diff(ofstream& f, Vdouble& x, Vdouble& ans, unsigned int n)
@@ -78,65 +151,80 @@ double calc_mu(state& st, hyperparams& hpa)
   unsigned int num = 0;
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      denom += st.l[i];
-      num += st.r[i];
+      denom += st.total_cn[i];
+      num += st.variant_cn[i];
     }
     
   return ((double) num) / denom;
 }
 
-double responsibility_partition_sub(READ& re, state& st, params& pa, hyperparams& hpa, unsigned int subtype)
-{
-  double sum1 = 0;
-  
-  if (subtype < hpa.MAX_SUBTYPE)
-    {
-      for (st.total_cn[subtype] = 1; st.total_cn[subtype] <= hpa.TOTAL_CN; ++st.total_cn[subtype])
-        {
-          double sum2 = 0;
-          
-          for (st.variant_cn[subtype] = 1; st.variant_cn[subtype] <= total_cn; ++st.variant_cn[subtype])
-            {
-              sum2 += pa.kappa[st.total_cn[subtype]][st.variant_cn[subtype]] * responsibility_partition_sub(re, st, pa, hpa, subtype + 1); // caution: ++subtypeにすると、次のループで+1されて計算されてしまう
-            }
-          sum1 += pa.pi[st.total_cn[subtype]] * sum2;
-        }
-    }
-  
-  else
-    {
-      for (st.total_cn[subtype] = 1; st.total_cn[subtype] <= hpa.TOTAL_CN; ++st.total_cn[subtype])
-        {
-          double sum2 = 0;
-          
-          for (st.variant_cn[subtype] = 1; st.variant_cn[subtype] <= total_cn; ++st.variant_cn[subtype])
-            {
-              double mu = calc_mu(st, hpa);
-              sum2 += pa.kappa[st.total_cn[subtype]][st.variant_cn[subtype]] * gsl_ran_binomial_pdf(re.first, mu, re.second);
-            }
-          sum1 += pa.pi[st.total_cn[subtype]] * sum2;
-        }
-    }
-  
-  return sum1;
-}
-
-double responsibility_numerator(READ& re, state& st, params& pa, hyperparams& hpa)
+void responsibility_numerator(READ& re, states& sts, state& st, params& pa, hyperparams& hpa)
 {
   double product = 1;
-
+  
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     product *= pa.pi[st.total_cn[i]] * pa.kappa[st.total_cn[i]][st.variant_cn[i]];
 
   double mu = calc_mu(st, hpa);
   product *= gsl_ran_binomial_pdf(re.first, mu, re.second);
+
+  state* new_st = new state;
+  init_state(*new_st, hpa);
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      new_st->total_cn[i] = st.total_cn[i];
+      new_st->variant_cn[i] = st.variant_cn[i];
+    }
+  new_st->resp_num = product;
   
-  return product;
+  sts.push_back(new_st);
 }
 
-double calc_responsibility(READ& re, state& st, params& pa, hyperparams& hpa)
+void responsibility_numerator_all(READ& re, states& sts, state& st, params& pa, hyperparams& hpa, unsigned int subtype)
 {
-  
+  if (subtype < hpa.MAX_SUBTYPE)
+    {
+      for (st.total_cn[subtype] = 1; st.total_cn[subtype] <= hpa.TOTAL_CN; ++st.total_cn[subtype])
+        {
+          for (st.variant_cn[subtype] = 1; st.variant_cn[subtype] <= st.total_cn[subtype]; ++st.variant_cn[subtype])
+            {
+              responsibility_numerator_all(re, sts, st, pa, hpa, subtype + 1);
+            }
+        }
+    }
+
+  else
+    {
+      for (st.total_cn[subtype] = 1; st.total_cn[subtype] <= hpa.TOTAL_CN; ++st.total_cn[subtype])
+        {
+          for (st.variant_cn[subtype] = 1; st.variant_cn[subtype] <= st.total_cn[subtype]; ++st.variant_cn[subtype])
+            {
+              responsibility_numerator(re, sts, st, pa, hpa);
+            }
+        }
+    }
+}
+
+double responsibility_partition(READ& re, states& sts, params& pa, hyperparams& hpa)
+{
+  double partition = 0;
+
+  for (states::iterator it = sts.begin(); it != sts.end(); ++it)
+    partition += (*it)->resp_num;
+
+  for (states::iterator it = sts.begin(); it != sts.end(); ++it)
+    (*it)->resp = (*it)->resp_num / partition;
+
+  return partition;
+}
+
+void delete_states(states& sts)
+{
+  for (int i=0; i<sts.size(); ++i)
+    {
+      delete sts[i];
+    }
 }
 
 unsigned int calc_bin_pi(state& st, hyperparams& hpa, unsigned int l)
@@ -155,48 +243,77 @@ unsigned int calc_bin_kappa(state& st, hyperparams& hpa, unsigned int l, unsigne
   unsigned int bin = 0;
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      if (st.total_cn[i] == l)
+      if (st.total_cn[i] == l && st.variant_cn[i] == r)
         bin++;
     }
   return bin;
 }
 
-double calc_llik(READS& res, Vdouble& kappa, hyperparams& hpa)
+double calc_llik(READS& res, states& sts, params& pa, hyperparams& hpa)
 {
-  Vuint cns (hpa.MAX_SUBTYPE+1, 0);
   double llik = 0;
 
+  state st;
+  init_state(st, hpa);
+  
   for (int k=0; k<res.size(); ++k)
-    llik += log(responsibility_partition_sub(*res[k], cns, kappa, hpa, 0));
+    {
+      responsibility_numerator_all(*res[k], sts, st, pa, hpa, 0);
+      double denominator = responsibility_partition(*res[k], sts, pa, hpa);
+      delete_states(sts);
+      
+      llik += log(denominator);
+    }
   
   return llik;
 }
 
-double em(READS& res, Vdouble& kappa_old, Vdouble& kappa_new, hyperparams& hpa)
+double em(READS& res, params& pa_old, params& pa_new, hyperparams& hpa)
 {
+  int K;
+  K = res.size();
+  
+  states sts;
   double llik = 0;
-  unsigned int K = res.size();
-  Vuint cns (hpa.MAX_SUBTYPE + 1, 0);
-  Vdouble denominator (res.size(), 0);
-
-  // fill(kappa_new.begin(), kappa_new.end(), 0);
-
+  state st;
+  init_state(st, hpa);
+  
   for (int k=0; k<res.size(); ++k)
     {
-      denominator[k] = responsibility_partition_sub(*res[k], cns, kappa_old, hpa, 0);
-      llik += log(denominator[k]);
-    }
-  
-  
-  for (unsigned int r=1; r<=hpa.TOTAL_CN; ++r)
-    {
-      kappa_new[r] = 0;
-      for (int k=0; k<res.size(); ++k)
+      responsibility_numerator_all(*res[k], sts, st, pa_old, hpa, 0);
+      llik += responsibility_partition(*res[k], sts, pa_old, hpa);
+
+      for (unsigned int l=1; l<=hpa.TOTAL_CN; ++l)
         {
-          double numerator = responsibility_weighted_numerator_sub(*res[k], cns, kappa_old, hpa, 0, r) / K / (hpa.MAX_SUBTYPE + 1);
-          kappa_new[r] += numerator / denominator[k];
+          for (states::iterator it = sts.begin(); it != sts.end(); ++it)
+            {
+              double bin_l = calc_bin_pi(**it, hpa, l);
+              pa_new.pi[l] += (*it)->resp * bin_l;
+            }
+
+          for (unsigned int r=1; r<=l; ++r)
+            {
+              for (states::iterator it = sts.begin(); it != sts.end(); ++it)
+                {
+                  double bin_lr = calc_bin_kappa(st, hpa, l, r);
+                  pa_new.kappa[l][r] += (*it)->resp * bin_lr;
+                }
+            }
         }
+
+      for (unsigned int l=1; l<=hpa.TOTAL_CN; ++l)
+        {
+          for (unsigned int r=1; r<=l; ++r)
+            {
+              pa_new.kappa[l][r] /= pa_new.pi[l];
+            }
+          pa_new.pi[l] /= K * (hpa.MAX_SUBTYPE + 1);
+        }
+      
+      delete_states(sts);
+      sts.clear();
     }
+  
   return llik;
 }
 
@@ -206,7 +323,7 @@ int main(int argc, char** argv)
   
   if (argc != 9)
     {
-      cerr << "usage: ./mixture_cn_em max_subtype n (infile) (kappa_answer_file) (accuracy_file) iter tol (log_file)" << endl;
+      cerr << "usage: ./mixture_total_variant_em max_subtype n (infile) (kappa_answer_file) (accuracy_file) iter tol (log_file)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -228,11 +345,29 @@ int main(int argc, char** argv)
   tol = atof(argv[7]);
   
   h >> hpa.TOTAL_CN;
-  Vdouble kappa_ans (hpa.TOTAL_CN + 1, 0);
-  for (int r=1; r<=hpa.TOTAL_CN; ++r)
-    h >> kappa_ans[r];
+  params pa_ans;
+  init_params(pa_ans, hpa);
 
-  Vdouble kappa (hpa.TOTAL_CN + 1, 1.0 / hpa.TOTAL_CN);
+  params pa;
+  init_params(pa, hpa);
+  
+  for (int l=1; l<=hpa.TOTAL_CN; ++l)
+    {
+      h >> pa_ans.pi[l];
+      pa.pi[l] = 1.0 / hpa.TOTAL_CN;
+    }
+
+  for (int l=1; l<=hpa.TOTAL_CN; ++l)
+    {
+      for (int r=1; r<=l; ++r)
+        {
+          h >> pa_ans.kappa[l][r];
+          pa.kappa[l][r] = 1.0 / l;
+        }
+    }
+
+  params pa_new;
+  init_params(pa_new, hpa);
 
   READS res;
   for (int i=0; i<n; ++i)
@@ -243,36 +378,29 @@ int main(int argc, char** argv)
     }
 
   l << scientific;
-  Vdouble kappa_new (hpa.TOTAL_CN + 1, 0);
+  
   for (int i=0; i<iter; ++i)
     {
-      fill(kappa_new.begin(), kappa_new.end(), 0);
-      double llik = em(res, kappa, kappa_new, hpa);
-      for (int r=1; r<=hpa.TOTAL_CN; ++r)
-        {
-          l << kappa[r] << " ";
-        }
-      l << endl;
-
+      clear_params(pa_new, hpa);
+      
+      double llik = em(res, pa, pa_new, hpa);
+      write_params(l, pa_new);
       l << "llik: " << llik << endl << endl;
 
-      if (sum_square_error(kappa_new, kappa) < tol*tol)
-        break;
+      if (check_tol(pa_new, pa_ans, tol))
+        {
+          copy_params(pa_new, pa);
+          break;
+        }
       
-      copy(kappa_new.begin(), kappa_new.end(), kappa.begin());
-
+      copy_params(pa_new, pa);
     }
 
-  for (int r=1; r<=hpa.TOTAL_CN; ++r)
-    {
-      l << kappa_new[r] << " ";
-    }
-  l << endl;
-  
-  l << "llik: " << calc_llik(res, kappa_new, hpa) << endl;
+  double llik = em(res, pa, pa_new, hpa);
+  l << "llik: " << llik << endl << endl;
 
   g << scientific;
-  write_diff(g, kappa, kappa_ans, n);
+  // write_diff(g, kappa, kappa_ans, n);
 
   for (int i=0; i<n; ++i)
     delete res[i];
