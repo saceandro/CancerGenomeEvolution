@@ -290,25 +290,6 @@ unsigned int calc_bin_kappa(state& st, hyperparams& hpa, unsigned int l, unsigne
   return bin;
 }
 
-double calc_llik(READS& res, states& sts, params& pa, hyperparams& hpa)
-{
-  double llik = 0;
-
-  state st;
-  init_state(st, hpa);
-  
-  for (int k=0; k<res.size(); ++k)
-    {
-      responsibility_numerator_all(*res[k], sts, st, pa, hpa, 0);
-      double denominator = responsibility_partition(*res[k], sts, pa, hpa);
-      delete_states(sts);
-      
-      llik += log(denominator);
-    }
-  
-  return llik;
-}
-
 double em(READS& res, params& pa_old, params& pa_new, hyperparams& hpa)
 {
   int K;
@@ -324,7 +305,7 @@ double em(READS& res, params& pa_old, params& pa_new, hyperparams& hpa)
       // cerr << "k: " << k << endl;
       
       responsibility_numerator_all(*res[k], sts, st, pa_old, hpa, 0);
-      llik += responsibility_partition(*res[k], sts, pa_old, hpa);
+      llik += log(responsibility_partition(*res[k], sts, pa_old, hpa));
 
       for (unsigned int l=1; l<=hpa.TOTAL_CN; ++l)
         {
