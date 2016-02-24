@@ -50,18 +50,56 @@ typedef struct _hyperparams
 void write_params(std::ofstream& f, params& pa)
 {
   f << endl << "pi" << endl;
+  // double sum = 0;
   for (int c=1; c<pa.pi.size(); ++c)
-    f << pa.pi[c] << "\t";
+    {
+      // sum += pa.pi[c];
+      f << pa.pi[c] << "\t";
+    }
   f << endl;
 
+  // cout << "pi_sum: " << sum << endl;
+  
   f << endl << "kappa" << endl;
   for (int c=1; c<pa.pi.size(); ++c)
     {
+      // double sum2 = 0;
       for (int d=1; d<=c; ++d)
-        f << pa.kappa[c][d] << "\t";
+        {
+          // sum2 += pa.kappa[c][d];
+          f << pa.kappa[c][d] << "\t";
+        }
       f << endl;
+      // cout << "kappa_sum (l = " << c << "): " << sum2 << endl;
     }
+  // cout << endl;
+  
   return;
+}
+
+void write_pi_diff(ofstream& f, Vdouble& x, Vdouble& ans, unsigned int n)
+{
+  double sum = 0;
+  for (int i=1; i<x.size(); ++i)
+    {
+      sum += pow(x[i] - ans[i], 2.0);
+    }
+  f << n << "\t" << sum << endl;
+}
+
+void write_kappa_diff(ofstream& f, VVdouble& kappa, VVdouble& kappa_ans, unsigned int n)
+{
+  double sum = 0;
+  for (int l=1; l<kappa.size(); ++l)
+    {
+      for (int r=1; r<=l; ++r)
+        {
+          sum += pow(kappa[l][r] - kappa_ans[l][r], 2.0);
+        }
+    }
+  sum /= kappa.size() - 1;
+  
+  f << n << "\t" << sum << endl;
 }
 
 void copy_params(params& from, params& target)
@@ -176,6 +214,9 @@ void responsibility_numerator(READ& re, states& sts, state& st, params& pa, hype
       new_st->total_cn[i] = st.total_cn[i];
       new_st->variant_cn[i] = st.variant_cn[i];
     }
+
+  // cerr << "resp_num: " << product << endl;
+  
   new_st->resp_num = product;
   
   sts.push_back(new_st);
@@ -273,13 +314,15 @@ double em(READS& res, params& pa_old, params& pa_new, hyperparams& hpa)
   int K;
   K = res.size();
   
-  states sts;
   double llik = 0;
+  states sts;
   state st;
   init_state(st, hpa);
   
   for (int k=0; k<res.size(); ++k)
     {
+      // cerr << "k: " << k << endl;
+      
       responsibility_numerator_all(*res[k], sts, st, pa_old, hpa, 0);
       llik += responsibility_partition(*res[k], sts, pa_old, hpa);
 
@@ -287,7 +330,7 @@ double em(READS& res, params& pa_old, params& pa_new, hyperparams& hpa)
         {
           for (states::iterator it = sts.begin(); it != sts.end(); ++it)
             {
-              double bin_l = calc_bin_pi(**it, hpa, l);
+              int bin_l = calc_bin_pi(**it, hpa, l);
               pa_new.pi[l] += (*it)->resp * bin_l;
             }
 
@@ -295,23 +338,23 @@ double em(READS& res, params& pa_old, params& pa_new, hyperparams& hpa)
             {
               for (states::iterator it = sts.begin(); it != sts.end(); ++it)
                 {
-                  double bin_lr = calc_bin_kappa(st, hpa, l, r);
+                  int bin_lr = calc_bin_kappa(**it, hpa, l, r);
                   pa_new.kappa[l][r] += (*it)->resp * bin_lr;
                 }
             }
         }
-
-      for (unsigned int l=1; l<=hpa.TOTAL_CN; ++l)
-        {
-          for (unsigned int r=1; r<=l; ++r)
-            {
-              pa_new.kappa[l][r] /= pa_new.pi[l];
-            }
-          pa_new.pi[l] /= K * (hpa.MAX_SUBTYPE + 1);
-        }
       
       delete_states(sts);
       sts.clear();
+    }
+
+  for (unsigned int l=1; l<=hpa.TOTAL_CN; ++l)
+    {
+      for (unsigned int r=1; r<=l; ++r)
+        {
+          pa_new.kappa[l][r] /= pa_new.pi[l];
+        }
+      pa_new.pi[l] /= K * (hpa.MAX_SUBTYPE + 1);
     }
   
   return llik;
@@ -319,11 +362,13 @@ double em(READS& res, params& pa_old, params& pa_new, hyperparams& hpa)
 
 int main(int argc, char** argv)
 {
-    feenableexcept(FE_INVALID | FE_OVERFLOW);
+  // cerr << scientific;
   
-  if (argc != 9)
+  feenableexcept(FE_INVALID | FE_OVERFLOW);
+  
+  if (argc != 10)
     {
-      cerr << "usage: ./mixture_total_variant_em max_subtype n (infile) (kappa_answer_file) (accuracy_file) iter tol (log_file)" << endl;
+      cerr << "usage: ./mixture_total_variant_em max_subtype n (infile) (kappa_answer_file) (pi_accuracy_file) iter tol (log_file) (kappa_accuracy_file)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -337,6 +382,7 @@ int main(int argc, char** argv)
   ifstream h (argv[4]);
   ofstream g (argv[5]);
   ofstream l (argv[8]);
+  ofstream a (argv[9]);
   
   int iter;
   iter = atoi(argv[6]);
@@ -366,6 +412,8 @@ int main(int argc, char** argv)
         }
     }
 
+  // write_params((ofstream&) cout, pa);
+  
   params pa_new;
   init_params(pa_new, hpa);
 
@@ -378,29 +426,33 @@ int main(int argc, char** argv)
     }
 
   l << scientific;
+
+  write_params(l, pa);
   
   for (int i=0; i<iter; ++i)
     {
       clear_params(pa_new, hpa);
       
       double llik = em(res, pa, pa_new, hpa);
-      write_params(l, pa_new);
       l << "llik: " << llik << endl << endl;
+      write_params(l, pa_new);
 
       if (check_tol(pa_new, pa_ans, tol))
         {
           copy_params(pa_new, pa);
           break;
         }
-      
+
       copy_params(pa_new, pa);
     }
 
   double llik = em(res, pa, pa_new, hpa);
-  l << "llik: " << llik << endl << endl;
+  l << "llik: " << llik << endl;
 
   g << scientific;
-  // write_diff(g, kappa, kappa_ans, n);
+  write_pi_diff(g, pa.pi, pa_ans.pi, n);
+  a << scientific;
+  write_kappa_diff(a, pa.kappa, pa_ans.kappa, n);
 
   for (int i=0; i<n; ++i)
     delete res[i];
@@ -409,6 +461,7 @@ int main(int argc, char** argv)
   h.close();
   g.close();
   l.close();
+  a.close();
 
   return 0;
 }
