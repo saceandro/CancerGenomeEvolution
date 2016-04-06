@@ -1,6 +1,5 @@
 #include <fstream>
-// #include "loglib.hh"
-#include "lda_timeweight/loglib2.hh"
+#include "loglib.hh"
 
 typedef std::vector<int> Vint;
 typedef std::vector<Vint> VVint;
