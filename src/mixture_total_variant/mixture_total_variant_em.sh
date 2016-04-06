@@ -1,0 +1,2 @@
+./mixture_total_variant_generate mixture_total_variant_generate.out1000 10000000 1000 4 pi_kappa.txt
+./mixture_total_variant_em 4 1000 mixture_total_variant_generate.out1000 pi_kappa.txt mixture_total_variant_em.accuracy.pi1000 100000 1e-10 mixture_total_variant_em.result1000 mixture_total_variant_em.accuracy.kappa1000
