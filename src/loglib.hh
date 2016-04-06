@@ -1,22 +1,36 @@
+#ifndef LOGLIB2_H_
+#define LOGLIB2_H_
+
 #include <iostream>
 #include <stdlib.h>
 #include <vector>
 #include <math.h>
 #include <float.h>
 
+#define DBL_MAX_1 (0x7feffffffffffffeULL)
+
+typedef union _double_union
+{
+  double d;
+  unsigned long long int c;
+}
+  double_union;
+
 class Log
 {
   double val;
-  int sign;
+  signed char sign;
+  // double_union dm_1;
+
   
 public:
   Log ();
-  Log (double, int);
+  Log (double, signed char);
   Log (double);
   
   double eval();
   bool iszero();
-  int get_sign();
+  signed char get_sign();
   double get_val();
   double take_log();
   Log take_pow(double);
@@ -38,16 +52,19 @@ Log::Log ()
 {
   val = -DBL_MAX;
   sign = 0;
+  // dm_1.c = DBL_MAX_1;
 }
 
-Log::Log (double val, int sign)
+Log::Log (double val, signed char sign)
 {
   this->val = val;
   this->sign = sign;
+  // dm_1.c = DBL_MAX_1;
 }
 
 Log::Log (double a)
 {
+  // dm_1.c = DBL_MAX_1;
   if (a > 0)
     {
       val = log(a);
@@ -80,7 +97,7 @@ bool Log::iszero()
   return (sign == 0);
 }
 
-int Log::get_sign()
+signed char Log::get_sign()
 {
   return sign;
 }
@@ -118,7 +135,7 @@ Log Log::take_pow(double b)
   else
     {
       temp.val = this->val * b;
-      if (isinf(temp.val) == -1)
+      if (temp.val <= -DBL_MAX )
         temp = Log(0);
       else
         temp.sign = 1;
@@ -152,7 +169,7 @@ Log Log::operator +(const Log& b)
   else if (this->val > b.val)
     {
       temp.val = this->val + log1p(this->sign * b.sign * exp(b.val - this->val));
-      if (isinf(temp.val) == -1)
+      if (temp.val <= -DBL_MAX)
         temp = Log(0);
       else
         temp.sign = this->sign;
@@ -160,7 +177,7 @@ Log Log::operator +(const Log& b)
   else
     {
       temp.val = b.val + log1p(this->sign * b.sign * exp(this->val - b.val));
-      if (isinf(temp.val) == -1)
+      if (temp.val <= -DBL_MAX)
         temp = Log(0);
       else
         temp.sign = b.sign;
@@ -182,7 +199,7 @@ Log Log::operator +=(const Log& x)
   else if (this->val > x.val)
     {
       this->val += log1p(this->sign * x.sign * exp(x.val - this->val));
-      if (isinf(this->val) == -1)
+      if (this->val <= -DBL_MAX)
         {
           this->val = -DBL_MAX;
           this->sign = 0;
@@ -191,7 +208,7 @@ Log Log::operator +=(const Log& x)
   else
     {
       this->val = x.val + log1p(this->sign * x.sign * exp(this->val - x.val));
-      if (isinf(this->val) == -1)
+      if (this->val <= -DBL_MAX)
         {
           this->val = -DBL_MAX;
           this->sign = 0;
@@ -221,7 +238,7 @@ Log Log::operator -(const Log& b)
   else if (this->val > b.val)
     {
       temp.val = this->val + log1p(this->sign * (-b.sign) * exp(b.val - this->val));
-      if (isinf(temp.val) == -1)
+      if (temp.val <= -DBL_MAX)
         temp = Log(0);
       else
         temp.sign = this->sign;
@@ -229,7 +246,7 @@ Log Log::operator -(const Log& b)
   else
     {
       temp.val = b.val + log1p(this->sign * (-b.sign) * exp(this->val - b.val));
-      if (isinf(temp.val) == -1)
+      if (temp.val <= -DBL_MAX)
         temp = Log(0);
       else
         temp.sign = -b.sign;
@@ -251,7 +268,7 @@ Log Log::operator -=(const Log& x)
   else if (this->val > x.val)
     {
       this->val += log1p(this->sign * (-x.sign) * exp(x.val - this->val));
-      if (isinf(this->val) == -1)
+      if (this->val <= -DBL_MAX)
         {
           this->val = -DBL_MAX;
           this->sign = 0;
@@ -260,7 +277,7 @@ Log Log::operator -=(const Log& x)
   else
     {
       this->val = x.val + log1p(this->sign * (-x.sign) * exp(this->val - x.val));
-      if (isinf(this->val) == -1)
+      if (this->val <= -DBL_MAX)
         {
           this->val = -DBL_MAX;
           this->sign = 0;
@@ -282,7 +299,7 @@ Log Log::operator *(const Log& x)
   else
     {
       temp.val = this->val + x.val;
-      if (isinf(temp.val) == -1)
+      if (temp.val <= -DBL_MAX)
         temp = Log(0);
       else
         temp.sign = this->sign * x.sign;
@@ -304,7 +321,7 @@ Log Log::operator *=(const Log& x)
   else
     {
       this->val += x.val;
-      if (isinf(this->val) == -1)
+      if (this->val <= -DBL_MAX)
         {
           this->val = -DBL_MAX;
           this->sign = 0;
@@ -332,7 +349,7 @@ Log Log::operator /(const Log& x)
   else
     {
       temp.val = this->val - x.val;
-      if (isinf(temp.val) == -1)
+      if (temp.val <= -DBL_MAX)
         temp = Log(0);
       else
         temp.sign = this->sign * x.sign;
@@ -354,7 +371,7 @@ Log Log::operator /=(const Log& x)
   else
     {
       this->val -= x.val;
-      if (isinf(this->val) == -1)
+      if (this->val <= -DBL_MAX)
         {
           this->val = -DBL_MAX;
           this->sign = 0;
@@ -438,7 +455,9 @@ typedef std::vector<VLog> VVLog;
 Log operator *(VLog& x, VLog& y)
 {
   Log temp;
-  for (int i=0; i<x.size(); ++i)
+  for (int i=0; i<(int)x.size(); ++i)
     temp += x[i] * y[i];
   return temp;
 }
+
+#endif  // LOGLIB2_H_
