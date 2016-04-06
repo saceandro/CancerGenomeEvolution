@@ -5,7 +5,7 @@
 #include <fenv.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
-#include "../enumtree2.hh"
+#include "../enumtree.hh"
 using namespace std;
 
 class state 
