@@ -8,8 +8,8 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa, subtypes& st
 {
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa[i]->u = Log(calc_sigmoid(gsl_vector_get(x, i)));
-      // pa[i]->u = Log(gsl_vector_get(x, i));
+      pa.pa[i]->u = Log(calc_sigmoid(gsl_vector_get(x, i)));
+      // pa.pa[i]->u = Log(gsl_vector_get(x, i));
     }
   
   calc_t(pa, hpa, sts);
@@ -30,12 +30,12 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa, subtypes& st
       Log sum;
       for (int l=1; l<=hpa.TOTAL_CN; ++l)
         {
-          pa[i]->pi[l] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1) - m, 1);
-          sum += pa[i]->pi[l];
+          pa.pa[i]->pi[l] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1) - m, 1);
+          sum += pa.pa[i]->pi[l];
         }
 
       for (int l=1; l<=hpa.TOTAL_CN; ++l)
-        pa[i]->pi[l] /= sum;
+        pa.pa[i]->pi[l] /= sum;
 
       for (int l=1; l<=hpa.TOTAL_CN; ++l)
         {
@@ -50,12 +50,12 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa, subtypes& st
       
           for (int r=1; r<=l; ++r)
             {
-              pa[i]->kappa[l][r] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1) - m, 1);
-              sum += pa[i]->kappa[l][r];
+              pa.pa[i]->kappa[l][r] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1) - m, 1);
+              sum += pa.pa[i]->kappa[l][r];
             }
 
           for (int r=1; r<=l; ++r)
-            pa[i]->kappa[l][r] /= sum;
+            pa.pa[i]->kappa[l][r] /= sum;
         }
     }
 }
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
       //     calc_t(pa, hpa, trs[t]);
 
       //     for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-      //       cerr << i << ":\t" << pa[i]->t.eval() << endl;
+      //       cerr << i << ":\t" << pa.pa[i]->t.eval() << endl;
       //     cerr << "---------------------------------------" << endl;
 
       //     for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)

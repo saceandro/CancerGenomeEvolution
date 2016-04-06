@@ -1,5 +1,6 @@
 #include <fstream>
-#include "loglib.hh"
+// #include "loglib.hh"
+#include "lda_timeweight/loglib2.hh"
 
 typedef std::vector<int> Vint;
 typedef std::vector<Vint> VVint;
@@ -21,7 +22,7 @@ public:
   subtype* above;
   std::vector<subtype*> children;
 
-  // use default constructor
+  subtype (int _index, int _total_cn, int _variant_cn, Log _resp_du, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), resp_du(_resp_du), parent(_parent), above(_above), children(_children) {}
 };
 
 typedef std::vector<subtype> subtypes;
@@ -64,8 +65,15 @@ public:
   param (Log _u, Log _t, Log _n, VLog _pi, VVLog _kappa) : u(_u), t(_t), n(_n), pi(_pi), kappa(_kappa) {}
 };
 
-typedef std::vector<param*> params;
+// typedef std::vector<param*> params;
 
+class params
+{
+public:
+  std::vector<param*> pa;
+  VLog rho;
+};
+  
 class hyperparams
 {
 public:
@@ -74,13 +82,17 @@ public:
   VVdouble beta;
   int MAX_SUBTYPE;
   int TOTAL_CN;
+  int MAX_TREE;
 };
 
 void init_params(params& pa, hyperparams& hpa)
 {
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    pa.push_back(new param (Log(0), Log(0), Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0)))));
+    pa.pa.push_back(new param (Log(0), Log(0), Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0)))));
+  pa.rho.assign(hpa.MAX_TREE, 0);
 }
+
+void trees_cons(trees&, hyperparams&);
 
 void init_hyperparams(hyperparams& hpa)
 {
@@ -88,6 +100,9 @@ void init_hyperparams(hyperparams& hpa)
   hpa.be_hpa.second = 0.1;
   hpa.alpha.assign(hpa.TOTAL_CN + 1, 0.1);
   hpa.beta.assign(hpa.TOTAL_CN + 1, Vdouble (hpa.TOTAL_CN + 1, 0.1));
+  trees trs;
+  trees_cons(trs, hpa);
+  hpa.MAX_TREE = trs.size();
 }
 
 void write_Vint(std::ofstream& f, Vint& v)
@@ -160,6 +175,8 @@ void trees_cons(trees& trs, Vints& acc)
   for (int t=0; t<acc.size(); ++t)
     {
       trs[t][0].index = 0;
+      trs[t][0].total_cn = 2;
+      trs[t][0].variant_cn = 0;
       trs[t][0].parent = NULL;
       trs[t][0].above = NULL;
 
@@ -187,14 +204,14 @@ void trees_cons(trees& trs, hyperparams& hpa)
 
   Vints acc;
   rooted_ordered_tree(dfs, hpa.MAX_SUBTYPE, acc);
-  write_Vints((std::ofstream&)std::cerr, acc);
+  // write_Vints((std::ofstream&)std::cerr, acc);
 
   // VVVbool a (acc.size(), VVbool(hpa.MAX_SUBTYPE, Vbool(hpa.MAX_SUBTYPE, false)));
   
   // child_matrix(a, acc);
   // write_bool_matrix(a);
   
-  trs.assign(acc.size(), subtypes (hpa.MAX_SUBTYPE + 1));
+  trs.assign(acc.size(), subtypes (hpa.MAX_SUBTYPE + 1, subtype (0, 0, 0, Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
   trees_cons(trs, acc);
 }
 
@@ -216,13 +233,13 @@ void traversal(subtype* p)
 
 void calc_t(params& pa, hyperparams& hpa, subtypes& sts)
 {
-  pa[0]->t = pa[0]->u;
+  pa.pa[0]->t = pa.pa[0]->u;
   if (hpa.MAX_SUBTYPE >= 1)
-    pa[1]->t = pa[1]->u;
+    pa.pa[1]->t = pa.pa[1]->u;
   
   for (int i=2; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa[i]->t = pa[sts[i].above->index]->t * pa[i]->u;
+      pa.pa[i]->t = pa.pa[sts[i].above->index]->t * pa.pa[i]->u;
     }
 }
 
@@ -242,7 +259,7 @@ bool above_time(subtypes& sts, int j, int y)
 Log d_t_u(params& pa, hyperparams& hpa, subtypes& sts, int j, int y)
 {
   if (above_time(sts, j, y))
-    return pa[j]->t / pa[y]->u;
+    return pa.pa[j]->t / pa.pa[y]->u;
   else
     return Log(0);
 }
