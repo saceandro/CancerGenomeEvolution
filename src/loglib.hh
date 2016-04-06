@@ -17,6 +17,7 @@ public:
   double eval();
   bool iszero();
   int get_sign();
+  double get_val();
   double take_log();
   Log take_pow(double);
 
@@ -68,7 +69,10 @@ Log::Log (double a)
 
 double Log::eval()
 {
-  return sign * exp(val);
+  if (sign == 0)
+    return 0;
+  else
+    return sign * exp(val);
 }
 
 bool Log::iszero()
@@ -79,6 +83,11 @@ bool Log::iszero()
 int Log::get_sign()
 {
   return sign;
+}
+
+double Log::get_val()
+{
+  return val;
 }
 
 double Log::take_log()
@@ -102,8 +111,18 @@ Log Log::take_pow(double b)
     }
     
   Log temp;
-  temp.val = this->val * b;
-  temp.sign = this->sign;
+  if (this->iszero())
+    {
+      temp = Log(0);
+    }
+  else
+    {
+      temp.val = this->val * b;
+      if (isinf(temp.val) == -1)
+        temp = Log(0);
+      else
+        temp.sign = 1;
+    }
   
   return temp;
 }
@@ -120,15 +139,31 @@ Log Log::operator +(const Log& b)
 {
   Log temp;
 
-  if (this->val > b.val)
+  if (this->iszero())
+    {
+      temp.val = b.val;
+      temp.sign = b.sign;
+    }
+  else if (b.sign == 0)
+    {
+      temp.val = this->val;
+      temp.sign = this->sign;
+    }
+  else if (this->val > b.val)
     {
       temp.val = this->val + log1p(this->sign * b.sign * exp(b.val - this->val));
-      temp.sign = this->sign;
+      if (isinf(temp.val) == -1)
+        temp = Log(0);
+      else
+        temp.sign = this->sign;
     }
   else
     {
       temp.val = b.val + log1p(this->sign * b.sign * exp(this->val - b.val));
-      temp.sign = b.sign;
+      if (isinf(temp.val) == -1)
+        temp = Log(0);
+      else
+        temp.sign = b.sign;
     }
 
   return temp;
@@ -136,14 +171,35 @@ Log Log::operator +(const Log& b)
 
 Log Log::operator +=(const Log& x)
 {
-  if (this->val > x.val)
+  if (this->iszero())
+    {
+      this->val = x.val;
+      this->sign = x.sign;
+    }
+  else if (x.sign == 0)
+    {
+    }
+  else if (this->val > x.val)
     {
       this->val += log1p(this->sign * x.sign * exp(x.val - this->val));
+      if (isinf(this->val) == -1)
+        {
+          this->val = -DBL_MAX;
+          this->sign = 0;
+        }
     }
   else
     {
       this->val = x.val + log1p(this->sign * x.sign * exp(this->val - x.val));
-      this->sign = x.sign;
+      if (isinf(this->val) == -1)
+        {
+          this->val = -DBL_MAX;
+          this->sign = 0;
+        }
+      else
+        {
+          this->sign = x.sign;
+        }
     }
   return *this;
 }
@@ -152,15 +208,31 @@ Log Log::operator -(const Log& b)
 {
   Log temp;
 
-  if (this->val > b.val)
+  if (this->iszero())
+    {
+      temp.val = b.val;
+      temp.sign = -b.sign;
+    }
+  else if (b.sign == 0)
+    {
+      temp.val = this->val;
+      temp.sign = this->sign;
+    }
+  else if (this->val > b.val)
     {
       temp.val = this->val + log1p(this->sign * (-b.sign) * exp(b.val - this->val));
-      temp.sign = this->sign;
+      if (isinf(temp.val) == -1)
+        temp = Log(0);
+      else
+        temp.sign = this->sign;
     }
   else
     {
       temp.val = b.val + log1p(this->sign * (-b.sign) * exp(this->val - b.val));
-      temp.sign = -b.sign;
+      if (isinf(temp.val) == -1)
+        temp = Log(0);
+      else
+        temp.sign = -b.sign;
     }
 
   return temp;
@@ -168,14 +240,33 @@ Log Log::operator -(const Log& b)
 
 Log Log::operator -=(const Log& x)
 {
-  if (this->val > x.val)
+  if (this->iszero())
+    {
+      this->val = x.val;
+      this->sign = -x.sign;
+    }
+  else if (x.sign == 0)
+    {
+    }
+  else if (this->val > x.val)
     {
       this->val += log1p(this->sign * (-x.sign) * exp(x.val - this->val));
+      if (isinf(this->val) == -1)
+        {
+          this->val = -DBL_MAX;
+          this->sign = 0;
+        }
     }
   else
     {
       this->val = x.val + log1p(this->sign * (-x.sign) * exp(this->val - x.val));
-      this->sign = -x.sign;
+      if (isinf(this->val) == -1)
+        {
+          this->val = -DBL_MAX;
+          this->sign = 0;
+        }
+      else
+        this->sign = -x.sign;
     }
   return *this;
 }
@@ -183,16 +274,44 @@ Log Log::operator -=(const Log& x)
 Log Log::operator *(const Log& x)
 {
   Log temp;
-  temp.val = this->val + x.val;
-  temp.sign = this->sign * x.sign;
+
+  if (this->iszero() || (x.sign == 0))
+    {
+      temp = Log(0);
+    }
+  else
+    {
+      temp.val = this->val + x.val;
+      if (isinf(temp.val) == -1)
+        temp = Log(0);
+      else
+        temp.sign = this->sign * x.sign;
+    }
   
   return temp;
 }
 
 Log Log::operator *=(const Log& x)
 {
-  this->val += x.val;
-  this->sign *= x.sign;
+  if (this->iszero())
+    {
+    }
+  else if (x.sign == 0)
+    {
+      this->val = -DBL_MAX;
+      this->sign = 0;
+    }
+  else
+    {
+      this->val += x.val;
+      if (isinf(this->val) == -1)
+        {
+          this->val = -DBL_MAX;
+          this->sign = 0;
+        }
+      else
+        this->sign *= x.sign;
+    }
   
   return *this;
 }
@@ -201,16 +320,48 @@ Log Log::operator /(const Log& x)
 {
   Log temp;
 
-  temp.val = this->val - x.val;
-  temp.sign = this->sign * x.sign;
+  if (x.sign == 0)
+    {
+      std::cout << "division by zero!" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  else if (this->iszero())
+    {
+      temp = Log(0);
+    }
+  else
+    {
+      temp.val = this->val - x.val;
+      if (isinf(temp.val) == -1)
+        temp = Log(0);
+      else
+        temp.sign = this->sign * x.sign;
+    }
   
   return temp;
 }
 
 Log Log::operator /=(const Log& x)
 {
-  this->val -= x.val;
-  this->sign *= x.sign;
+  if (x.sign == 0)
+    {
+      std::cout << "division by zero!" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  else if (this->iszero())
+    {
+    }
+  else
+    {
+      this->val -= x.val;
+      if (isinf(this->val) == -1)
+        {
+          this->val = -DBL_MAX;
+          this->sign = 0;
+        }
+      else
+        this->sign *= x.sign;
+    }
   
   return *this;
 }
