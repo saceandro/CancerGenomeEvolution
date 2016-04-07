@@ -36,6 +36,7 @@ void copy(subtypes& x, const subtypes& y)
 {
   for (int i=0; i<(int)x.size(); ++i)
     {
+      x[i].index = y[i].index;
       x[i].total_cn = y[i].total_cn;
       x[i].variant_cn = y[i].variant_cn;
       x[i].t = y[i].t;

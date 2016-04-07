@@ -193,7 +193,7 @@ TEST_F(EnumtreeTest, copy)
 {
   for (int t=0; t<(int)y.size(); ++t)
     {
-
+      EXPECT_EQ(y[t][0].index, 0);
       EXPECT_EQ(y[t][0].total_cn, 2);
       EXPECT_EQ(y[t][0].variant_cn, 0);
       EXPECT_TRUE(y[t][0].parent == NULL);
@@ -202,106 +202,106 @@ TEST_F(EnumtreeTest, copy)
     }
 
   
-
+  EXPECT_EQ(y[0][1].index, 1);
   EXPECT_TRUE(y[0][1].parent == &y[0][0]);
   EXPECT_TRUE(y[0][1].above == &y[0][0]);
   EXPECT_THAT(y[0][1].children, ::testing::ElementsAre(&y[0][2]));
 
-
+  EXPECT_EQ(y[0][2].index, 2);
   EXPECT_TRUE(y[0][2].parent == &y[0][1]);
   EXPECT_TRUE(y[0][2].above == &y[0][1]);
   EXPECT_THAT(y[0][2].children, ::testing::ElementsAre(&y[0][3]));
 
-
+  EXPECT_EQ(y[0][3].index, 3);
   EXPECT_TRUE(y[0][3].parent == &y[0][2]);
   EXPECT_TRUE(y[0][3].above == &y[0][2]);
   EXPECT_THAT(y[0][3].children, ::testing::ElementsAre(&y[0][4]));
 
-
+  EXPECT_EQ(y[0][4].index, 4);
   EXPECT_TRUE(y[0][4].parent == &y[0][3]);
   EXPECT_TRUE(y[0][4].above == &y[0][3]);
   EXPECT_THAT(y[0][4].children, ::testing::IsEmpty());
 
   
-
+  EXPECT_EQ(y[1][1].index, 1);
   EXPECT_TRUE(y[1][1].parent == &y[1][0]);
   EXPECT_TRUE(y[1][1].above == &y[1][0]);
   EXPECT_THAT(y[1][1].children, ::testing::ElementsAre(&y[1][2]));
 
-
+  EXPECT_EQ(y[1][2].index, 2);
   EXPECT_TRUE(y[1][2].parent == &y[1][1]);
   EXPECT_TRUE(y[1][2].above == &y[1][1]);
   EXPECT_THAT(y[1][2].children, ::testing::ElementsAre(&y[1][3], &y[1][4]));
 
-
+  EXPECT_EQ(y[1][3].index, 3);
   EXPECT_TRUE(y[1][3].parent == &y[1][2]);
   EXPECT_TRUE(y[1][3].above == &y[1][2]);
   EXPECT_THAT(y[1][3].children, ::testing::IsEmpty());
 
-
+  EXPECT_EQ(y[1][4].index, 4);
   EXPECT_TRUE(y[1][4].parent == &y[1][2]);
   EXPECT_TRUE(y[1][4].above == &y[1][3]);
   EXPECT_THAT(y[1][4].children, ::testing::IsEmpty());
 
   
-
+  EXPECT_EQ(y[2][1].index, 1);
   EXPECT_TRUE(y[2][1].parent == &y[2][0]);
   EXPECT_TRUE(y[2][1].above == &y[2][0]);
   EXPECT_THAT(y[2][1].children, ::testing::ElementsAre(&y[2][2], &y[2][4]));
 
-
+  EXPECT_EQ(y[2][2].index, 2);
   EXPECT_TRUE(y[2][2].parent == &y[2][1]);
   EXPECT_TRUE(y[2][2].above == &y[2][1]);
   EXPECT_THAT(y[2][2].children, ::testing::ElementsAre(&y[2][3]));
 
-
+  EXPECT_EQ(y[2][3].index, 3);
   EXPECT_TRUE(y[2][3].parent == &y[2][2]);
   EXPECT_TRUE(y[2][3].above == &y[2][2]);
   EXPECT_THAT(y[2][3].children, ::testing::IsEmpty());
 
-
+  EXPECT_EQ(y[2][4].index, 4);
   EXPECT_TRUE(y[2][4].parent == &y[2][1]);
   EXPECT_TRUE(y[2][4].above == &y[2][2]);
   EXPECT_THAT(y[2][4].children, ::testing::IsEmpty());
 
   
-
+  EXPECT_EQ(y[3][1].index, 1);
   EXPECT_TRUE(y[3][1].parent == &y[3][0]);
   EXPECT_TRUE(y[3][1].above == &y[3][0]);
   EXPECT_THAT(y[3][1].children, ::testing::ElementsAre(&y[3][2], &y[3][3]));
 
-
+  EXPECT_EQ(y[3][2].index, 2);
   EXPECT_TRUE(y[3][2].parent == &y[3][1]);
   EXPECT_TRUE(y[3][2].above == &y[3][1]);
   EXPECT_THAT(y[3][2].children, ::testing::IsEmpty());
 
-
+  EXPECT_EQ(y[3][3].index, 3);
   EXPECT_TRUE(y[3][3].parent == &y[3][1]);
   EXPECT_TRUE(y[3][3].above == &y[3][2]);
   EXPECT_THAT(y[3][3].children, ::testing::ElementsAre(&y[3][4]));
 
-
+  EXPECT_EQ(y[3][4].index, 4);
   EXPECT_TRUE(y[3][4].parent == &y[3][3]);
   EXPECT_TRUE(y[3][4].above == &y[3][3]);
   EXPECT_THAT(y[3][4].children, ::testing::IsEmpty());
 
 
-
+  EXPECT_EQ(y[4][1].index, 1);
   EXPECT_TRUE(y[4][1].parent == &y[4][0]);
   EXPECT_TRUE(y[4][1].above == &y[4][0]);
   EXPECT_THAT(y[4][1].children, ::testing::ElementsAre(&y[4][2], &y[4][3], &y[4][4]));
 
-
+  EXPECT_EQ(y[4][2].index, 2);
   EXPECT_TRUE(y[4][2].parent == &y[4][1]);
   EXPECT_TRUE(y[4][2].above == &y[4][1]);
   EXPECT_THAT(y[4][2].children, ::testing::IsEmpty());
 
-
+  EXPECT_EQ(y[4][3].index, 3);
   EXPECT_TRUE(y[4][3].parent == &y[4][1]);
   EXPECT_TRUE(y[4][3].above == &y[4][2]);
   EXPECT_THAT(y[4][3].children, ::testing::IsEmpty());
 
-
+  EXPECT_EQ(y[4][4].index, 4);
   EXPECT_TRUE(y[4][4].parent == &y[4][1]);
   EXPECT_TRUE(y[4][4].above == &y[4][3]);
   EXPECT_THAT(y[4][4].children, ::testing::IsEmpty());
