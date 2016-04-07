@@ -145,12 +145,6 @@ void init_state(state& st, hyperparams& hpa)
   st.st[0].variant_cn = 0;
 }
 
-void delete_params(params& pa, hyperparams& hpa)
-{
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    delete pa.pa[i];
-}
-
 void calc_n(subtypes& sts, hyperparams& hpa)
 {
   Log sum;
@@ -246,7 +240,7 @@ void responsibility_numerator(READ& re, states& sts, subtypes& st, params& pa, h
         {
           Log sum2;
           for (int j=0; j<=hpa.MAX_SUBTYPE; ++j) // modified to be j=0
-            sum2 += d_n_t(st, hpa, i, j) * d_t_u(pa, hpa, st, j, y);
+            sum2 += d_n_t(st, hpa, i, j) * d_t_u(pa, st, j, y);
           sum += d_mu_n(st, hpa, i) * sum2;
         }
       
@@ -476,8 +470,7 @@ double calc_llik_for_drho(double x_a, void* _drho)
 
   gsl_vector_set(p->x, p->a, x_a);
 
-  params pa;
-  init_params(pa, p->hpa);
+  params pa (p->hpa);
   calc_params(p->x, pa, p->hpa);
 
   return calc_llik(p->res, pa, p->hpa, p->tr);
@@ -489,8 +482,7 @@ double calc_llik_for_du(double x_i, void* _du)
 
   gsl_vector_set(p->x, p->hpa.MAX_TREE + p->i, x_i);
 
-  params pa;
-  init_params(pa, p->hpa);
+  params pa (p->hpa);
   calc_params(p->x, pa, p->hpa);
 
   return calc_llik(p->res, pa, p->hpa, p->tr);
@@ -504,8 +496,7 @@ double calc_llik_for_dpi(double x_il, void* dp)
   
   gsl_vector_set(p->x, p->hpa.MAX_TREE + p->hpa.MAX_SUBTYPE + 1 + params_per_subtype * (p->i - 1) + p->l - 1, x_il);
 
-  params pa;
-  init_params(pa, p->hpa);
+  params pa (p->hpa);
   calc_params(p->x, pa, p->hpa);
 
   return calc_llik(p->res, pa, p->hpa, p->tr);
@@ -519,8 +510,7 @@ double calc_llik_for_dkappa(double x_ilr, void* dk)
 
   gsl_vector_set(p->x, p->hpa.MAX_TREE + p->hpa.MAX_SUBTYPE + 1 + params_per_subtype * (p->i - 1) + p->hpa.TOTAL_CN + (p->l - 1) * p->l / 2 + p->r - 1, x_ilr);
 
-  params pa;
-  init_params(pa, p->hpa);
+  params pa (p->hpa);
   calc_params(p->x, pa, p->hpa);
 
   return calc_llik(p->res, pa, p->hpa, p->tr);
@@ -746,12 +736,10 @@ double calc_dx_rho_llik_analytic(READS& res, gsl_vector* x, int b, hyperparams& 
 {
   int K = res.size();
 
-  params pa;
-  init_params(pa, hpa);
+  params pa (hpa);
   calc_params(x, pa, hpa);
 
-  params grad_by_param;
-  init_params(grad_by_param, hpa);
+  params grad_by_param (hpa);
 
   double llik = d_llik(res, pa, grad_by_param, hpa, trs);
 
@@ -792,12 +780,10 @@ double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, int j, hyperparams& hp
 {
   int K = res.size();
 
-  params pa;
-  init_params(pa, hpa);
+  params pa (hpa);
   calc_params(x, pa, hpa);
 
-  params grad_by_param;
-  init_params(grad_by_param, hpa);
+  params grad_by_param (hpa);
 
   double llik = d_llik(res, pa, grad_by_param, hpa, trs);
   // return calc_dx_sigmoid(gsl_vector_get(x,j)) * grad_by_param[j]->u.eval();
@@ -839,12 +825,10 @@ double calc_dx_pi_llik_analytic(READS& res, gsl_vector* x, int i, int s, hyperpa
 {
   int K = res.size();
 
-  params pa;
-  init_params(pa, hpa);
+  params pa (hpa);
   calc_params(x, pa, hpa);
 
-  params grad_by_param;
-  init_params(grad_by_param, hpa);
+  params grad_by_param (hpa);
 
   double llik = d_llik(res, pa, grad_by_param, hpa, trs);
   double sum_alpha = sum_vector(hpa.alpha, 1, hpa.TOTAL_CN);
@@ -885,12 +869,10 @@ double calc_dx_kappa_llik_analytic(READS& res, gsl_vector* x, int i, int l, int 
 {
   int K = res.size();
 
-  params pa;
-  init_params(pa, hpa);
+  params pa (hpa);
   calc_params(x, pa, hpa);
 
-  params grad_by_param;
-  init_params(grad_by_param, hpa);
+  params grad_by_param (hpa);
 
   double llik = d_llik(res, pa, grad_by_param, hpa, trs);
 
@@ -937,16 +919,17 @@ int main(int argc, char** argv)
     }
 
   READS res;
-  hyperparams hpa;
-  int n, step;
+  int n, step, MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
 
-  hpa.MAX_SUBTYPE = atoi(argv[1]);
-  hpa.TOTAL_CN = atoi(argv[2]);
-  init_hyperparams(hpa);
+  MAX_SUBTYPE = atoi(argv[1]);
+  TOTAL_CN = atoi(argv[2]);
+  
   trees trs;
-  trees_cons(trs, hpa);
-  hpa.MAX_TREE = trs.size();
+  trees_cons(trs, MAX_SUBTYPE);
+  MAX_TREE = trs.size();
 
+  hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
+  
   n = atoi(argv[3]);
   step = atoi(argv[4]);
   
