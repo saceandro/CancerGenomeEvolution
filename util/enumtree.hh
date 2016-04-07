@@ -1,3 +1,6 @@
+#ifndef ENUMTREE_H_
+#define ENUMTREE_H_
+
 #include <fstream>
 #include "loglib.hh"
 
@@ -23,6 +26,7 @@ public:
   subtype* above;
   std::vector<subtype*> children;
 
+  subtype () {}
   subtype (int _index, int _total_cn, int _variant_cn, Log _t, Log _n, Log _resp_du, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), t(_t), n(_n), resp_du(_resp_du), parent(_parent), above(_above), children(_children) {}
 };
 
@@ -30,7 +34,7 @@ typedef std::vector<subtype> subtypes;
 
 void copy(subtypes& x, const subtypes& y)
 {
-  for (int i=0; i<x.size(); ++i)
+  for (int i=0; i<(int)x.size(); ++i)
     {
       x[i].total_cn = y[i].total_cn;
       x[i].variant_cn = y[i].variant_cn;
@@ -44,17 +48,32 @@ void copy(subtypes& x, const subtypes& y)
         x[i].parent = &x[y[i].parent->index]; // copy index, not the pointer itself !
       
       if (y[i].above == NULL)
-        x[i].above == NULL;
+        x[i].above = NULL;
       else
         x[i].above = &x[y[i].above->index]; // copy index, not the pointer itself !
       
       x[i].children.assign(y[i].children.size(), NULL);
-      for (int j=0; j<y[i].children.size(); ++j)
+      for (int j=0; j<(int)y[i].children.size(); ++j)
         x[i].children[j] = &x[y[i].children[j]->index]; // copy index, not the pointer itself !
     }
 }
 
 typedef std::vector<subtypes> trees;
+
+class hyperparams
+{
+public:
+  std::pair<double,double> be_hpa;
+  Vdouble alpha;
+  VVdouble beta;
+  Vdouble gamma;
+  int MAX_SUBTYPE;
+  int TOTAL_CN;
+  int MAX_TREE;
+
+  hyperparams () {}
+  hyperparams (int, int, int);
+};
 
 class param
 {
@@ -66,62 +85,47 @@ public:
   param (Log _u, VLog _pi, VVLog _kappa) : u(_u), pi(_pi), kappa(_kappa) {}
 };
 
-// typedef std::vector<param*> params;
-
 class params
 {
 public:
   std::vector<param*> pa;
   VLog rho;
-};
-  
-class hyperparams
-{
-public:
-  std::pair<double,double> be_hpa;
-  Vdouble alpha;
-  VVdouble beta;
-  Vdouble gamma;
-  int MAX_SUBTYPE;
-  int TOTAL_CN;
-  int MAX_TREE;
+
+  params (hyperparams&);
 };
 
-void init_params(params& pa, hyperparams& hpa)
+params::params(hyperparams& hpa)
 {
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    pa.pa.push_back(new param (Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0)))));
-  pa.rho.assign(hpa.MAX_TREE, Log(0));
+    pa.push_back(new param (Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0)))));
+  rho.assign(hpa.MAX_TREE, Log(0));
 }
 
-void trees_cons(trees&, hyperparams&);
-
-void init_hyperparams(hyperparams& hpa)
+hyperparams::hyperparams(int _MAX_SUBTYPE, int _TOTAL_CN, int _MAX_TREE) : MAX_SUBTYPE(_MAX_SUBTYPE), TOTAL_CN(_TOTAL_CN), MAX_TREE(_MAX_TREE)
 {
-  hpa.be_hpa.first = 0.1;
-  hpa.be_hpa.second = 0.1;
-  hpa.alpha.assign(hpa.TOTAL_CN + 1, 0.1);
-  hpa.beta.assign(hpa.TOTAL_CN + 1, Vdouble (hpa.TOTAL_CN + 1, 0.1));
-  hpa.gamma.assign(hpa.MAX_TREE, 0.1);
+  be_hpa.first = 0.1;
+  be_hpa.second = 0.1;
+  alpha.assign(_TOTAL_CN + 1, 0.1);
+  beta.assign(_TOTAL_CN + 1, Vdouble (_TOTAL_CN + 1, 0.1));
+  gamma.assign(_MAX_TREE, 0.1);
 }
 
 void write_Vint(std::ofstream& f, Vint& v)
 {
-  for (int i=0; i<v.size(); ++i)
+  for (int i=0; i<(int)v.size(); ++i)
     f << v[i] << " ";
   f << std::endl;
 }
 
 void write_Vints(std::ofstream& f, Vints& acc)
 {
-  for (int i=0; i<acc.size(); ++i)
+  for (int i=0; i<(int)acc.size(); ++i)
     write_Vint(f, *acc[i]);
 }
 
-
 void rooted_ordered_tree(Vint* dfs, int n, Vints& acc)
 {
-  if (n <= dfs->size())
+  if (n <= (int)dfs->size())
     {
       // write_Vint((std::ofstream&)std::cerr, *dfs);
       acc.push_back(dfs);
@@ -141,9 +145,9 @@ void rooted_ordered_tree(Vint* dfs, int n, Vints& acc)
 
 void child_matrix(VVVbool& a, Vints& acc)
 {
-  for (int t=0; t<acc.size(); ++t)
+  for (int t=0; t<(int)acc.size(); ++t)
     {
-      for (int i=1; i<acc[0]->size(); ++i)
+      for (int i=1; i<(int)acc[0]->size(); ++i)
         {
           a[t][(*acc[t])[i]-1][i] = true;
         }
@@ -152,11 +156,11 @@ void child_matrix(VVVbool& a, Vints& acc)
 
 void write_bool_matrix(VVVbool& a)
 {
-  for (int t=0; t<a.size(); ++t)
+  for (int t=0; t<(int)a.size(); ++t)
     {
-      for (int i=0; i<a[t].size(); ++i)
+      for (int i=0; i<(int)a[t].size(); ++i)
         {
-          for (int j=0; j<a[t][i].size(); ++j)
+          for (int j=0; j<(int)a[t][i].size(); ++j)
             {
               if (a[t][i][j])
                 std::cerr << 1 << " ";
@@ -172,7 +176,7 @@ void write_bool_matrix(VVVbool& a)
 
 void trees_cons(trees& trs, Vints& acc)
 {
-  for (int t=0; t<acc.size(); ++t)
+  for (int t=0; t<(int)acc.size(); ++t)
     {
       trs[t][0].index = 0;
       trs[t][0].total_cn = 2;
@@ -180,7 +184,7 @@ void trees_cons(trees& trs, Vints& acc)
       trs[t][0].parent = NULL;
       trs[t][0].above = NULL;
 
-      for (int i=1; i<=acc[t]->size(); ++i)
+      for (int i=1; i<=(int)acc[t]->size(); ++i)
         {
           trs[t][i].index = i;
           trs[t][i].parent = &trs[t][(*acc[t])[i-1]];
@@ -224,7 +228,7 @@ void traversal(subtype* p)
       std::cerr << p->index << "'s above " << p->above->index << std::endl;
     }
 
-  for (int j = 0; j < p->children.size(); ++j)
+  for (int j = 0; j < (int)p->children.size(); ++j)
     {
       std::cerr << p->index << "'s " << j+1 << " th child ";
       traversal(p->children[j]);
@@ -256,10 +260,12 @@ bool above_time(subtypes& sts, int j, int y)
   return false;
 }
 
-Log d_t_u(params& pa, hyperparams& hpa, subtypes& sts, int j, int y)
+Log d_t_u(params& pa, subtypes& sts, int j, int y)
 {
   if (above_time(sts, j, y))
     return sts[j].t / pa.pa[y]->u;
   else
     return Log(0);
 }
+
+#endif  // ENUMTREE_H_

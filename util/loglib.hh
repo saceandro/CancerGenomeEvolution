@@ -1,5 +1,5 @@
-#ifndef LOGLIB2_H_
-#define LOGLIB2_H_
+#ifndef LOGLIB_H_
+#define LOGLIB_H_
 
 #include <iostream>
 #include <stdlib.h>
@@ -460,4 +460,4 @@ Log operator *(VLog& x, VLog& y)
   return temp;
 }
 
-#endif  // LOGLIB2_H_
+#endif  // LOGLIB_H_
