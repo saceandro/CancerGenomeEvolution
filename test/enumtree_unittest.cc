@@ -47,9 +47,9 @@ class EnumtreeTest : public testing::Test {
   // should define it if you need to initialize the varaibles.
   // Otherwise, this can be skipped.
   virtual void SetUp() {
+    trees_cons(x, 4);
     hpa.MAX_SUBTYPE = 4;
     hpa.TOTAL_CN = 3;
-    trees_cons(x, hpa);
     hpa.MAX_TREE = x.size();
 
     y.assign(x.size(), subtypes (hpa.MAX_SUBTYPE + 1, subtype()));

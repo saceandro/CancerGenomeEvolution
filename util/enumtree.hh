@@ -93,6 +93,7 @@ public:
   VLog rho;
 
   params (hyperparams&);
+  ~params ();
 };
 
 params::params(hyperparams& hpa)
@@ -100,6 +101,14 @@ params::params(hyperparams& hpa)
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     pa.push_back(new param (Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0)))));
   rho.assign(hpa.MAX_TREE, Log(0));
+}
+
+params::~params()
+{
+  for (int i=0; i<(int)pa.size(); ++i)
+    {
+      delete pa[i];
+    }
 }
 
 hyperparams::hyperparams(int _MAX_SUBTYPE, int _TOTAL_CN, int _MAX_TREE) : MAX_SUBTYPE(_MAX_SUBTYPE), TOTAL_CN(_TOTAL_CN), MAX_TREE(_MAX_TREE)
@@ -200,23 +209,23 @@ void trees_cons(trees& trs, Vints& acc)
     }
 }
 
-void trees_cons(trees& trs, hyperparams& hpa)
+void trees_cons(trees& trs, int max_subtype)
 {
-  // assumes hpa.MAX_SUBTYPE >= 1
+  // assumes max_subtype >= 1
   
   Vint* dfs = new Vint;
   dfs->assign(1, 0);
 
   Vints acc;
-  rooted_ordered_tree(dfs, hpa.MAX_SUBTYPE, acc);
+  rooted_ordered_tree(dfs, max_subtype, acc);
   // write_Vints((std::ofstream&)std::cerr, acc);
 
-  // VVVbool a (acc.size(), VVbool(hpa.MAX_SUBTYPE, Vbool(hpa.MAX_SUBTYPE, false)));
+  // VVVbool a (acc.size(), VVbool(max_subtype, Vbool(max_subtype, false)));
   
   // child_matrix(a, acc);
   // write_bool_matrix(a);
   
-  trs.assign(acc.size(), subtypes (hpa.MAX_SUBTYPE + 1, subtype (0, 0, 0, Log(0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
+  trs.assign(acc.size(), subtypes (max_subtype + 1, subtype (0, 0, 0, Log(0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
   trees_cons(trs, acc);
 }
 

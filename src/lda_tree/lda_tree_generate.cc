@@ -8,25 +8,6 @@
 #include "../../util/enumtree.hh"
 using namespace std;
 
-class state 
-{
-public:
-  int locus;
-  subtypes st;
-  Log resp;
-
-  // use default constructor
-};
-
-typedef std::vector<state*> states;
-
-void init_state(state& st, hyperparams& hpa)
-{
-  st.st.assign(hpa.MAX_SUBTYPE + 1, subtype (0, 0, 0, Log(0), Log(0), Log(0), NULL, NULL, vector<subtype*> (0, NULL)));
-  st.st[0].total_cn = 2;
-  st.st[0].variant_cn = 0;
-}
-
 void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
 {
   for (int a=0; a<hpa.MAX_TREE; ++a)
@@ -77,12 +58,6 @@ void write_t_n(std::ofstream& f, subtypes& st, hyperparams& hpa)
   f << endl << endl;
 }
 
-void delete_params(params& pa, hyperparams& hpa)
-{
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    delete pa.pa[i];
-}
-
 double calc_mu(subtypes& st, hyperparams& hpa)
 {
   Log denom;
@@ -131,8 +106,7 @@ void generate_params(params& pa, hyperparams& hpa, gsl_rng* rng)
 
 void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperparams& hpa, trees& tr, int seed, gsl_rng* rng)
 {
-  params pa_cum;
-  init_params(pa_cum, hpa);
+  params pa_cum (hpa);
 
   for (int a=0; a<hpa.MAX_TREE; ++a)
     {
@@ -185,6 +159,7 @@ void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperpar
           if (w < pa_cum.rho[a])
             {
               topology = a;
+              break;
             }
         }
 
@@ -211,17 +186,12 @@ void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperpar
             }
         }
 
-      // calc_t(pa, hpa, tr[topology]);
-      // calc_n(tr[topology], hpa);
-      
       double mu = calc_mu(tr[topology], hpa);
       // cerr << "mu: " << mu << endl;
       
       unsigned int m = gsl_ran_binomial(rng, mu, M);
       f << m << "\t" << M << endl;
     }
-  
-
 }
 
 int main(int argc, char** argv)
@@ -235,18 +205,17 @@ int main(int argc, char** argv)
       exit(EXIT_FAILURE);
     }
   
-  hyperparams hpa;
-  int M, n, seed;
+  int M, n, seed, MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
   
-  hpa.MAX_SUBTYPE = atoi(argv[1]);
-  hpa.TOTAL_CN = atoi(argv[2]);
+  MAX_SUBTYPE = atoi(argv[1]);
+  TOTAL_CN = atoi(argv[2]);
   M = atoi(argv[3]);
   n = atoi(argv[4]);
   seed = atoi(argv[5]);
 
   trees tr;
-  trees_cons(tr, hpa);
-  hpa.MAX_TREE = tr.size();
+  trees_cons(tr, MAX_SUBTYPE);
+  MAX_TREE = tr.size();
 
   ofstream f (argv[6]);
   ofstream g (argv[7]);
@@ -265,18 +234,15 @@ int main(int argc, char** argv)
   T = gsl_rng_mt19937;
   r = gsl_rng_alloc(T);
   gsl_rng_set(r, seed);
-  init_hyperparams(hpa);
+  hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
    
-  params pa;
-  init_params(pa, hpa);
+  params pa (hpa);
   
   generate_params(pa, hpa, r);
   write_params(f, pa, hpa);
 
   generate_binom(h, g, M, n, pa, hpa, tr, seed, r);
 
-  delete_params(pa, hpa);
-  
   gsl_rng_free (r);
   
   f.close();
