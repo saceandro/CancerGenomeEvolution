@@ -5,7 +5,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_sf.h>
-#include "../loglib.hh"
+#include "../../util/loglib.hh"
 using namespace std;
 
 #define calc_sigmoid(x) ((tanh((x)/2.0) + 1.0) / 2.0)

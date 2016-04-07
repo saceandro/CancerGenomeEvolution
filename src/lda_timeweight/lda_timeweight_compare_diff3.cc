@@ -7,7 +7,7 @@
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_deriv.h>
 #include <gsl/gsl_sf.h>
-#include "../loglib.hh"
+#include "../../util/loglib.hh"
 using namespace std;
 
 #define napier exp(1)

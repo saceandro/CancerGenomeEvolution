@@ -1,5 +1,5 @@
 #include <gsl/gsl_vector.h>
-#include "enumtree.hh"
+#include "../util/enumtree.hh"
 using namespace std;
 
 #define calc_sigmoid(x) ((tanh((x)/2.0) + 1.0) / 2.0)
