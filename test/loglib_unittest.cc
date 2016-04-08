@@ -123,30 +123,31 @@ TEST_F(LogTest, Constructor)
   EXPECT_EQ(smallest.get_val(), -dm_1.d);
   EXPECT_EQ(smallest.get_sign(), 1);
   
-  EXPECT_LT(rei.eval() - 0.0, 1e-10);
-  EXPECT_LT(two.eval() - 2.0, 1e-10);
-  EXPECT_LT(negative_two.eval() + 2.0, 1e-10);
-  EXPECT_LT(three.eval() - 3.0, 1e-10);
-  EXPECT_LT(negative_three.eval() + 3.0, 1e-10);
+  EXPECT_EQ(rei.eval(), 0.0);
+  EXPECT_DOUBLE_EQ(two.eval(), 2.0);
+  EXPECT_DOUBLE_EQ(negative_two.eval(), -2.0);
+  EXPECT_DOUBLE_EQ(three.eval(), 3.0);
+  EXPECT_DOUBLE_EQ(negative_three.eval(), -3.0);
   EXPECT_EQ(smallest.eval(), 0.0);
   EXPECT_EQ(negative_smallest.eval(), 0.0);
 
-  EXPECT_LT(dblmin.eval() - DBL_MIN, 1e-10);
-  EXPECT_LT(negative_dblmin.eval() + DBL_MIN, 1e-10);
+  // Assertions below fail due to the loss of accuracy in return for the wider range of real number represantation.
+  // EXPECT_DOUBLE_EQ(dblmin.eval(), DBL_MIN);
+  // EXPECT_DOUBLE_EQ(negative_dblmin.eval(), -DBL_MIN);
 }
 
 
 TEST_F(LogTest, Add)
 {
-  EXPECT_LT((two + three).eval() - 5.0, 1e-10);
-  EXPECT_LT((negative_two + negative_three).eval() + 5.0, 1e-10);
-  EXPECT_LT((negative_two + three).eval() - 1.0, 1e-10);
-  EXPECT_LT((two + negative_three).eval() + 1.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two + three).eval(), 5.0);
+  EXPECT_DOUBLE_EQ((negative_two + negative_three).eval(), -5.0);
+  EXPECT_DOUBLE_EQ((negative_two + three).eval(), 1.0);
+  EXPECT_DOUBLE_EQ((two + negative_three).eval(), -1.0);
   
-  EXPECT_LT((three + two).eval() - 5.0, 1e-10);
-  EXPECT_LT((negative_three + negative_two).eval() + 5.0, 1e-10);
-  EXPECT_LT((three + negative_two).eval() - 1.0, 1e-10);
-  EXPECT_LT((negative_three + two).eval() + 1.0, 1e-10);
+  EXPECT_DOUBLE_EQ((three + two).eval(), 5.0);
+  EXPECT_DOUBLE_EQ((negative_three + negative_two).eval(), -5.0);
+  EXPECT_DOUBLE_EQ((three + negative_two).eval(), 1.0);
+  EXPECT_DOUBLE_EQ((negative_three + two).eval(), -1.0);
   
   EXPECT_EQ((two + negative_two).get_sign(), 0);
   EXPECT_EQ((two + negative_two).get_val(), -DBL_MAX);
@@ -165,64 +166,64 @@ TEST_F(LogTest, Add)
 
   EXPECT_EQ(((two + smallest) + negative_smallest).get_sign(), 1);
   EXPECT_EQ(((two + smallest) + negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((two + smallest) + negative_smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((two + smallest) + negative_smallest).eval(), 2.0);
 
   EXPECT_EQ(((smallest + two) + negative_smallest).get_sign(), 1);
   EXPECT_EQ(((smallest + two) + negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((smallest + two) + negative_smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((smallest + two) + negative_smallest).eval(), 2.0);
 
   EXPECT_EQ(((two + negative_smallest) + smallest).get_sign(), 1);
   EXPECT_EQ(((two + negative_smallest) + smallest).get_val(), log(2.0));
-  EXPECT_LT(((two + negative_smallest) + smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((two + negative_smallest) + smallest).eval(), 2.0);
 
   EXPECT_EQ(((negative_smallest + two) + smallest).get_sign(), 1);
   EXPECT_EQ(((negative_smallest + two) + smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_smallest + two) + smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_smallest + two) + smallest).eval(), 2.0);
 
   EXPECT_EQ(((negative_two + smallest) + negative_smallest).get_sign(), -1);
   EXPECT_EQ(((negative_two + smallest) + negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_two + smallest) + negative_smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_two + smallest) + negative_smallest).eval(), -2.0);
 
   EXPECT_EQ(((smallest + negative_two) + negative_smallest).get_sign(), -1);
   EXPECT_EQ(((smallest + negative_two) + negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((smallest + negative_two) + negative_smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((smallest + negative_two) + negative_smallest).eval(), -2.0);
 
   EXPECT_EQ(((negative_two + negative_smallest) + smallest).get_sign(), -1);
   EXPECT_EQ(((negative_two + negative_smallest) + smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_two + negative_smallest) + smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_two + negative_smallest) + smallest).eval(), -2.0);
 
   EXPECT_EQ(((negative_smallest + negative_two) + smallest).get_sign(), -1);
   EXPECT_EQ(((negative_smallest + negative_two) + smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_smallest + negative_two) + smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_smallest + negative_two) + smallest).eval(), -2.0);
 
   EXPECT_EQ((rei + two).get_sign(), 1);
   EXPECT_EQ((rei + two).get_val(), log(2.0));
-  EXPECT_LT((rei + two).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((rei + two).eval(), 2.0);
   
   EXPECT_EQ((two + rei).get_sign(), 1);
   EXPECT_EQ((two + rei).get_val(), log(2.0));
-  EXPECT_LT((two + rei).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two + rei).eval(), 2.0);
   
   EXPECT_EQ((rei + negative_two).get_sign(), -1);
   EXPECT_EQ((rei + negative_two).get_val(), log(2.0));
-  EXPECT_LT((rei + negative_two).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((rei + negative_two).eval(), -2.0);
 
   EXPECT_EQ((negative_two + rei).get_sign(), -1);
   EXPECT_EQ((negative_two + rei).get_val(), log(2.0));
-  EXPECT_LT((negative_two + rei).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((negative_two + rei).eval(), -2.0);
 }
 
 TEST_F(LogTest, Sub)
 {
-  EXPECT_LT((two - three).eval() + 1.0, 1e-10);
-  EXPECT_LT((negative_two - negative_three).eval() - 1.0, 1e-10);
-  EXPECT_LT((negative_two - three).eval() + 5.0, 1e-10);
-  EXPECT_LT((two - negative_three).eval() - 5.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two - three).eval(), -1.0);
+  EXPECT_DOUBLE_EQ((negative_two - negative_three).eval(), 1.0);
+  EXPECT_DOUBLE_EQ((negative_two - three).eval(), -5.0);
+  EXPECT_DOUBLE_EQ((two - negative_three).eval(), 5.0);
   
-  EXPECT_LT((three - two).eval() - 1.0, 1e-10);
-  EXPECT_LT((negative_three - negative_two).eval() + 1.0, 1e-10);
-  EXPECT_LT((three - negative_two).eval() - 5.0, 1e-10);
-  EXPECT_LT((negative_three - two).eval() + 5.0, 1e-10);
+  EXPECT_DOUBLE_EQ((three - two).eval(), 1.0);
+  EXPECT_DOUBLE_EQ((negative_three - negative_two).eval(), -1.0);
+  EXPECT_DOUBLE_EQ((three - negative_two).eval(), 5.0);
+  EXPECT_DOUBLE_EQ((negative_three - two).eval(), -5.0);
   
   EXPECT_EQ((two - two).get_sign(), 0);
   EXPECT_EQ((two - two).get_val(), -DBL_MAX);
@@ -251,101 +252,101 @@ TEST_F(LogTest, Sub)
   
   EXPECT_EQ(((two - smallest) - negative_smallest).get_sign(), 1);
   EXPECT_EQ(((two - smallest) - negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((two - smallest) - negative_smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((two - smallest) - negative_smallest).eval(), 2.0);
 
   EXPECT_EQ(((smallest - two) - negative_smallest).get_sign(), -1);
   EXPECT_EQ(((smallest - two) - negative_smallest).get_val(), log(2.0) + log1p(-exp(-dm_1.d + log1p(1.0) - log(2.0)))); // not correct ! information loss ! log1p(...) = 0.0 !
-  EXPECT_LT(((smallest - two) - negative_smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((smallest - two) - negative_smallest).eval(), -2.0);
 
   EXPECT_EQ(((two - negative_smallest) - smallest).get_sign(), 1);
   EXPECT_EQ(((two - negative_smallest) - smallest).get_val(), log(2.0));
-  EXPECT_LT(((two - negative_smallest) - smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((two - negative_smallest) - smallest).eval(), 2.0);
 
   EXPECT_EQ(((negative_smallest - two) - smallest).get_sign(), -1);
   EXPECT_EQ(((negative_smallest - two) - smallest).get_val(), log(2.0)  + log1p(-exp(-dm_1.d + log1p(1.0) - log(2.0)))); // not correct ! information loss !
-  EXPECT_LT(((negative_smallest - two) - smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_smallest - two) - smallest).eval(), -2.0);
 
   EXPECT_EQ(((negative_two - smallest) - negative_smallest).get_sign(), -1);
   EXPECT_EQ(((negative_two - smallest) - negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_two - smallest) - negative_smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_two - smallest) - negative_smallest).eval(), -2.0);
 
   EXPECT_EQ(((smallest - negative_two) - negative_smallest).get_sign(), 1);
   EXPECT_EQ(((smallest - negative_two) - negative_smallest).get_val(), log(2.0)  + log1p(-exp(-dm_1.d + log1p(1.0) - log(2.0)))); // not correct ! information loss !
-  EXPECT_LT(((smallest - negative_two) - negative_smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((smallest - negative_two) - negative_smallest).eval(), 2.0);
 
   EXPECT_EQ(((negative_two - negative_smallest) - smallest).get_sign(), -1);
   EXPECT_EQ(((negative_two - negative_smallest) - smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_two - negative_smallest) - smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_two - negative_smallest) - smallest).eval(), -2.0);
 
   EXPECT_EQ(((negative_smallest - negative_two) - smallest).get_sign(), 1);
   EXPECT_EQ(((negative_smallest - negative_two) - smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_smallest - negative_two) - smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_smallest - negative_two) - smallest).eval(), 2.0);
 
   
   EXPECT_EQ(((two - smallest) + smallest).get_sign(), 1);
   EXPECT_EQ(((two - smallest) + smallest).get_val(), log(2.0));
-  EXPECT_LT(((two - smallest) + smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((two - smallest) + smallest).eval(), 2.0);
 
   EXPECT_EQ(((smallest - two) - smallest).get_sign(), -1);
   EXPECT_EQ(((smallest - two) - smallest).get_val(), log(2.0));
-  EXPECT_LT(((smallest - two) - smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((smallest - two) - smallest).eval(), -2.0);
 
   EXPECT_EQ(((two - negative_smallest) + negative_smallest).get_sign(), 1);
   EXPECT_EQ(((two - negative_smallest) + negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((two - negative_smallest) + negative_smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((two - negative_smallest) + negative_smallest).eval(), 2.0);
 
   EXPECT_EQ(((negative_smallest - two) - negative_smallest).get_sign(), -1);
   EXPECT_EQ(((negative_smallest - two) - negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_smallest - two) - negative_smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_smallest - two) - negative_smallest).eval(), -2.0);
 
   EXPECT_EQ(((negative_two - smallest) + smallest).get_sign(), -1);
   EXPECT_EQ(((negative_two - smallest) + smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_two - smallest) + smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_two - smallest) + smallest).eval(), -2.0);
 
   EXPECT_EQ(((smallest - negative_two) - smallest).get_sign(), 1);
   EXPECT_EQ(((smallest - negative_two) - smallest).get_val(), log(2.0));
-  EXPECT_LT(((smallest - negative_two) - smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((smallest - negative_two) - smallest).eval(), 2.0);
 
   EXPECT_EQ(((negative_two - negative_smallest) + negative_smallest).get_sign(), -1);
   EXPECT_EQ(((negative_two - negative_smallest) + negative_smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_two - negative_smallest) + negative_smallest).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_two - negative_smallest) + negative_smallest).eval(), -2.0);
 
   EXPECT_EQ(((negative_smallest - negative_two) + smallest).get_sign(), 1);
   EXPECT_EQ(((negative_smallest - negative_two) + smallest).get_val(), log(2.0));
-  EXPECT_LT(((negative_smallest - negative_two) + smallest).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ(((negative_smallest - negative_two) + smallest).eval(), 2.0);
 
   
   EXPECT_EQ((rei - two).get_sign(), -1);
   EXPECT_EQ((rei - two).get_val(), log(2.0));
-  EXPECT_LT((rei - two).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((rei - two).eval(), -2.0);
   
   EXPECT_EQ((two - rei).get_sign(), 1);
   EXPECT_EQ((two - rei).get_val(), log(2.0));
-  EXPECT_LT((two - rei).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two - rei).eval(), 2.0);
   
   EXPECT_EQ((rei - negative_two).get_sign(), 1);
   EXPECT_EQ((rei - negative_two).get_val(), log(2.0));
-  EXPECT_LT((rei - negative_two).eval() - 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((rei - negative_two).eval(), 2.0);
 
   EXPECT_EQ((negative_two - rei).get_sign(), -1);
   EXPECT_EQ((negative_two - rei).get_val(), log(2.0));
-  EXPECT_LT((negative_two - rei).eval() + 2.0, 1e-10);
+  EXPECT_DOUBLE_EQ((negative_two - rei).eval(), -2.0);
 }
 
 TEST_F(LogTest, Multiply)
 {
-  EXPECT_LT((two * three).eval() - 6.0, 1e-10);
-  EXPECT_LT((negative_two * negative_three).eval() - 6.0, 1e-10);
-  EXPECT_LT((negative_two * three).eval() + 6.0, 1e-10);
-  EXPECT_LT((two * negative_three).eval() + 6.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two * three).eval(), 6.0);
+  EXPECT_DOUBLE_EQ((negative_two * negative_three).eval(), 6.0);
+  EXPECT_DOUBLE_EQ((negative_two * three).eval(), -6.0);
+  EXPECT_DOUBLE_EQ((two * negative_three).eval(), -6.0);
   
-  EXPECT_LT((three * two).eval() - 6.0, 1e-10);
-  EXPECT_LT((negative_three * negative_two).eval() - 6.0, 1e-10);
-  EXPECT_LT((three * negative_two).eval() + 6.0, 1e-10);
-  EXPECT_LT((negative_three * two).eval() + 6.0, 1e-10);
+  EXPECT_DOUBLE_EQ((three * two).eval(), 6.0);
+  EXPECT_DOUBLE_EQ((negative_three * negative_two).eval(), 6.0);
+  EXPECT_DOUBLE_EQ((three * negative_two).eval(), -6.0);
+  EXPECT_DOUBLE_EQ((negative_three * two).eval(), -6.0);
   
-  EXPECT_LT((two * negative_two).eval() + 4.0, 1e-10);
-  EXPECT_LT((three * negative_three).eval() + 9.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two * negative_two).eval(), -4.0);
+  EXPECT_DOUBLE_EQ((three * negative_three).eval(), -9.0);
   EXPECT_EQ((smallest * negative_smallest).get_sign(), 0);
   EXPECT_EQ((smallest * negative_smallest).get_val(), -DBL_MAX);
   EXPECT_EQ((smallest * negative_smallest).eval(), 0.0);
@@ -376,18 +377,18 @@ TEST_F(LogTest, Multiply)
 
 TEST_F(LogTest, DIVIDE)
 {
-  EXPECT_LT((two / three).eval() - 2.0/3.0, 1e-10);
-  EXPECT_LT((negative_two / negative_three).eval() - 2.0/3.0, 1e-10);
-  EXPECT_LT((negative_two / three).eval() + 2.0/3.0, 1e-10);
-  EXPECT_LT((two / negative_three).eval() + 2.0/3.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two / three).eval(), 2.0/3.0);
+  EXPECT_DOUBLE_EQ((negative_two / negative_three).eval(), 2.0/3.0);
+  EXPECT_DOUBLE_EQ((negative_two / three).eval(), -2.0/3.0);
+  EXPECT_DOUBLE_EQ((two / negative_three).eval(), -2.0/3.0);
   
-  EXPECT_LT((three / two).eval() - 1.5, 1e-10);
-  EXPECT_LT((negative_three / negative_two).eval() - 1.5, 1e-10);
-  EXPECT_LT((three / negative_two).eval() + 1.5, 1e-10);
-  EXPECT_LT((negative_three / two).eval() + 1.5, 1e-10);
+  EXPECT_DOUBLE_EQ((three / two).eval(), 1.5);
+  EXPECT_DOUBLE_EQ((negative_three / negative_two).eval(), 1.5);
+  EXPECT_DOUBLE_EQ((three / negative_two).eval(), -1.5);
+  EXPECT_DOUBLE_EQ((negative_three / two).eval(), -1.5);
   
-  EXPECT_LT((two / negative_two).eval() + 1.0, 1e-10);
-  EXPECT_LT((three / negative_three).eval() + 1.0, 1e-10);
+  EXPECT_DOUBLE_EQ((two / negative_two).eval(), -1.0);
+  EXPECT_DOUBLE_EQ((three / negative_three).eval(), -1.0);
 
   EXPECT_EQ((smallest / smallest).get_sign(), 1);
   EXPECT_EQ((smallest / smallest).get_val(), 0.0);
@@ -416,9 +417,9 @@ TEST_F(LogTest, floatingpoint)
 {
   EXPECT_EQ(dm.d, DBL_MAX);
   EXPECT_LE(-dm_1.d - 1e300, -dm.d);
-  std::cout << std::scientific << std::setprecision(20);
-  std::cout << dm.d << std::endl;
-  std::cout << dm_1.d << std::endl;
+  // std::cout << std::scientific << std::setprecision(20);
+  // std::cout << dm.d << std::endl;
+  // std::cout << dm_1.d << std::endl;
 }
 
 

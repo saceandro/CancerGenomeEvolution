@@ -275,53 +275,39 @@ void responsibility_numerator_all(READ& re, states& sts, subtypes& st, params& p
     }
 }
 
-void responsibility_numerator_tree(READ& re, vector<states>& sts, trees& tr, params& pa, hyperparams& hpa)
+void responsibility_numerator_tree(READ& re, vector<states>& st, trees& tr, params& pa, hyperparams& hpa)
 {
   for (int a=0; a<tr.size(); ++a)
     {
       calc_t(pa, hpa, tr[a]);
       calc_n(tr[a], hpa);
 
-      responsibility_numerator_all(re, sts[a], tr[a], pa, hpa, 1);
+      responsibility_numerator_all(re, st[a], tr[a], pa, hpa, 1);
     }
 }
 
 Log responsibility_partition(vector<vector<states> >& sts, params& pa, hyperparams& hpa)
 {
-  Log partition (0);
-  VLog u_partition (hpa.MAX_SUBTYPE + 1, 0);
-  
+  Log partition = Log(0);
   for (int a=0; a<sts[0].size(); ++a)
     {
-      Log partition_a (1);
-      VLog u_partition_a(hpa.MAX_SUBTYPE + 1, 1);
+      Log partition_a = Log(1);
       for (int k=0; k<sts.size(); ++k)
         {
-          Log partition_k (0);
-          VLog u_partition_k(hpa.MAX_SUBTYPE + 1, 0);
+          Log partition_k = Log(0);
           for (states::iterator it = sts[k][a].begin(); it != sts[k][a].end(); ++it)
             {
-              // cout << (*it)->resp.take_log() << "\t" << (*it)->resp.get_sign() << endl;
+              cerr << "resp: " << (*it)->resp.get_val() << "\t" << (int)(*it)->resp.get_sign() << endl;
               partition_k += (*it)->resp;
-              
-              for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-                {
-                  u_partition_k[i] += (*it)->st[i].resp_du;
-                }
             }
           partition_a *= partition_k;
-          for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-            {
-              u_partition_a[i] *= u_partition_k[i];
-            }
         }
+      cerr << "pa.rho[" << a << "] :" << pa.rho[a].get_val() << "\t" << (int)pa.rho[a].get_sign() << endl;
+      cerr << "sum_resp a: " << a << ": " << partition_a.get_val() << "\t" << (int)partition_a.get_sign() << endl;
       partition += pa.rho[a] * partition_a;
-      for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-        {
-          u_partition[i] += pa.rho[a] * u_partition_a[i];
-        }
     }
 
+  // cerr << "partition: " << partition.get_val() << "\t" << (int)partition.get_sign() << endl;
   for (int a=0; a<sts[0].size(); ++a)
     {
       for (int k=0; k<sts.size(); ++k)
@@ -332,11 +318,26 @@ Log responsibility_partition(vector<vector<states> >& sts, params& pa, hyperpara
               for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
                 {
                   (*it)->st[i].resp_du /= partition;
+                  // cerr << "resp_du: " << (*it)->st[i].resp_du.get_val() << "\t" << (int)(*it)->st[i].resp_du.get_sign() << endl;
                 }
             }
         }
     }
-  
+
+  // Log check_partition = Log(0);
+  // for (int a=0; a<sts[0].size(); ++a)
+  //   {
+  //     for (int k=0; k<sts.size(); ++k)
+  //       {
+  //         for (states::iterator it = sts[k][a].begin(); it != sts[k][a].end(); ++it)
+  //           {
+  //             check_partition += (*it)->resp;
+  //           }
+  //       }
+  //   }
+
+  // cerr << "sum partition: " << check_partition.get_val() << "\t" << (int)check_partition.get_sign() << endl;
+
   return partition;
 }
 
@@ -748,13 +749,11 @@ double calc_dx_rho_llik_analytic(READS& res, gsl_vector* x, int b, hyperparams& 
   
   for (int a=0; a<hpa.MAX_TREE; ++a)
     {
-      cerr << d_rho_x(pa, hpa, a, b).get_val() << "\t" << d_rho_x(pa, hpa, a, b).get_sign() << "\t" << grad_by_param.rho[a].get_val() << "\t" << grad_by_param.rho[a].get_sign() << endl;
+      cerr << d_rho_x(pa, hpa, a, b).get_val() << "\t" << (int)d_rho_x(pa, hpa, a, b).get_sign() << "\t" << grad_by_param.rho[a].get_val() << "\t" << (int)grad_by_param.rho[a].get_sign() << endl;
       grad += d_rho_x(pa, hpa, a, b) * grad_by_param.rho[a];
     }
 
-  if (grad.iszero())
-    cerr << "dx_rho is 0!" << endl;
-  return grad.take_log();
+  return grad.eval();
 }
 
 double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, trees& trs)
