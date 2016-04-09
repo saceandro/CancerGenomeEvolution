@@ -297,32 +297,35 @@ Log responsibility_partition(vector<vector<states> >& sts, params& pa, hyperpara
           Log partition_k = Log(0);
           for (states::iterator it = sts[k][a].begin(); it != sts[k][a].end(); ++it)
             {
-              cerr << "resp: " << (*it)->resp.get_val() << "\t" << (int)(*it)->resp.get_sign() << endl;
-              partition_k += (*it)->resp;
+              // cerr << "resp: " << (int)(*it)->resp.get_sign() << "\t" << (*it)->resp.get_val() << endl;
+              partition_k += (*it)->resp; // nearly same as take max in log world
+              // cerr << "partition_k: " << (int)partition_k.get_sign() << "\t" << partition_k.get_val() << endl << endl;
             }
-          partition_a *= partition_k;
+          partition_a *= partition_k; // same as add in log world
+          // cerr << "partition_a: " << (int)partition_a.get_sign() << "\t" << partition_a.get_val() << endl << endl << endl;
         }
-      cerr << "pa.rho[" << a << "] :" << pa.rho[a].get_val() << "\t" << (int)pa.rho[a].get_sign() << endl;
-      cerr << "sum_resp a: " << a << ": " << partition_a.get_val() << "\t" << (int)partition_a.get_sign() << endl;
-      partition += pa.rho[a] * partition_a;
+      partition += pa.rho[a] * partition_a; // nearly same as take max in log world
+      // cerr << "partition: " << (int)partition.get_sign() << "\t" << partition.get_val() << endl << endl << endl << endl;
     }
+  // cerr << "partition: " << (int)partition.get_sign() << "\t" << partition.get_val() << endl << endl << endl << endl;
 
-  // cerr << "partition: " << partition.get_val() << "\t" << (int)partition.get_sign() << endl;
-  for (int a=0; a<sts[0].size(); ++a)
-    {
-      for (int k=0; k<sts.size(); ++k)
-        {
-          for (states::iterator it = sts[k][a].begin(); it != sts[k][a].end(); ++it)
-            {
-              (*it)->resp /= partition;
-              for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-                {
-                  (*it)->st[i].resp_du /= partition;
-                  // cerr << "resp_du: " << (*it)->st[i].resp_du.get_val() << "\t" << (int)(*it)->st[i].resp_du.get_sign() << endl;
-                }
-            }
-        }
-    }
+  // not true! responsibility is defined for all locus
+  // for (int a=0; a<sts[0].size(); ++a)
+  //   {
+  //     for (int k=0; k<sts.size(); ++k)
+  //       {
+  //         for (states::iterator it = sts[k][a].begin(); it != sts[k][a].end(); ++it)
+  //           {
+  //             cerr << "resp: " << (int)(*it)->resp.get_sign() << "\t" << (*it)->resp.get_val() << endl;
+  //             (*it)->resp /= partition;
+  //             for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  //               {
+  //                 (*it)->st[i].resp_du /= partition;
+  //                 // cerr << "resp_du: " << (*it)->st[i].resp_du.get_val() << "\t" << (int)(*it)->st[i].resp_du.get_sign() << endl;
+  //               }
+  //           }
+  //       }
+  //   }
 
   // Log check_partition = Log(0);
   // for (int a=0; a<sts[0].size(); ++a)
@@ -449,18 +452,18 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, trees& trs)
         }
     }
 
-  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-  //   {
-  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
-  //       {
-  //         lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        {
+          lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
           
-  //         for (int r=1; r<=l; ++r)
-  //           {
-  //             lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
-  //           }
-  //       }
-  //   }
+          for (int r=1; r<=l; ++r)
+            {
+              lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
+            }
+        }
+    }
 
   return lik.take_log();
 }
@@ -613,12 +616,19 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, t
                         {
                           pi_numerator_k[i][l] += (*it)->resp;
 
-                          for (int r=1; r<=l; ++r)
+                          // for (int r=1; r<=l; ++r)
+                          //   {
+                          //     if ((*it)->st[i].variant_cn == r)
+                          //       {
+                          //         kappa_numerator_k[i][l][r] += (*it)->resp;
+                          //       }
+                          //   }
+                        }
+                      for (int r=1; r<=l; ++r)
+                        {
+                          if ((*it)->st[i].total_cn == l && (*it)->st[i].variant_cn == r)
                             {
-                              if ((*it)->st[i].variant_cn == r)
-                                {
-                                  kappa_numerator_k[i][l][r] += (*it)->resp;
-                                }
+                              kappa_numerator_k[i][l][r] += (*it)->resp;
                             }
                         }
                     }
@@ -666,39 +676,62 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, t
         }
     }
 
-  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-  //   {
-  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
-  //       {
-  //         grad_by_param.pa[i]->pi[l] = Log(hpa.alpha[l] - 1.0) + grad_by_param.pa[i]->pi[l];
+  for (int a=0; a<hpa.MAX_TREE; ++a)
+    {
+      grad_by_param.rho[a] /= lik;
+    }
 
-  //         for (int r=1; r<=l; ++r)
-  //           {
-  //             grad_by_param.pa[i]->kappa[l][r] = Log(hpa.beta[l][r] - 1.0) + grad_by_param.pa[i]->kappa[l][r];
-  //           }
-  //       }
-  //   }
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      grad_by_param.pa[i]->u /= lik;
+    }
+  
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        {
+          grad_by_param.pa[i]->pi[l] /= lik;
 
-  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-  //   {
-  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
-  //       {
-  //         lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
+          for (int r=1; r<=l; ++r)
+            {
+              grad_by_param.pa[i]->kappa[l][r] /= lik;
+            }
+        }
+    }
+  
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        {
+          grad_by_param.pa[i]->pi[l] = Log(hpa.alpha[l] - 1.0) + grad_by_param.pa[i]->pi[l];
+
+          for (int r=1; r<=l; ++r)
+            {
+              grad_by_param.pa[i]->kappa[l][r] = Log(hpa.beta[l][r] - 1.0) + grad_by_param.pa[i]->kappa[l][r];
+            }
+        }
+    }
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        {
+          lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
           
-  //         for (int r=1; r<=l; ++r)
-  //           {
-  //             lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
-  //           }
-  //       }
-  //   }
+          for (int r=1; r<=l; ++r)
+            {
+              lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
+            }
+        }
+    }
 
   return lik.take_log();
 }
 
-double dx_vec(Vdouble& vec, int l, int s)
+Log dx_vec(VLog& vec, int l, int s)
 {
   if (l == s)
-    return vec[l] * (1.0 - vec[l]);
+    return vec[l] * (Log(1.0) - vec[l]);
 
   return -vec[l] * vec[s];
 }
@@ -745,11 +778,11 @@ double calc_dx_rho_llik_analytic(READS& res, gsl_vector* x, int b, hyperparams& 
   double llik = d_llik(res, pa, grad_by_param, hpa, trs);
 
   Log grad (0);
-  cerr << "max_tree: " << hpa.MAX_TREE << endl;
+  // cerr << "max_tree: " << hpa.MAX_TREE << endl;
   
   for (int a=0; a<hpa.MAX_TREE; ++a)
     {
-      cerr << d_rho_x(pa, hpa, a, b).get_val() << "\t" << (int)d_rho_x(pa, hpa, a, b).get_sign() << "\t" << grad_by_param.rho[a].get_val() << "\t" << (int)grad_by_param.rho[a].get_sign() << endl;
+      // cerr << d_rho_x(pa, hpa, a, b).get_val() << "\t" << (int)d_rho_x(pa, hpa, a, b).get_sign() << "\t" << grad_by_param.rho[a].get_val() << "\t" << (int)grad_by_param.rho[a].get_sign() << endl;
       grad += d_rho_x(pa, hpa, a, b) * grad_by_param.rho[a];
     }
 
@@ -878,13 +911,13 @@ double calc_dx_kappa_llik_analytic(READS& res, gsl_vector* x, int i, int l, int 
   double sum_beta = sum_vector(hpa.beta[l], 1, l);
   return (grad_by_param.pa[i]->kappa[l][t] - pa.pa[i]->kappa[l][t] * ( Log(sum_beta - l - hpa.alpha[l] + 1.0) + grad_by_param.pa[i]->pi[l] )).eval();
 
-  // double grad = 0;
+  // Log grad = Log(0);
   // for (int r=1; r<=l; ++r)
   //   {
-  //     grad += dx_vec(pa[i]->kappa[l], r, t) * grad_by_param[i]->kappa[l][r] / pa[i]->kappa[l][r];
+  //     grad += dx_vec(pa.pa[i]->kappa[l], r, t) * grad_by_param.pa[i]->kappa[l][r] / pa.pa[i]->kappa[l][r];
   //   }
   
-  // return grad;
+  // return grad.eval();
 }
 
 void gsl_set_random(gsl_vector* x, hyperparams& hpa, gsl_rng* rng)
@@ -976,31 +1009,31 @@ int main(int argc, char** argv)
         q << gsl_vector_get(x, 0) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
     }
 
-  // for (int i=-step; i<=step; ++i)
-  //   {
-  //     gsl_set_random(x, hpa, r);
-  //     gsl_vector_set(x, hpa.MAX_TREE + 1, 1.0 * ((double)i) / step);
-  //     double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs);
-  //     double analytic = calc_dx_u_llik_analytic(res, x, 1, hpa, trs);
+  for (int i=-step; i<=step; ++i)
+    {
+      gsl_set_random(x, hpa, r);
+      gsl_vector_set(x, hpa.MAX_TREE + 1, 1.0 * ((double)i) / step);
+      double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs);
+      double analytic = calc_dx_u_llik_analytic(res, x, 1, hpa, trs);
       
-  //     if (fabs(num) > 0)
-  //       ff << gsl_vector_get(x, hpa.MAX_TREE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-  //     else
-  //       ff << gsl_vector_get(x, hpa.MAX_TREE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
-  //   }
+      if (fabs(num) > 0)
+        ff << gsl_vector_get(x, hpa.MAX_TREE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+      else
+        ff << gsl_vector_get(x, hpa.MAX_TREE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
+    }
 
-  // for (int i=-step; i<=step; ++i)
-  //   {
-  //     gsl_set_random(x, hpa, r);
-  //     gsl_vector_set(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1, 1.0 * ((double)i) / step);
-  //     double num = calc_dx_pi_llik_numeric(res, x, 1, 1, hpa, trs);
-  //     double analytic = calc_dx_pi_llik_analytic(res, x, 1, 1, hpa, trs);
+  for (int i=-step; i<=step; ++i)
+    {
+      gsl_set_random(x, hpa, r);
+      gsl_vector_set(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1, 1.0 * ((double)i) / step);
+      double num = calc_dx_pi_llik_numeric(res, x, 1, 1, hpa, trs);
+      double analytic = calc_dx_pi_llik_analytic(res, x, 1, 1, hpa, trs);
       
-  //     if (fabs(num) > 0)
-  //       g << gsl_vector_get(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-  //     else
-  //       g << gsl_vector_get(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
-  //   }
+      if (fabs(num) > 0)
+        g << gsl_vector_get(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+      else
+        g << gsl_vector_get(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
+    }
 
   // for (int i=-step; i<=step; ++i)
   //   {
@@ -1015,6 +1048,20 @@ int main(int argc, char** argv)
   //       h << gsl_vector_get(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2 - 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
   //   }
 
+  for (int i=-step; i<=step; ++i)
+    {
+      gsl_set_random(x, hpa, r);
+      gsl_vector_set(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1 + hpa.TOTAL_CN + 1, 1.0 * ((double)i) / step);
+      double num = calc_dx_kappa_llik_numeric(res, x, 1, 2, 1, hpa, trs);
+      double analytic = calc_dx_kappa_llik_analytic(res, x, 1, 2, 1, hpa, trs);
+      
+      if (fabs(num) > 0)
+        h << gsl_vector_get(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1 + hpa.TOTAL_CN + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+      else
+        h << gsl_vector_get(x, hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1 + hpa.TOTAL_CN + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
+    }
+
+  // hpa.MAX_TREE + hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1
   for (int i=0; i<n; ++i)
     delete res[i];
 

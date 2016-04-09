@@ -161,6 +161,17 @@ TEST_F(LogTest, Add)
 
   EXPECT_EQ((smallest + smallest).get_sign(), 1);
   EXPECT_EQ((smallest + smallest).get_val(), -dm_1.d + log1p(1.0));
+
+  EXPECT_EQ((smallest + smallest).get_sign(), smallest.get_sign());
+  EXPECT_EQ((smallest + smallest).get_val(), smallest.get_val()); // if smallest is too small, logsum yields the same value !
+
+  // Assertions below fail due to the loss of accuracy in return for the wider range of real number represantation.
+  // EXPECT_DOUBLE_EQ((dblmin + dblmin).eval(), 2*DBL_MIN);
+  // EXPECT_DOUBLE_EQ((smallest + dblmin).eval(), DBL_MIN);
+  // EXPECT_DOUBLE_EQ((dblmin + smallest).eval(), DBL_MIN);
+
+  EXPECT_DOUBLE_EQ((Log(-1e6, 1) + Log(-1e6, 1)).get_val(), -1e6 + log1p(1.0));
+  
   EXPECT_EQ((negative_smallest + negative_smallest).get_sign(), -1);
   EXPECT_EQ((negative_smallest + negative_smallest).get_val(), -dm_1.d + log1p(1.0));
 
@@ -211,6 +222,73 @@ TEST_F(LogTest, Add)
   EXPECT_EQ((negative_two + rei).get_sign(), -1);
   EXPECT_EQ((negative_two + rei).get_val(), log(2.0));
   EXPECT_DOUBLE_EQ((negative_two + rei).eval(), -2.0);
+}
+
+TEST_F(LogTest, AddEq_2plus3)
+{
+  two += three;
+  EXPECT_DOUBLE_EQ(two.eval(), 5.0);
+}
+
+TEST_F(LogTest, AddEq_2plus_m3)
+{
+  two += negative_three;
+  EXPECT_DOUBLE_EQ(two.eval(), -1.0);
+}
+
+TEST_F(LogTest, AddEq_m2plus_3)
+{
+  negative_two += three;
+  EXPECT_DOUBLE_EQ(negative_two.eval(), 1.0);
+}
+
+TEST_F(LogTest, AddEq_m2plus_m3)
+{
+  negative_two += negative_three;
+  EXPECT_DOUBLE_EQ(negative_two.eval(), -5.0);
+}
+
+TEST_F(LogTest, AddEq_3plus2)
+{
+  three += two;
+  EXPECT_DOUBLE_EQ(three.eval(), 5.0);
+}
+
+TEST_F(LogTest, AddEq_3plus_m2)
+{
+  three += negative_two;
+  EXPECT_DOUBLE_EQ(three.eval(), 1.0);
+}
+
+TEST_F(LogTest, AddEq_m3plus2)
+{
+  negative_three += two;
+  EXPECT_DOUBLE_EQ(negative_three.eval(), -1.0);
+}
+
+TEST_F(LogTest, AddEq_m3plus_m2)
+{
+  negative_three += negative_two;
+  EXPECT_DOUBLE_EQ(negative_three.eval(), -5.0);
+}
+
+TEST_F(LogTest, AddEq_2plus0)
+{
+  two += rei;
+  EXPECT_DOUBLE_EQ(two.eval(), 2.0);
+}
+
+TEST_F(LogTest, AddEq_0plus2)
+{
+  rei += two;
+  EXPECT_DOUBLE_EQ(rei.eval(), 2.0);
+}
+
+TEST_F(LogTest, AddEq_smallest_plus_smallest)
+{
+  smallest += smallest;
+  EXPECT_EQ(smallest.get_sign(), 1);
+  EXPECT_EQ(smallest.get_val(), -dm_1.d + log1p(1.0));
 }
 
 TEST_F(LogTest, Sub)
@@ -375,6 +453,46 @@ TEST_F(LogTest, Multiply)
   EXPECT_EQ((negative_two * rei).eval(), 0.0);
 }
 
+TEST_F(LogTest, MultiplyEq_2by3)
+{
+  two *= three;
+  EXPECT_DOUBLE_EQ(two.eval(), 6.0);
+}
+
+TEST_F(LogTest, MultiplyEq_2by_m3)
+{
+  two *= negative_three;
+  EXPECT_DOUBLE_EQ(two.eval(), -6.0);
+}
+
+TEST_F(LogTest, MultiplyEq_m2by3)
+{
+  negative_two *= three;
+  EXPECT_DOUBLE_EQ(negative_two.eval(), -6.0);
+}
+
+TEST_F(LogTest, MultiplyEq_m2by_m3)
+{
+  negative_two *= negative_three;
+  EXPECT_DOUBLE_EQ(negative_two.eval(), 6.0);
+}
+
+TEST_F(LogTest, MultiplyEq_2by0)
+{
+  two *= rei;
+  EXPECT_EQ(two.get_sign(), 0);
+  EXPECT_EQ(two.get_val(), -DBL_MAX);
+  EXPECT_EQ(two.eval(), 0.0);
+}
+
+TEST_F(LogTest, MultiplyEq_0bytwo)
+{
+  rei *= two;
+  EXPECT_EQ(rei.get_sign(), 0);
+  EXPECT_EQ(rei.get_val(), -DBL_MAX);
+  EXPECT_EQ(rei.eval(), 0.0);
+}
+
 TEST_F(LogTest, DIVIDE)
 {
   EXPECT_DOUBLE_EQ((two / three).eval(), 2.0/3.0);
@@ -413,21 +531,78 @@ TEST_F(LogTest, DIVIDE)
   EXPECT_EQ((rei / negative_two).eval(), 0.0);
 }
 
+TEST_F(LogTest, DivideEq_2over3)
+{
+  two /= three;
+  EXPECT_DOUBLE_EQ(two.eval(), 2.0/3.0);
+}
+
+TEST_F(LogTest, DivideEq_2over_m3)
+{
+  two /= negative_three;
+  EXPECT_DOUBLE_EQ(two.eval(), -2.0/3.0);
+}
+
+TEST_F(LogTest, DivideEq_m2over3)
+{
+  negative_two /= three;
+  EXPECT_DOUBLE_EQ(negative_two.eval(), -2.0/3.0);
+}
+
+TEST_F(LogTest, DivideEq_m2over_m3)
+{
+  negative_two /= negative_three;
+  EXPECT_DOUBLE_EQ(negative_two.eval(), 2.0/3.0);
+}
+
+TEST_F(LogTest, DivideEq_3over2)
+{
+  three /= two;
+  EXPECT_DOUBLE_EQ(three.eval(), 1.5);
+}
+
+TEST_F(LogTest, DivideEq_3over_m2)
+{
+  three /= negative_two;
+  EXPECT_DOUBLE_EQ(three.eval(), -1.5);
+}
+
+TEST_F(LogTest, DivideEq_m3over2)
+{
+  negative_three /= two;
+  EXPECT_DOUBLE_EQ(negative_three.eval(), -1.5);
+}
+
+TEST_F(LogTest, DivideEq_m3over_m2)
+{
+  negative_three /= negative_two;
+  EXPECT_DOUBLE_EQ(negative_three.eval(), 1.5);
+}
+
+TEST_F(LogTest, DivideEq_smallest_over_smallest)
+{
+  smallest /= smallest;
+  EXPECT_EQ(smallest.get_sign(), 1);
+  EXPECT_EQ(smallest.get_val(), 0.0);
+  EXPECT_EQ(smallest.eval(), 1.0);
+}
+
 TEST_F(LogTest, floatingpoint)
 {
   EXPECT_EQ(dm.d, DBL_MAX);
   EXPECT_LE(-dm_1.d - 1e300, -dm.d);
+  EXPECT_DOUBLE_EQ(-1e6, -1e6 + log1p(1.0));
   // std::cout << std::scientific << std::setprecision(20);
   // std::cout << dm.d << std::endl;
   // std::cout << dm_1.d << std::endl;
 }
 
-
-// TEST_F(LogTest, HALF_DBOULE)
-// {
-//   EXPECT_LT(((dblmin / two - dblmin) * two).eval(), 1e-10);
-//   EXPECT_LT(((dblmin / two) + (dblmin / two) - dblmin).eval(), 1e-10);
-// }
+TEST_F(LogTest, HALF_DBOULE)
+{
+  // Assertions below fail due to the loss of accuracy in return for the wider range of real number represantation.
+  // EXPECT_DOUBLE_EQ((dblmin / two + dblmin / two).eval(), DBL_MIN);
+  // EXPECT_DOUBLE_EQ((dblmin / two * two).eval(), DBL_MIN);
+}
 
 // // Tests the default c'tor.
 // TEST_F(QueueTest, DefaultConstructor) {
