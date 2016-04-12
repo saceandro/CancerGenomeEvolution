@@ -563,6 +563,7 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, t
                 }
             }
         }
+      grad_by_param.rho[a] *= pa.rho[a];
     }
 
   for (int a=0; a<hpa.MAX_TREE; ++a)
@@ -590,7 +591,7 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, t
 
   for (int a=0; a<hpa.MAX_TREE; ++a)
     {
-      grad_by_param.rho[a] += Log(hpa.gamma[a] - 1.0) / pa.rho[a];
+      grad_by_param.rho[a] += Log(hpa.gamma[a] - 1.0);
     }
   
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
@@ -667,14 +668,8 @@ double calc_dx_rho_llik_analytic(READS& res, gsl_vector* x, int b, hyperparams& 
 
   double llik = d_llik(res, pa, grad_by_param, hpa, trs);
 
-  Log grad (0);
-  
-  for (int a=0; a<hpa.MAX_TREE; ++a)
-    {
-      grad += d_rho_x(pa, hpa, a, b) * grad_by_param.rho[a];
-    }
-
-  return grad.eval();
+  double sum_gamma = sum_vector(hpa.gamma, 0, hpa.MAX_TREE);
+  return (grad_by_param.rho[b] - pa.rho[b] * Log(sum_gamma - hpa.MAX_TREE + 1.0)).eval();
 }
 
 double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, trees& trs)
