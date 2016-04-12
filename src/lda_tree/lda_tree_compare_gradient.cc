@@ -476,19 +476,19 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, t
 
   for (int a=0; a<hpa.MAX_TREE; ++a)
     {
-      grad_by_param.rho[a] = Log(1.0);
-      VLog u_numerator_a(hpa.MAX_SUBTYPE + 1, Log(0)); // this should be initialized as Log(0)!
+      grad_by_param.rho[a] = Log(1.0); // this should be initialized as Log(1)! other parameter's gradient is initialized by Log(0) by params constructor.
+      VLog u_numerator_a(hpa.MAX_SUBTYPE + 1, Log(0)); 
       VVLog pi_numerator_a (hpa.MAX_SUBTYPE + 1, VLog (hpa.TOTAL_CN + 1, Log(0)));
       VVVLog kappa_numerator_a (hpa.MAX_SUBTYPE + 1, VVLog (hpa.TOTAL_CN + 1, VLog(hpa.TOTAL_CN + 1, Log(0))));
       for (int k=0; k<K; ++k)
         {
-          VLog rho_numerator_k (hpa.MAX_TREE, Log(0));
+          Log rho_numerator_k (0);
           VLog u_numerator_num_k (hpa.MAX_SUBTYPE + 1, Log(0));
           VVLog pi_numerator_num_k (hpa.MAX_SUBTYPE + 1, VLog (hpa.TOTAL_CN + 1, Log(0)));
           VVVLog kappa_numerator_num_k (hpa.MAX_SUBTYPE + 1, VVLog (hpa.TOTAL_CN + 1, VLog(hpa.TOTAL_CN + 1, Log(0))));
           for (states::iterator it = sts[k][a].begin(); it != sts[k][a].end(); ++it)
             {
-              rho_numerator_k[a] += (*it)->resp;
+              rho_numerator_k += (*it)->resp;
               
               for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
                 {
@@ -515,22 +515,22 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, t
                 }
             }
 
-          grad_by_param.rho[a] *= rho_numerator_k[a];
+          grad_by_param.rho[a] *= rho_numerator_k;
           
           for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
             {
-              u_numerator_a[i] += u_numerator_num_k[i] / rho_numerator_k[a];
+              u_numerator_a[i] += u_numerator_num_k[i] / rho_numerator_k;
             }
 
           for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
             {
               for (int l=1; l<=hpa.TOTAL_CN; ++l)
                 {
-                  pi_numerator_a[i][l] += pi_numerator_num_k[i][l] / rho_numerator_k[a];
+                  pi_numerator_a[i][l] += pi_numerator_num_k[i][l] / rho_numerator_k;
                   
                     for (int r=1; r<=l; ++r)
                       {
-                        kappa_numerator_a[i][l][r] += kappa_numerator_num_k[i][l][r] / rho_numerator_k[a];
+                        kappa_numerator_a[i][l][r] += kappa_numerator_num_k[i][l][r] / rho_numerator_k;
                       }
                 }
             }
