@@ -305,8 +305,6 @@ void delete_states(states& sts)
     }
 }
 
-// implemented until here
-
 void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
 {
   Log sum_rho (0);
@@ -392,6 +390,16 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, trees& trs)
         }
     }
 
+  for (int a=0; a<hpa.MAX_TREE; ++a)
+    {
+      lik *= pa.rho[a].take_pow(hpa.gamma[a] - 1.0);
+    }
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa.second - 1.0);
+    }
+  
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       for (int l=1; l<=hpa.TOTAL_CN; ++l)
@@ -579,18 +587,38 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, t
             }
         }
     }
+
+  for (int a=0; a<hpa.MAX_TREE; ++a)
+    {
+      grad_by_param.rho[a] += Log(hpa.gamma[a] - 1.0) / pa.rho[a];
+    }
+  
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      grad_by_param.pa[i]->u += Log(hpa.be_hpa.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
+    }
   
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       for (int l=1; l<=hpa.TOTAL_CN; ++l)
         {
-          grad_by_param.pa[i]->pi[l] = Log(hpa.alpha[l] - 1.0) + grad_by_param.pa[i]->pi[l];
+          grad_by_param.pa[i]->pi[l] += Log(hpa.alpha[l] - 1.0);
 
           for (int r=1; r<=l; ++r)
             {
-              grad_by_param.pa[i]->kappa[l][r] = Log(hpa.beta[l][r] - 1.0) + grad_by_param.pa[i]->kappa[l][r];
+              grad_by_param.pa[i]->kappa[l][r] += Log(hpa.beta[l][r] - 1.0);
             }
         }
+    }
+
+  for (int a=0; a<hpa.MAX_TREE; ++a)
+    {
+      lik *= pa.rho[a].take_pow(hpa.gamma[a] - 1.0);
+    }
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa.second - 1.0);
     }
 
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
