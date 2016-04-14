@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -71,23 +72,79 @@ double calc_mu(subtypes& st, hyperparams& hpa)
   return (num / denom).eval();
 }
 
-void generate_params(params& pa, hyperparams& hpa, gsl_rng* rng)
+bool strictly_greater_than(double i, double j)
 {
-  Vdouble v (hpa.MAX_TREE, 0);
+  return (i > j);
+}
+
+int strictly_less_than(const void* i, const void* j)
+{
+  double* a = (double*) i;
+  double* b = (double*) j;
   
+  return (*a < *b);
+}
+
+void generate_params(params& pa, hyperparams& hpa, trees&tr, gsl_rng* rng)
+{
   for (int i=0; i<1024; ++i) // for appropriet random number generation
     gsl_rng_uniform(rng);
 
-  gsl_ran_dirichlet(rng, hpa.MAX_TREE, &hpa.gamma[0], &v[0]);
-  
-  for (int a=0; a<=hpa.MAX_TREE; ++a)
-    pa.rho[a] = Log(v[a]);
+  double n [hpa.MAX_SUBTYPE + 1];
+  double n_prior [hpa.MAX_SUBTYPE + 1];
 
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa.pa[i]->u = Log(gsl_ran_beta(rng, hpa.be_hpa.first, hpa.be_hpa.second));
+      n_prior[i] = 0.1;
+    }
+  
+  gsl_ran_dirichlet(rng, hpa.MAX_SUBTYPE + 1, n_prior, n);
+
+  qsort(n+1, hpa.MAX_SUBTYPE, sizeof(double), strictly_less_than);
+  // sort(n.begin()+1, n.end(), strictly_greater_than);
+  double tmp = n[4];
+  n[4] = n[3];
+  n[3] = tmp;
+
+  cerr << "t:" << endl;
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    cerr << i << ":\t" << n[i] << endl;
+  
+  cerr << "=======================================" << endl;
+  cerr << "---------------------------------------" << endl;
+  
+  for (int t=0; t<hpa.MAX_TREE; ++t)
+    {
+      for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          tr[t][i].t = Log(n[i]);
+        }
     }
 
+  for (int t=0; t<hpa.MAX_TREE; ++t)
+    {
+      calc_u_from_t(pa, hpa, tr[t]);
+      cerr << "calculated u:" << endl;
+      for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+        cerr << i << ":\t" << pa.pa[i]->u.eval() << endl;
+      cerr << "---------------------------------------" << endl;
+      
+      // calc_t(pa, hpa, tr[t]);
+      // cerr << "recalculated t:" << endl;
+      // for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+      //   cerr << i << ":\t" << tr[t][i].t.eval() << endl;
+      // cerr << "=======================================" << endl;
+    }
+
+  // Vdouble v (hpa.MAX_TREE, 0);
+  
+  // gsl_ran_dirichlet(rng, hpa.MAX_TREE, &hpa.gamma[0], &v[0]);
+  
+  // for (int a=0; a<=hpa.MAX_TREE; ++a)
+  //   pa.rho[a] = Log(v[a]);
+
+  pa.rho[2] = Log(1); // set categorical distribution to be always topology 2 for 0-1-2 2-3 2-4 branching structure
+  
   Vdouble w (hpa.TOTAL_CN, 0);
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
@@ -145,10 +202,9 @@ void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperpar
 
   for (int a=0; a<hpa.MAX_TREE; ++a)
     {
-      calc_t(pa, hpa, tr[a]);
-      calc_n(tr[a], hpa);
-      write_t_n(g, tr[a], hpa);
+      calc_n(tr[a], hpa); // deleted calc_t() because t is the variables generated. Indeed, n = t for all i because I set labmda to be 1.
     }
+  write_t_n(g, tr[2], hpa);
   
   for (int k=0; k<n; ++k)
     {
@@ -162,7 +218,7 @@ void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperpar
               break;
             }
         }
-
+      
       for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
         {
           Log x = Log(gsl_rng_uniform(rng));
@@ -201,10 +257,10 @@ int main(int argc, char** argv)
   
   if (argc != 9)
     {
-      cerr << "usage: ./lda_tree_generate max_subtype total_cn M n seed (rho_u_pi_kappa outfile) (t_n outfile) (reads outfile)" << endl;
+      cerr << "usage: ./lda_tree_generate_single_tree_dirichlet_weight max_subtype total_cn M n seed (rho_u_pi_kappa outfile) (t_n outfile) (reads outfile)" << endl;
       exit(EXIT_FAILURE);
     }
-  
+
   int M, n, seed, MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
   
   MAX_SUBTYPE = atoi(argv[1]);
@@ -213,6 +269,12 @@ int main(int argc, char** argv)
   n = atoi(argv[4]);
   seed = atoi(argv[5]);
 
+  if (MAX_SUBTYPE != 4)
+    {
+      cerr << "This program assumes max_subtype to be 4." << endl;
+      exit(EXIT_FAILURE);
+    }
+  
   trees tr;
   trees_cons(tr, MAX_SUBTYPE);
   MAX_TREE = tr.size();
@@ -238,9 +300,11 @@ int main(int argc, char** argv)
    
   params pa (hpa);
   
-  generate_params(pa, hpa, r);
+  generate_params(pa, hpa, tr, r);
+  
+  calc_u_from_t(pa, hpa, tr[2]);
   write_params(f, pa, hpa);
-
+  
   generate_binom(h, g, M, n, pa, hpa, tr, seed, r);
 
   gsl_rng_free (r);

@@ -30,10 +30,13 @@ USER_DIR = .
 # Set Google Test and Google Mock's header directories as system
 # directories, such that the compiler doesn't generate warnings in
 # these headers.
-CPPFLAGS += -isystem $(GTEST_DIR)/include -isystem $(GMOCK_DIR)/include
+CPPFLAGS += -isystem $(GTEST_DIR)/include -isystem $(GMOCK_DIR)/include -I/home/konta/usr/local/include -L/home/konta/usr/local/lib
 
 # Flags passed to the C++ compiler.
 CXXFLAGS += -g -Wall -Wextra -pthread
+
+# math.h and gsl
+LNK_FLAGS = -lgsl -lgslcblas -lm
 
 # All tests produced by this Makefile.  Remember to add new tests you
 # created to the list.
@@ -107,3 +110,6 @@ enumtree_unittest.o : $(USER_DIR)/enumtree_unittest.cc \
 
 enumtree_unittest : enumtree_unittest.o gmock_main.a
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
+
+enumtree_prior_test : enumtree_prior_test.cc $(USER_DIR)/../util/enumtree_prior.hh
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $< $(LNK_FLAGS)

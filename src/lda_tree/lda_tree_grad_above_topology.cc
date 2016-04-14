@@ -738,10 +738,20 @@ int main(int argc, char** argv)
 
   MAX_SUBTYPE = atoi(argv[1]);
   TOTAL_CN = atoi(argv[2]);
+
+  if (MAX_SUBTYPE != 4)
+    {
+      cerr << "This program assumes max_subtype to be 4." << endl;
+      exit(EXIT_FAILURE);
+    }
   
   trees trs;
   trees_cons(trs, MAX_SUBTYPE);
-  MAX_TREE = trs.size();
+
+  trees trs2 (2);
+  trs2[0] = trs[0];
+  trs2[1] = trs[2];
+  MAX_TREE = trs2.size();
 
   hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
   
@@ -773,7 +783,7 @@ int main(int argc, char** argv)
   params pa_new (hpa);
   params pa_best (hpa);
   
-  diff di (res, hpa, trs);
+  diff di (res, hpa, trs2);
   
   g << scientific;
   h << scientific;

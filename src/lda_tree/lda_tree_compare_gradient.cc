@@ -6,7 +6,7 @@
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_deriv.h>
 #include <gsl/gsl_sf.h>
-#include "../../util/enumtree.hh"
+#include "../../util/enumtree_prior.hh"
 using namespace std;
 
 #define calc_sigmoid(x) ((tanh((x)/2.0) + 1.0) / 2.0)
@@ -668,7 +668,7 @@ double calc_dx_rho_llik_analytic(READS& res, gsl_vector* x, int b, hyperparams& 
 
   double llik = d_llik(res, pa, grad_by_param, hpa, trs);
 
-  double sum_gamma = sum_vector(hpa.gamma, 0, hpa.MAX_TREE);
+  double sum_gamma = sum_vector(hpa.gamma, 0, hpa.MAX_TREE - 1); // corrected (4/14). sum end is hpa.MAX_TREE - 1 !
   return (grad_by_param.rho[b] - pa.rho[b] * Log(sum_gamma - hpa.MAX_TREE + 1.0)).eval();
 }
 
