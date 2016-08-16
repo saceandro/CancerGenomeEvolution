@@ -33,7 +33,9 @@ public:
   signed char get_sign();
   double get_val();
   double take_log();
+  Log take_log_Log();
   Log take_pow(double);
+  Log take_exp();
 
   Log operator -();
   Log operator +(const Log&);
@@ -119,6 +121,20 @@ double Log::take_log()
   return val;
 }
 
+Log Log::take_log_Log()
+{
+  if (this->sign != 1)
+    {
+      std::cout << "take_log(<=0)" << std::endl;
+      std::cout << val << "\t" << sign << std::endl << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  
+  Log temp = Log(val);
+  
+  return temp;
+}
+
 Log Log::take_pow(double b)
 {
   if (this->sign == -1)
@@ -139,6 +155,29 @@ Log Log::take_pow(double b)
         temp = Log(0);
       else
         temp.sign = 1;
+    }
+  
+  return temp;
+}
+
+Log Log::take_exp()
+{
+  Log temp;
+  
+  temp.val = this->eval();
+  
+  if (temp.val <= -DBL_MAX)
+    {
+      temp = Log(0);
+    }
+  else if (temp.val >= DBL_MAX)
+    {
+      std::cout << "err: take_exp overflow!" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  else
+    {
+      temp.sign = 1;
     }
   
   return temp;
