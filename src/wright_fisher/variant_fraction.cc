@@ -355,149 +355,150 @@ void variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta
 //     }
 // }
 
-// double d_t_variant_fraction(int s, int h, int q, double n_q, double t_q, double t_q_h, double beta_tilda_q, VVdouble& gegen, Vdouble& gegen_int, double& numerator, double& partition)
-// {
-//   double x_q = ((double) s) / FRACTIONS;
-//   cout << "x_q = " << x_q << endl;
-//   // f << "x_q = " << x_q << endl;
-//   double Nnq = CELL_MAX*n_q;
-//   double lNnq = log(Nnq);
+void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition)
+{
+  Log x_q = ((double) s) / FRACTIONS;
+  cout << "x_q = " << x_q.eval() << endl;
+  // f << "x_q = " << x_q << endl;
+  Log Nnq = Log(CELL_MAX) * n_q;
+  Log lNnq = Nnq.take_log_Log();
 
-//   if (h == 0)
-//     {
-//       double part_acc = 0;
-//       for (int i=GEGEN_MAX; i>0; --i)
-//         {
-//           double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
+  if (h == 0)
+    {
+      Log part_acc = Log(0);
+      for (int i=GEGEN_MAX; i>0; --i)
+        {
+          Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
-//           part_acc += (2.0*i + 1.0) *
-//             (exp(log(1.0 + g) + g + log(gsl_sf_expint_E1(g) - gsl_sf_expint_E1(g*Nnq))) - 1.0 + exp(-g * (Nnq - 1.0))/Nnq);
-//         }
-//       partition = 1.0 + ( 1.0/Nnq - 1.0 + part_acc ) / lNnq;
-//       // f << "partition = " << partition << endl;
+          part_acc += Log(2.0*i + 1.0) *
+            (Log((Log(1.0) + g).take_log() + g.eval() + log(gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval())), 1) - Log(1.0) + (-g * (Nnq - Log(1.0))).take_exp()/Nnq);
+        }
+      partition = Log(1.0) + ( Log(1.0)/Nnq - Log(1.0) + part_acc ) / lNnq;
+      // f << "partition = " << partition << endl;
       
-//       if (s == 0)
-//         cout << "err: variant fraction <= 0" << endl;
+      if (s == 0)
+        cout << "err: variant fraction <= 0" << endl;
       
-//       else if (s < FRACTIONS)
-//         {
-//           double acc = 0;
-//           for (int i=GEGEN_MAX; i>0; --i)
-//             {
-//               double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
+      else if (s < FRACTIONS)
+        {
+          Log acc = Log(0);
+          for (int i=GEGEN_MAX; i>0; --i)
+            {
+              Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
-//               double a = 
-//                 (2.0*i + 1.0) * gegen[s][i] *
-//                 (exp(log(1.0 + g) + g + log(gsl_sf_expint_E1(g) - gsl_sf_expint_E1(g*Nnq))) - 1.0 - 1.0/g/g + exp(-g * (Nnq - 1.0))/Nnq); // corrected the sign of 1/g/g
-//               cout << a << endl;
+              Log a = 
+                Log(2.0*i + 1.0) * gegen[s][i] *
+                (Log((Log(1.0) + g).take_log() + g.eval() + log(gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval())), 1) - Log(1.0) - Log(1.0)/g/g + (-g * (Nnq - Log(1.0))).take_exp()/Nnq); // corrected the sign of 1/g/g
+              cout << a.eval() << endl;
 
-//               acc += a;
-//             }
-//           numerator =  -8.0 * pow(n_q/beta_tilda_q/t_q, 2.0) * lNnq * gegen_int[s] + 2.0 / lNnq * acc;
+              acc += a;
+            }
+          numerator =  -Log(8.0) * (n_q/beta_tilda_q/t_q).take_pow(2.0) * lNnq * gegen_int[s] + Log(2.0) / lNnq * acc;
 
-//           cout << "numerator = " << numerator << endl << endl;
+          cout << "numerator = " << numerator.eval() << endl << endl;
           
-//           return numerator;
-//         }
+          return;
+        }
 
-//       else // s == FRACTIONS
-//         {
-//           double acc = 0;
-//           for (int i=GEGEN_MAX; i>0; --i)
-//             {
-//               double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
+      else // s == FRACTIONS
+        {
+          Log acc = Log(0);
+          for (int i=GEGEN_MAX; i>0; --i)
+            {
+              Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
-//               double a = (2.0*i + 1.0) *
-//                 (exp(log(1.0 + g) + g + log(gsl_sf_expint_E1(g) - gsl_sf_expint_E1(g*Nnq))) - 1.0 + exp(-g * (Nnq - 1.0))/Nnq);
+              Log a = Log(2.0*i + 1.0) *
+                (Log((Log(1.0) + g).take_log() + g.eval() + log(gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval())), 1) - Log(1.0) + (-g * (Nnq - Log(1.0))).take_exp()/Nnq);
 
-//               if (i % 2 == 1)
-//                 a *= -1;
+              if (i % 2 == 1)
+                a = -a;
               
-//               cout << a << endl;
-//               acc += a;
-//             }
-//           numerator =  1.0 +  (1.0/Nnq - 1.0 + acc) / lNnq;
-//           cout << "numerator = " << numerator << endl << endl;
+              cout << a.eval() << endl;
+              acc += a;
+            }
+          numerator =  Log(1.0) +  (Log(1.0)/Nnq - Log(1.0) + acc) / lNnq;
+          cout << "numerator = " << numerator.eval() << endl << endl;
           
-//           return numerator;
-//         }
+          return;
+        }
       
-//     }
+    }
   
-//   else // h > 0
-//     {
-//       // f << "partition = 1" << endl;
-//       partition = 1.0;
+  // else // h > 0
+  //   {
+  //     // f << "partition = 1" << endl;
+  //     partition = 1.0;
       
-//       double beki = exp(t_q_h / t_q * lNnq);
-//       double beki_1 = exp((t_q_h/ t_q  - 1.0) * lNnq);
+  //     double beki = exp(t_q_h / t_q * lNnq);
+  //     double beki_1 = exp((t_q_h/ t_q  - 1.0) * lNnq);
       
-//       if (0 < s && s < FRACTIONS)
-//         {
-//           double acc = 0;
-//           for (int i=GEGEN_MAX; i>0; --i)
-//             {
-//               double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
-//               double a =
-//                 (2.0*i + 1.0) * gegen[s][i] *
-//                 ( (1.0 / lNnq / Nnq + (t_q_h / t_q - 1.0/lNnq) * beki_1) * exp(-g * (beki - 1.0)) + (1.0 - 1.0/Nnq) / lNnq * exp(-g * (Nnq - 1.0)) );
-//               cout << a << endl;
-//               acc += a;
-//             }
-//           numerator = 2.0 * acc;
+  //     if (0 < s && s < FRACTIONS)
+  //       {
+  //         double acc = 0;
+  //         for (int i=GEGEN_MAX; i>0; --i)
+  //           {
+  //             double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
+  //             double a =
+  //               (2.0*i + 1.0) * gegen[s][i] *
+  //               ( (1.0 / lNnq / Nnq + (t_q_h / t_q - 1.0/lNnq) * beki_1) * exp(-g * (beki - 1.0)) + (1.0 - 1.0/Nnq) / lNnq * exp(-g * (Nnq - 1.0)) );
+  //             cout << a << endl;
+  //             acc += a;
+  //           }
+  //         numerator = 2.0 * acc;
           
-//           cout << "numerator = " << numerator << endl << endl;
+  //         cout << "numerator = " << numerator << endl << endl;
           
-//           return numerator;
-//         }
+  //         return numerator;
+  //       }
 
-//       else if (s == FRACTIONS)
-//         {
-//           cout << "x_q = 1" << endl;
+  //     else if (s == FRACTIONS)
+  //       {
+  //         cout << "x_q = 1" << endl;
           
-//           double acc = 0;
-//           for (int i=GEGEN_MAX; i>0; --i)
-//             {
-//               double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
-//               double a =
-//                 (2.0*i + 1.0) *
-//                 ( (1.0 / lNnq / Nnq + (t_q_h / t_q - 1.0/lNnq) * beki_1) * exp(-g * (beki - 1.0)) + (1.0 - 1.0/Nnq) / lNnq * exp(-g * (Nnq - 1.0)) );
+  //         double acc = 0;
+  //         for (int i=GEGEN_MAX; i>0; --i)
+  //           {
+  //             double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
+  //             double a =
+  //               (2.0*i + 1.0) *
+  //               ( (1.0 / lNnq / Nnq + (t_q_h / t_q - 1.0/lNnq) * beki_1) * exp(-g * (beki - 1.0)) + (1.0 - 1.0/Nnq) / lNnq * exp(-g * (Nnq - 1.0)) );
               
-//               if (i % 2 == 1)
-//                 a *= -1;
+  //             if (i % 2 == 1)
+  //               a *= -1;
               
-//               cout << a << endl;
-//               acc += a;
-//             }
-//           numerator = 1.0/lNnq + ( t_q_h / t_q - 1.0/lNnq ) * beki_1 + acc;
+  //             cout << a << endl;
+  //             acc += a;
+  //           }
+  //         numerator = 1.0/lNnq + ( t_q_h / t_q - 1.0/lNnq ) * beki_1 + acc;
 
-//           cout << "numerator = " << numerator << endl << endl;
+  //         cout << "numerator = " << numerator << endl << endl;
           
-//           return numerator;
-//         }
+  //         return numerator;
+  //       }
 
-//       else // s == 0
-//         {
-//           double acc = 0;
-//           for (int i=GEGEN_MAX; i>0; --i)
-//             {
-//               double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
-//               double a =
-//                 (2.0*i + 1.0) *
-//                 ( (1.0 / lNnq / Nnq + (t_q_h / t_q - 1.0/lNnq) * beki_1) * exp(-g * (beki - 1.0)) + (1.0 - 1.0/Nnq) / lNnq * exp(-g * (Nnq - 1.0)) );
+  //     else // s == 0
+  //       {
+  //         double acc = 0;
+  //         for (int i=GEGEN_MAX; i>0; --i)
+  //           {
+  //             double g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
+  //             double a =
+  //               (2.0*i + 1.0) *
+  //               ( (1.0 / lNnq / Nnq + (t_q_h / t_q - 1.0/lNnq) * beki_1) * exp(-g * (beki - 1.0)) + (1.0 - 1.0/Nnq) / lNnq * exp(-g * (Nnq - 1.0)) );
               
-//               cout << a << endl;
-//               acc += a;
-//             }
-//           numerator = 1.0 - 1.0 / lNnq  - ( t_q_h / t_q - 1.0/lNnq ) * beki_1 - acc;
+  //             cout << a << endl;
+  //             acc += a;
+  //           }
+  //         numerator = 1.0 - 1.0 / lNnq  - ( t_q_h / t_q - 1.0/lNnq ) * beki_1 - acc;
 
-//           cout << "numerator = " << numerator << endl << endl;
+  //         cout << "numerator = " << numerator << endl << endl;
           
-//           return numerator;
-//         }
-//     }
-//   return -1;
-// }
+  //         return numerator;
+  //       }
+  //   }
+  // return -1;
+  return;
+}
 
 // void d_variant_fraction_partition(myfunc d_x_variant_fraction, int h, int q, double n_q, double t_q, double t_q_h, double beta_tilda_q, VVdouble& gegen, Vdouble& gegen_int, Vdouble& vf, Vdouble& dvf, double vf_partition, ofstream &f) // needs 
 // {
@@ -651,17 +652,17 @@ int main(int argc, char **argv)
   Log d_t_partition = 0;
   
   variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, numerator, partition);
-  // d_t_variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, d_t_numerator, d_t_partition);
+  d_t_variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, d_t_numerator, d_t_partition);
 
   Log var_frac = numerator / partition;
-  // Log d_t_var_frac = (d_t_numerator * partition - numerator * d_t_partition) / partition / partition;
+  Log d_t_var_frac = (d_t_numerator * partition - numerator * d_t_partition) / partition / partition;
   // Log result = 0;
   // Log abserr = 0;
   
   // d_t_variant_fraction_numeric(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, &result, &abserr);
   
   cout << "var_frac: " << var_frac.eval() << endl;
-  // cout << "d_t_var_frac: " << d_t_var_frac << endl;
+  cout << "d_t_var_frac: " << d_t_var_frac.eval() << endl;
   // cout << "d_t_var_frac (numeric): " << result << endl;
   
   return 0;
