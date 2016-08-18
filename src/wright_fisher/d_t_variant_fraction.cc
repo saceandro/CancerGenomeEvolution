@@ -649,7 +649,7 @@ int main(int argc, char **argv)
 {
   if (argc != 8)
     {
-      cerr << "usage: ./variant_fraction s h q n_q t_q t_q_h beta_tilda_q" << endl;
+      cerr << "usage: ./d_t_variant_fraction (outfile) h q n_q t_q t_q_h beta_tilda_q" << endl;
       return 0;
     }
   
@@ -668,7 +668,7 @@ int main(int argc, char **argv)
 
   set_gegen_integral(gegen_int, gegen_int_err);
 
-  int s = atoi(argv[1]);
+  ofstream of(argv[1]);
   int h = atoi(argv[2]);
   int q = atoi(argv[3]);
   Log n_q = Log(atof(argv[4]));
@@ -676,24 +676,42 @@ int main(int argc, char **argv)
   Log t_q_h = Log(atof(argv[6]));
   Log beta_tilda_q = Log(atof(argv[7]));
 
-  Log numerator = 0;
-  Log partition = 0;
-  Log d_t_numerator = 0;
-  Log d_t_partition = 0;
-  
-  variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, numerator, partition);
-  d_t_variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, d_t_numerator, d_t_partition);
+  int s = 0;
+  if (h == 0)
+    {
+      s = 1;
+    }
 
-  Log var_frac = numerator / partition;
-  Log d_t_var_frac = (d_t_numerator * partition - numerator * d_t_partition) / partition / partition;
-  double result = 0;
-  double abserr = 0;
+  for (; s <= FRACTIONS; ++s)
+    {
+      Log numerator = 0;
+      Log partition = 0;
+      Log d_t_numerator = 0;
+      Log d_t_partition = 0;
   
-  d_t_variant_fraction_numeric(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, &result, &abserr);
+      variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, numerator, partition);
+      d_t_variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, d_t_numerator, d_t_partition);
+
+      Log var_frac = numerator / partition;
+      Log d_t_var_frac = (d_t_numerator * partition - numerator * d_t_partition) / partition / partition;
+      double result = 0;
+      double abserr = 0;
   
-  cout << "var_frac: " << var_frac.eval() << endl;
-  cout << "d_t_var_frac: " << d_t_var_frac.eval() << endl;
-  cout << "d_t_var_frac (numeric): " << result << endl;
+      d_t_variant_fraction_numeric(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, &result, &abserr);
+
+      if (0 < s && s < FRACTIONS)
+        {
+          of << ((double) s) / FRACTIONS << "\t" << var_frac.eval() * (1.0/9) << "\t" << d_t_var_frac.eval() << "\t" << result << endl;
+        }
+      else
+        {
+          of << ((double) s) / FRACTIONS << "\t" << var_frac.eval() << "\t" << d_t_var_frac.eval() << "\t" << result << endl;
+        }
+      
+      // cout << "var_frac: " << var_frac.eval() << endl;
+      // cout << "d_t_var_frac: " << d_t_var_frac.eval() << endl;
+      // cout << "d_t_var_frac (numeric): " << result << endl;
+    }
   
   return 0;
 }
