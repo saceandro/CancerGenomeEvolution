@@ -36,6 +36,7 @@ public:
   Log take_log_Log();
   Log take_pow(double);
   Log take_exp();
+  Log inverse();
 
   Log operator -();
   Log operator +(const Log&);
@@ -180,6 +181,20 @@ Log Log::take_exp()
       temp.sign = 1;
     }
   
+  return temp;
+}
+
+Log Log::inverse()
+{
+  if (this->sign == 0)
+    {
+      std::cout << "inverse(0)" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  
+  Log temp;
+  temp.val = -this->val;
+  temp.sign = this->sign;
   return temp;
 }
 

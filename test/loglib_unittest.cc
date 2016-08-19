@@ -604,6 +604,15 @@ TEST_F(LogTest, HALF_DBOULE)
   // EXPECT_DOUBLE_EQ((dblmin / two * two).eval(), DBL_MIN);
 }
 
+TEST_F(LogTest, inverse)
+{
+  EXPECT_DOUBLE_EQ(two.inverse().eval(), 0.5);
+  EXPECT_DOUBLE_EQ(three.inverse().eval(), 1.0/3);
+  EXPECT_DOUBLE_EQ(negative_two.inverse().eval(), -0.5);
+  EXPECT_DOUBLE_EQ(negative_three.inverse().eval(), -1.0/3);
+}
+
+
 // // Tests the default c'tor.
 // TEST_F(QueueTest, DefaultConstructor) {
 //   // You can access data in the test fixture here.
