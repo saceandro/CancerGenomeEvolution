@@ -44,6 +44,19 @@ typedef struct _vfnumdiff_th
 }
   vfnumdiff_th;
 
+typedef struct _vfnumdiff_n
+{
+  int s;
+  int h;
+  int q;
+  Log t_q;
+  Log t_q_h;
+  Log beta_tilda_q;
+  VVLog gegen;
+  VLog gegen_int;
+}
+  vfnumdiff_n;
+
 void write_vector(ofstream &f, VLog &a, int n)
 {
   for (int i=0; i<n; ++i)
@@ -447,6 +460,19 @@ double func_th_normalized(double t_q_h, void *params)
   return vf[p->s].eval();
 }
 
+double func_n_normalized(double n_q, void *params)
+{
+  vfnumdiff_n *p = (vfnumdiff_n*) params;
+
+  VLog vf(FRACTIONS + 1, Log(0));
+  VLog vf_numerator(FRACTIONS + 1, Log(0));
+  VLog vf_denominator(FRACTIONS + 1, Log(0));
+  Log partition = Log(0);
+  variant_fraction_partition(p->h, p->q, Log(n_q), p->t_q, p->t_q_h, p->beta_tilda_q, p->gegen, p->gegen_int, vf, vf_numerator, vf_denominator, partition);
+  
+  return vf[p->s].eval();
+}
+
 void d_t_variant_fraction_numeric_normalized(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, double* result, double* abserr)
 {
   gsl_function F;
@@ -487,6 +513,27 @@ void d_th_variant_fraction_numeric_normalized(int s, int h, int q, Log n_q, Log 
   F.params = &dth_vf;
               
   gsl_deriv_backward(&F, t_q_h.eval(), 1e-7, result, abserr);
+}
+
+void d_n_variant_fraction_numeric_normalized(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, double* result, double* abserr)
+{
+  gsl_function F;
+
+  F.function = &func_n_normalized;
+
+  vfnumdiff_n dn_vf;
+  dn_vf.s = s;
+  dn_vf.h = h;
+  dn_vf.q = q;
+  dn_vf.t_q = t_q;
+  dn_vf.t_q_h = t_q_h;
+  dn_vf.beta_tilda_q = beta_tilda_q;
+  dn_vf.gegen = gegen;
+  dn_vf.gegen_int = gegen_int;
+
+  F.params = &dn_vf;
+              
+  gsl_deriv_backward(&F, n_q.eval(), 1e-7, result, abserr);
 }
 
 void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition)
@@ -980,7 +1027,7 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
   else // h > 0
     {
       // f << "denominator = 1" << endl;
-      denominator = Log(1.0);
+      denominator = Log(0);
       
       Log beki = (t_q_h / t_q * lNnq).take_exp();
       Log beki_1 = ((t_q_h/ t_q  - 1.0) * lNnq).take_exp();
@@ -993,11 +1040,12 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
               Log a =
                 Log(2.0*i + 1.0) * gegen[s][i] *
-                ( (Log(1.0) / lNnq / Nnq + (t_q_h / t_q - Log(1.0)/lNnq) * beki_1) * (-g * (beki - Log(1.0))).take_exp() + (Log(1.0) - Log(1.0)/Nnq) / lNnq * (-g * (Nnq - Log(1.0))).take_exp() );
+                ( ( (Log(1) + lNnq.inverse()) * (Nnq.inverse() - beki_1) + t_q_h / t_q * beki_1) * (-g * (beki - Log(1))).take_exp()
+                  - (Log(1) - (Log(1) + lNnq.inverse()) * (Log(1) - Nnq.inverse())) * (-g * (Nnq - Log(1))).take_exp());
               // cout << a.eval() << endl;
               acc += a;
             }
-          numerator = Log(2.0) * acc;
+          numerator = -Log(2) / lNnq * t_q / n_q * acc;
           
           // cout << "numerator = " << numerator.eval() << endl << endl;
           
@@ -1014,7 +1062,8 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
               Log a =
                 Log(2.0*i + 1.0) *
-                ( (Log(1.0) / lNnq / Nnq + (t_q_h / t_q - Log(1.0)/lNnq) * beki_1) * (-g * (beki - Log(1.0))).take_exp() + (Log(1.0) - Log(1.0)/Nnq) / lNnq * (-g * (Nnq - Log(1.0))).take_exp() );
+                ( ( (Log(1) + lNnq.inverse()) * (Nnq.inverse() - beki_1) + t_q_h / t_q * beki_1) * (-g * (beki - Log(1))).take_exp()
+                  - (Log(1) - (Log(1) + lNnq.inverse()) * (Log(1) - Nnq.inverse())) * (-g * (Nnq - Log(1))).take_exp());
               
               if (i % 2 == 1)
                 a = -a;
@@ -1022,7 +1071,7 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               // cout << a.eval() << endl;
               acc += a;
             }
-          numerator = Log(1.0)/lNnq + ( t_q_h / t_q - Log(1.0)/lNnq ) * beki_1 + acc;
+          numerator = -t_q / n_q / lNnq * ( (Log(1) - beki_1) / lNnq + (t_q_h / t_q - Log(1)) * beki_1 + acc );
 
           // cout << "numerator = " << numerator.eval() << endl << endl;
           
@@ -1037,13 +1086,14 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
               Log a =
                 Log(2.0*i + 1.0) *
-                ( (Log(1.0) / lNnq / Nnq + (t_q_h / t_q - Log(1.0)/lNnq) * beki_1) * (-g * (beki - Log(1.0))).take_exp() + (Log(1.0) - Log(1.0)/Nnq) / lNnq * (-g * (Nnq - Log(1.0))).take_exp() );
+                ( ( (Log(1) + lNnq.inverse()) * (Nnq.inverse() - beki_1) + t_q_h / t_q * beki_1) * (-g * (beki - Log(1))).take_exp()
+                  - (Log(1) - (Log(1) + lNnq.inverse()) * (Log(1) - Nnq.inverse())) * (-g * (Nnq - Log(1))).take_exp());
               
               // cout << a.eval() << endl;
               acc += a;
             }
-          numerator = Log(1.0) - Log(1.0) / lNnq  - ( t_q_h / t_q - Log(1.0)/lNnq ) * beki_1 - acc;
-
+          numerator = t_q / n_q / lNnq * ( (Log(1) - beki_1) / lNnq + (t_q_h / t_q - Log(1)) * beki_1 + acc );
+            
           // cout << "numerator = " << numerator.eval() << endl << endl;
           
           return;
@@ -1271,9 +1321,12 @@ int main(int argc, char **argv)
       double dt_abserr = 0;
       double dth_result = 0;
       double dth_abserr = 0;
+      double dn_result = 0;
+      double dn_abserr = 0;
       d_t_variant_fraction_numeric_normalized(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, &dt_result, &dt_abserr);
       d_th_variant_fraction_numeric_normalized(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, &dth_result, &dth_abserr);
-      of << ((double) s) / FRACTIONS << "\t" << vf[s].eval() << "\t" << dtvf[s].eval() << "\t" << dt_result << "\t" << dthvf[s].eval() << "\t" << dth_result << "\t" << dnvf[s].eval() << endl;
+      d_n_variant_fraction_numeric_normalized(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, &dn_result, &dn_abserr);
+      of << ((double) s) / FRACTIONS << "\t" << vf[s].eval() << "\t" << dtvf[s].eval() << "\t" << dt_result << "\t" << dthvf[s].eval() << "\t" << dth_result << "\t" << dnvf[s].eval() << "\t" << dn_result << endl;
     }
 
   s = 0;
