@@ -13,9 +13,7 @@ using namespace std;
 #define calc_gamma_i(i, n, t, beta_tilda) (Log(i*(i+1)) * beta_tilda * t / Log(2) / n / (Log(log(CELL_MAX)) + n.take_log_Log()))
 #define FRACTIONS 10
 #define GEGEN_MAX 200
-#define BETA_TILDA_MAX 10
 
-// typedef double (*myfunc) (int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int);
 typedef void (*myfunc) (int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition);
   
 typedef struct _vfnumdiff_t
@@ -312,69 +310,69 @@ void variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta
   return;
 }
 
-double func_t(double t_q, void *params)
-{
-  vfnumdiff_t *p = (vfnumdiff_t*) params;
+// double func_t(double t_q, void *params)
+// {
+//   vfnumdiff_t *p = (vfnumdiff_t*) params;
 
-  Log numerator = Log(0);
-  Log partition = Log(0);
+//   Log numerator = Log(0);
+//   Log partition = Log(0);
   
-  variant_fraction(p->s, p->h, p->q, p->n_q, Log(t_q), p->t_q_h, p->beta_tilda_q, p->gegen, p->gegen_int, numerator, partition);
-  return (numerator / partition).eval();
-}
+//   variant_fraction(p->s, p->h, p->q, p->n_q, Log(t_q), p->t_q_h, p->beta_tilda_q, p->gegen, p->gegen_int, numerator, partition);
+//   return (numerator / partition).eval();
+// }
 
-double func_th(double t_q_h, void *params)
-{
-  vfnumdiff_th *p = (vfnumdiff_th*) params;
+// double func_th(double t_q_h, void *params)
+// {
+//   vfnumdiff_th *p = (vfnumdiff_th*) params;
 
-  Log numerator = Log(0);
-  Log partition = Log(0);
+//   Log numerator = Log(0);
+//   Log partition = Log(0);
   
-  variant_fraction(p->s, p->h, p->q, p->n_q, p->t_q, Log(t_q_h), p->beta_tilda_q, p->gegen, p->gegen_int, numerator, partition);
-  return (numerator / partition).eval();
-}
+//   variant_fraction(p->s, p->h, p->q, p->n_q, p->t_q, Log(t_q_h), p->beta_tilda_q, p->gegen, p->gegen_int, numerator, partition);
+//   return (numerator / partition).eval();
+// }
 
-void d_t_variant_fraction_numeric(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, double* result, double* abserr)
-{
-  gsl_function F;
+// void d_t_variant_fraction_numeric(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, double* result, double* abserr)
+// {
+//   gsl_function F;
 
-  F.function = &func_t;
+//   F.function = &func_t;
 
-  vfnumdiff_t dt_vf;
-  dt_vf.s = s;
-  dt_vf.h = h;
-  dt_vf.q = q;
-  dt_vf.n_q = n_q;
-  dt_vf.t_q_h = t_q_h;
-  dt_vf.beta_tilda_q = beta_tilda_q;
-  dt_vf.gegen = gegen;
-  dt_vf.gegen_int = gegen_int;
+//   vfnumdiff_t dt_vf;
+//   dt_vf.s = s;
+//   dt_vf.h = h;
+//   dt_vf.q = q;
+//   dt_vf.n_q = n_q;
+//   dt_vf.t_q_h = t_q_h;
+//   dt_vf.beta_tilda_q = beta_tilda_q;
+//   dt_vf.gegen = gegen;
+//   dt_vf.gegen_int = gegen_int;
 
-  F.params = &dt_vf;
+//   F.params = &dt_vf;
               
-  gsl_deriv_backward(&F, t_q.eval(), 1e-7, result, abserr);
-}
+//   gsl_deriv_backward(&F, t_q.eval(), 1e-7, result, abserr);
+// }
 
-void d_th_variant_fraction_numeric(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, double* result, double* abserr)
-{
-  gsl_function F;
+// void d_th_variant_fraction_numeric(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, double* result, double* abserr)
+// {
+//   gsl_function F;
 
-  F.function = &func_th;
+//   F.function = &func_th;
 
-  vfnumdiff_th dth_vf;
-  dth_vf.s = s;
-  dth_vf.h = h;
-  dth_vf.q = q;
-  dth_vf.n_q = n_q;
-  dth_vf.t_q = t_q;
-  dth_vf.beta_tilda_q = beta_tilda_q;
-  dth_vf.gegen = gegen;
-  dth_vf.gegen_int = gegen_int;
+//   vfnumdiff_th dth_vf;
+//   dth_vf.s = s;
+//   dth_vf.h = h;
+//   dth_vf.q = q;
+//   dth_vf.n_q = n_q;
+//   dth_vf.t_q = t_q;
+//   dth_vf.beta_tilda_q = beta_tilda_q;
+//   dth_vf.gegen = gegen;
+//   dth_vf.gegen_int = gegen_int;
 
-  F.params = &dth_vf;
+//   F.params = &dth_vf;
               
-  gsl_deriv_backward(&F, t_q_h.eval(), 1e-7, result, abserr);
-}
+//   gsl_deriv_backward(&F, t_q_h.eval(), 1e-7, result, abserr);
+// }
 
 void variant_fraction_partition(int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& vf_numerator, VLog& vf_denominator, Log& partition)
 {
@@ -700,68 +698,6 @@ void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
   return;
 }
 
-void d_t_variant_fraction_partition(int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& vf_numerator, VLog& vf_denominator, Log& vf_partition, VLog& dtvf)
-{
-  Log partition = Log(0);
-  
-  Log interval = Log(1.0) / Log(FRACTIONS - 1);
-
-  if (h == 0)
-    {
-      for (int s=1; s<=FRACTIONS; ++s)
-        {
-          Log numerator = Log(0);
-          Log denominator = Log(0);
-          d_t_variant_fraction(s, 0, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, numerator, denominator);
-          if (s < FRACTIONS)
-            {
-              dtvf[s] = (numerator / vf_denominator[s] - vf_numerator[s] / vf_denominator[s] * denominator / vf_denominator[s]) * interval;
-            }
-          else
-            {
-              dtvf[s] = numerator / vf_denominator[s] - vf_numerator[s] / vf_denominator[s] * denominator / vf_denominator[s];
-            }
-        }
-
-      for (int s=1; s<=FRACTIONS; ++s)
-        {
-          partition += dtvf[s];
-        }
-
-      for (int s=1; s<=FRACTIONS; ++s)
-        {
-          dtvf[s] = (dtvf[s] - vf[s] * partition) / vf_partition;
-        }
-    }
-  else
-    {
-      for (int s=0; s<=FRACTIONS; ++s)
-        {
-          Log numerator = Log(0);
-          Log denominator = Log(0);
-          d_t_variant_fraction(s, 1, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, numerator, denominator);
-          if (0 < s && s < FRACTIONS)
-            {
-              dtvf[s] = (numerator / vf_denominator[s] - vf_numerator[s] / vf_denominator[s] * denominator / vf_denominator[s]) * interval;
-            }
-          else
-            {
-              dtvf[s] = numerator / vf_denominator[s] - vf_numerator[s] / vf_denominator[s] * denominator / vf_denominator[s];
-            }
-        }
-
-      for (int s=0; s<=FRACTIONS; ++s)
-        {
-          partition += dtvf[s];
-        }
-  
-      for (int s=0; s<=FRACTIONS; ++s)
-        {
-          dtvf[s] = (dtvf[s] - vf[s] * partition) / vf_partition;
-        }
-    }
-}
-
 void d_variant_fraction_partition(myfunc d_x_variant_fraction, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& vf_numerator, VLog& vf_denominator, Log& vf_partition, VLog& dvf)
 {
   Log partition = Log(0);
@@ -822,16 +758,6 @@ void d_variant_fraction_partition(myfunc d_x_variant_fraction, int h, int q, Log
           dvf[s] = (dvf[s] - vf[s] * partition) / vf_partition;
         }
     }
-}
-
-void d_t_variant_fraction_all(int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& dtvf)
-{
-  VLog vf_numerator(FRACTIONS + 1, Log(0));
-  VLog vf_denominator(FRACTIONS + 1, Log(0));
-  Log vf_partition = Log(0);
-  
-  variant_fraction_partition(h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, vf, vf_numerator, vf_denominator, vf_partition);
-  d_t_variant_fraction_partition(h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, vf, vf_numerator, vf_denominator, vf_partition, dtvf);
 }
 
 void d_variant_fraction_all(myfunc d_x_variant_fraction, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& dvf)
@@ -1101,174 +1027,6 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
     }
   return;
 }
-
-// void d_variant_fraction_partition(myfunc d_x_variant_fraction, int h, int q, double n_q, double t_q, double t_q_h, double beta_tilda_q, VVdouble& gegen, Vdouble& gegen_int, Vdouble& vf, Vdouble& dvf, double vf_partition, ofstream &f) // needs 
-// {
-//   double interval = 1.0 / FRACTIONS;
-//   double dvf_partition = 0;
-
-//   if (h == 0)
-//     {
-//       for (int s=1; s<=FRACTIONS; ++s)
-//         {
-//           dvf[s] = d_x_variant_fraction(s, 0, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, f);
-//           if (s < FRACTIONS)
-//             dvf[s] *= interval;
-//         }
-
-//       f << "not_partitioned_d_x_variant_fraction h0:" << endl;
-//       write_vector(f, dvf, FRACTIONS+1);
-//       cout << endl;      
-
-//       for (int s=1; s<=FRACTIONS; ++s)
-//         {
-//           dvf_partition += dvf[s];
-//         }
-//       f << "dvf_partition: " << dvf_partition << endl;
-  
-//       for (int s=1; s<=FRACTIONS; ++s)
-//         {
-//           dvf[s] = (dvf[s] - vf[s] * dvf_partition)/ vf_partition;
-//         }
-//     }
-//   else
-//     {
-//       for (int s=0; s<=FRACTIONS; ++s)
-//         {
-//           dvf[s] = d_x_variant_fraction(s, 1, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, f);
-//           if (0 < s && s < FRACTIONS)
-//             dvf[s] *= interval;
-//         }
-
-//       f << "not_partitioned_d_x_variant_fraction h0:" << endl;
-//       write_vector(f, dvf, FRACTIONS+1);
-//       cout << endl;      
-
-//       for (int s=0; s<=FRACTIONS; ++s)
-//         {
-//           dvf_partition += dvf[s];
-//         }
-//       f << "dvf_partition: " << dvf_partition << endl;
-  
-//       for (int s=0; s<=FRACTIONS; ++s)
-//         {
-//           dvf[s] = (dvf[s] - vf[s] * dvf_partition)/ vf_partition;
-//           // dvf[s] = interval * (dvf[s] * vf_partition - vf[s] * dvf_partition)/ vf_partition / vf_partition;
-//         }
-//     }
-// }
-
-// int main(int argc, char **argv)
-// {
-//   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
-  
-//   gsl_set_error_handler_off ();
-    
-//   VVdouble gegen;
-//   gegen.assign(FRACTIONS+1, Vdouble(GEGEN_MAX+1, 0));
-
-//   set_gegen(gegen);
-
-//   Vdouble gegen_int (FRACTIONS+1, 0);
-//   Vdouble gegen_int_err (FRACTIONS+1, 0);
-
-//   set_gegen_integral(gegen_int, gegen_int_err);
-
-//   Vdouble vf_h0 (FRACTIONS+1, 0);
-//   Vdouble vf_h1 (FRACTIONS+1, 0);
-
-//   Vdouble dvf_h0 (FRACTIONS+1, 0);
-//   Vdouble dvf_h1 (FRACTIONS+1, 0);
-
-//   ofstream f(argv[1]);
-
-//   for (int beta_tilda_disc=1; beta_tilda_disc<=BETA_TILDA_MAX; ++beta_tilda_disc)
-//     {
-//       double beta_tilda_q = ((double) beta_tilda_disc) / BETA_TILDA_MAX;
-
-//       f << "beta_tilda_q: " << beta_tilda_q << endl;
-//       cout << "beta_tilda_q: " << beta_tilda_q << endl;
-
-//       double vf_partition_h0 = 0;
-//       double vf_partition_h1 = 0;
-
-//       cout << "h = 0" << endl;
-//       f << "h = 0" << endl;
-//       variant_fraction_partition(0, 4, 0.1, 0.2, 0.05, beta_tilda_q, gegen, gegen_int, vf_h0, vf_partition_h0, f);
-//       // write_vector(f, vf_h0, FRACTIONS+1);
-//       d_variant_fraction_partition(d_t_variant_fraction, 0, 4, 0.1, 0.2, 0.05, beta_tilda_q, gegen, gegen_int, vf_h0, dvf_h0, vf_partition_h0, f);
-//       f << "d_t_result: ";
-//       write_vector(f, dvf_h0, FRACTIONS+1);
-//       f << endl;
-
-//       cout << "h > 0" << endl;
-//       f << "h > 0" << endl;
-//       variant_fraction_partition(1, 4, 0.1, 0.2, 0.05, beta_tilda_q, gegen, gegen_int, vf_h1, vf_partition_h1, f);
-//       // write_vector(f, vf_h1, FRACTIONS+1);
-//       d_variant_fraction_partition(d_t_variant_fraction, 1, 4, 0.1, 0.2, 0.05, beta_tilda_q, gegen, gegen_int, vf_h1, dvf_h1, vf_partition_h1, f);
-//       f << "d_t_result: ";
-//       write_vector(f, dvf_h1, FRACTIONS+1);
-
-//       f << endl << endl;
-//     }
-  
-//   f.close();
-  
-//   return 0;
-// }
-
-// int main(int argc, char **argv)
-// {
-//   if (argc != 8)
-//     {
-//       cerr << "usage: ./variant_fraction s h q n_q t_q t_q_h beta_tilda_q" << endl;
-//       return 0;
-//     }
-  
-  
-//   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
-  
-//   gsl_set_error_handler_off ();
-
-//   VVLog gegen;
-//   gegen.assign(FRACTIONS+1, VLog(GEGEN_MAX+1, Log(0)));
-
-//   set_gegen(gegen);
-
-//   VLog gegen_int (FRACTIONS+1, Log(0));
-//   VLog gegen_int_err (FRACTIONS+1, Log(0));
-
-//   set_gegen_integral(gegen_int, gegen_int_err);
-
-//   int s = atoi(argv[1]);
-//   int h = atoi(argv[2]);
-//   int q = atoi(argv[3]);
-//   Log n_q = Log(atof(argv[4]));
-//   Log t_q = Log(atof(argv[5]));
-//   Log t_q_h = Log(atof(argv[6]));
-//   Log beta_tilda_q = Log(atof(argv[7]));
-
-//   Log numerator = 0;
-//   Log partition = 0;
-//   Log d_t_numerator = 0;
-//   Log d_t_partition = 0;
-  
-//   variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, numerator, partition);
-//   d_t_variant_fraction(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, d_t_numerator, d_t_partition);
-
-//   Log var_frac = numerator / partition;
-//   Log d_t_var_frac = (d_t_numerator * partition - numerator * d_t_partition) / partition / partition;
-//   double result = 0;
-//   double abserr = 0;
-  
-//   d_t_variant_fraction_numeric(s, h, q, n_q, t_q, t_q_h, beta_tilda_q, gegen, gegen_int, &result, &abserr);
-  
-//   cout << "var_frac: " << var_frac.eval() << endl;
-//   cout << "d_t_var_frac: " << d_t_var_frac.eval() << endl;
-//   cout << "d_t_var_frac (numeric): " << result << endl;
-  
-//   return 0;
-// }
 
 int main(int argc, char **argv)
 {
