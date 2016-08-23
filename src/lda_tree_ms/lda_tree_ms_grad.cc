@@ -58,10 +58,6 @@ double sum_vector(Vdouble& v, int s, int e)
 
 void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
 {
-  for (int a=0; a<hpa.MAX_TREE; ++a)
-    f << pa.rho[a].eval() << "\t";
-  f << endl << endl;
-  
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     f << pa.pa[i]->u.eval() << "\t";
   f << endl << endl;
@@ -85,9 +81,6 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
 
 void copy_params(params& pa, params& target, hyperparams& hpa)
 {
-  for (int a=0; a<hpa.MAX_TREE; ++a)
-    target.rho[a] = pa.rho[a];
-  
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     target.pa[i]->u = pa.pa[i]->u;
 
