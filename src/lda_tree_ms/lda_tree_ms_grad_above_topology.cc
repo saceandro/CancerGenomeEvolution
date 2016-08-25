@@ -683,7 +683,7 @@ int main(int argc, char** argv)
       
       params pa_best (hpa);
       double llik_best = -DBL_MAX;
-      for (int i=0; i<2; ++i)
+      for (int i=0; i<5; ++i)
         {
           cout << "minimize_iter: " << i << endl << endl;
           h << "minimize_iter: " << i << endl << endl;

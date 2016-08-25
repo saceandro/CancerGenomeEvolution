@@ -113,3 +113,6 @@ enumtree_unittest : enumtree_unittest.o gmock_main.a
 
 enumtree_prior_test : enumtree_prior_test.cc $(USER_DIR)/../util/enumtree_prior.hh
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $< $(LNK_FLAGS)
+
+enumtree_wf_unittest : enumtree_wf_unittest.o gmock_main.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -lpthread $^ -o $@
