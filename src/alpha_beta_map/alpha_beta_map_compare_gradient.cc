@@ -109,21 +109,9 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
 
 void init_state(state& st, hyperparams& hpa)
 {
-  st.st.assign(hpa.MAX_SUBTYPE + 1, subtype (0, 0, 0, Log(0), Log(0), Log(0), NULL, NULL, vector<subtype*> (0, NULL)));
+  st.st.assign(hpa.MAX_SUBTYPE + 1, subtype (0, 0, 0, Log(0), Log(0), Log(0), Log(0), NULL, NULL, vector<subtype*> (0, NULL)));
   st.st[0].total_cn = 2;
   st.st[0].variant_cn = 0;
-}
-
-void calc_n(subtypes& sts, hyperparams& hpa)
-{
-  Log sum;
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      sts[i].n = sts[i].t;
-      sum += sts[i].t;
-    }
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    sts[i].n /= sum;
 }
 
 double calc_mu(subtypes& st, hyperparams& hpa)
@@ -133,7 +121,7 @@ double calc_mu(subtypes& st, hyperparams& hpa)
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
       denom += st[i].n * Log(st[i].total_cn);
-      num += st[i].n * Log(st[i].variant_cn);
+      num += st[i].n * st[i].x * Log(st[i].variant_cn);
     }
     
   return (num / denom).eval();
@@ -155,107 +143,109 @@ Log d_bin_mu(READ& re, double mu)
     }
 }
 
-Log d_n_t(subtypes& st, hyperparams& hpa, int i, int j)
-{
-  if (i == j)
-    return st[i].n * (Log(1) - st[i].n)/ st[i].t;
-  else
-    return -st[i].n * st[i].n / st[i].t;
-}
+// Log d_n_t(subtypes& st, hyperparams& hpa, int i, int j)
+// {
+//   if (i == j)
+//     return st[i].n * (Log(1) - st[i].n)/ st[i].t;
+//   else
+//     return -st[i].n * st[i].n / st[i].t;
+// }
 
 Log d_mu_n(subtypes& st, hyperparams& hpa, int j)
 {
-  Log normal;
+  Log normal = Log(0);
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     normal += st[i].n * Log(st[i].total_cn);
 
   Log variant;
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    variant += st[i].n * Log(st[i].variant_cn);
+    variant += st[i].n * st[i].x * Log(st[i].variant_cn);
 
-  Log a = Log(st[j].variant_cn) / normal;
+  Log a = st[j].x * Log(st[j].variant_cn) / normal;
   Log b = Log(st[j].total_cn) / normal * variant / normal;
 
   return a - b;
 }
 
-void responsibility_numerator(READ& re, states& sts, subtypes& st, params& pa, hyperparams& hpa)
-{
-  Log product (1);
+// void responsibility_numerator(READ& re, states& sts, subtypes& st, params& pa, hyperparams& hpa, int index, int s)
+// {
+//   Log product (1);
   
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    product *= pa.pa[i]->pi[st[i].total_cn] * pa.pa[i]->kappa[st[i].total_cn][st[i].variant_cn];
+//   state* new_state = new state;
+//   init_state(*new_state, hpa);
+//   copy(new_state->st, st);
 
-  state* new_state = new state;
-  init_state(*new_state, hpa);
-  copy(new_state->st, st);
+//   double mu = calc_mu(st, hpa);
+//   new_state->resp = product * Log(log_binomial_pdf(re.first, mu, re.second), 1);
 
-  double mu = calc_mu(st, hpa);
-  new_state->resp = product * Log(log_binomial_pdf(re.first, mu, re.second), 1);
-
-  product *= d_bin_mu(re, mu);
-  for (int y=0; y<=hpa.MAX_SUBTYPE; ++y)
-    {
-      Log sum;
-      for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-        {
-          Log sum2;
-          for (int j=0; j<=hpa.MAX_SUBTYPE; ++j) // modified to be j=0
-            sum2 += d_n_t(st, hpa, i, j) * d_t_u(pa, st, j, y);
-          sum += d_mu_n(st, hpa, i) * sum2;
-        }
+//   product *= d_bin_mu(re, mu);
+//   for (int y=0; y<=hpa.MAX_SUBTYPE; ++y)
+//     {
+//       Log sum;
+//       for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+//         {
+//           Log sum2;
+//           for (int j=0; j<=hpa.MAX_SUBTYPE; ++j) // modified to be j=0
+//             sum2 += d_n_t(st, hpa, i, j) * d_t_u(pa, st, j, y);
+//           sum += d_mu_n(st, hpa, i) * sum2;
+//         }
       
-      new_state->st[y].resp_du = product * sum;
-    }
+//       new_state->st[y].resp_du = product * sum;
+//     }
   
-  sts.push_back(new_state);
-}
+//   sts.push_back(new_state);
+// }
 
-void responsibility_numerator_all(READ& re, states& sts, subtypes& st, params& pa, hyperparams& hpa, int i)
-{
-  if (i < hpa.MAX_SUBTYPE)
-    {
-      for (st[i].total_cn = 1; st[i].total_cn <= hpa.TOTAL_CN; ++st[i].total_cn)
-        {
-          for (st[i].variant_cn = 1; st[i].variant_cn <= st[i].total_cn; ++st[i].variant_cn)
-            {
-              responsibility_numerator_all(re, sts, st, pa, hpa, i + 1);
-            }
-        }
-    }
+// void responsibility_numerator_all(READ& re, states& sts, subtypes& st, params& pa, hyperparams& hpa, int index)
+// {
+//   for (int s=1; s<FRACTIONS; ++s)
+//     {
+//       responsibility_numerator(re, sts, st, pa, hpa, index, s);
+//     }
+  
+//   // if (i < hpa.MAX_SUBTYPE)
+//   //   {
+//   //     for (st[i].total_cn = 1; st[i].total_cn <= hpa.TOTAL_CN; ++st[i].total_cn)
+//   //       {
+//   //         for (st[i].variant_cn = 1; st[i].variant_cn <= st[i].total_cn; ++st[i].variant_cn)
+//   //           {
+//   //             responsibility_numerator_all(re, sts, st, pa, hpa, i + 1);
+//   //           }
+//   //       }
+//   //   }
 
-  else
-    {
-      for (st[i].total_cn = 1; st[i].total_cn <= hpa.TOTAL_CN; ++st[i].total_cn)
-        {
-          for (st[i].variant_cn = 1; st[i].variant_cn <= st[i].total_cn; ++st[i].variant_cn)
-            {
-              responsibility_numerator(re, sts, st, pa, hpa);
-            }
-        }
-    }
-}
+//   // else
+//   //   {
+//   //     for (st[i].total_cn = 1; st[i].total_cn <= hpa.TOTAL_CN; ++st[i].total_cn)
+//   //       {
+//   //         for (st[i].variant_cn = 1; st[i].variant_cn <= st[i].total_cn; ++st[i].variant_cn)
+//   //           {
+//   //             responsibility_numerator(re, sts, st, pa, hpa);
+//   //           }
+//   //       }
+//   //   }
+// }
 
-Log responsibility_partition(states& sts, hyperparams& hpa)
-{
-  Log partition = Log(0);
+// Log responsibility_partition(states& sts, hyperparams& hpa)
+// {
+//   Log partition = Log(0);
 
-  for (states::iterator it = sts.begin(); it != sts.end(); ++it)
-    {
-      partition += (*it)->resp; // nearly same as take max in log world
-    }
+//   for (states::iterator it = sts.begin(); it != sts.end(); ++it)
+//     {
+//       partition += (*it)->resp; // nearly same as take max in log world
+//     }
 
-  for (states::iterator it = sts.begin(); it != sts.end(); ++it)
-    {
-      (*it)->resp /= partition;
-      for (int i=0; i<hpa.MAX_SUBTYPE; ++i)
-        {
-          (*it)->st[i].resp_du /= partition;
-        }
-    }
+//   for (states::iterator it = sts.begin(); it != sts.end(); ++it)
+//     {
+//       (*it)->resp /= partition;
+//       for (int i=0; i<hpa.MAX_SUBTYPE; ++i)
+//         {
+//           (*it)->st[i].resp_du /= partition;
+//         }
+//     }
 
-  return partition;
-}
+//   return partition;
+// }
 
 void delete_states(states& sts)
 {
@@ -271,7 +261,7 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
     {
       pa.pa[i]->u = Log(calc_sigmoid(gsl_vector_get(x, i)));
     }
-  
+
   int params_per_subtype = hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2;
 
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
@@ -314,6 +304,32 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
           for (int r=1; r<=l; ++r)
             pa.pa[i]->kappa[l][r] /= sum;
         }
+    }
+}
+
+void deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction, Log d_t, Log d_n)
+{
+  Log denom = Log(0);
+  Log d_t_num = Log(0);
+  Log d_n_num = Log(0);
+  
+  VLog vf (FRACTIONS + 1, Log(0));
+  VLog dtvf (FRACTIONS + 1, Log(0));
+  VLog dnvf (FRACTIONS + 1, Log(0));
+      
+  d_variant_fraction_all(d_t_variant_fraction, 0, q, st[q].n, st[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, dtvf);
+  d_variant_fraction_all(d_n_variant_fraction, 0, q, st[q].n, st[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, dnvf);
+
+  for (int s=1; s<=FRACTIONS; ++s)
+    {
+      st[q].x = ((double) s) / FRACTIONS;
+      double mu = calc_mu(st, hpa);
+      denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
+
+      d_t_num += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dtvf[s];
+
+      d_n_num += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dnvf[s]
+        + d_mu_n * d_bin_mu // implementing here
     }
 }
 

@@ -24,13 +24,14 @@ public:
   Log t;
   Log nu;
   Log n;
+  Log x;
   Log resp_du;
   subtype* parent;
   subtype* above;
   std::vector<subtype*> children;
 
   subtype () {}
-  subtype (int _index, int _total_cn, int _variant_cn, int _brother_index, Log _t, Log _n, Log _resp_du, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), brother_index(_brother_index), t(_t), n(_n), resp_du(_resp_du), parent(_parent), above(_above), children(_children) {}
+  subtype (int _index, int _total_cn, int _variant_cn, int _brother_index, Log _t, Log _nu, Log _n, Log _x, Log _resp_du, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), brother_index(_brother_index), t(_t), nu(_nu), n(_n), x(_x), resp_du(_resp_du), parent(_parent), above(_above), children(_children) {}
 };
 
 typedef std::vector<subtype> subtypes;
@@ -44,7 +45,9 @@ void copy(subtypes& x, const subtypes& y)
       x[i].variant_cn = y[i].variant_cn;
       x[i].brother_index = y[i].brother_index;
       x[i].t = y[i].t;
+      x[i].nu = y[i].nu;
       x[i].n = y[i].n;
+      x[i].x = x[i].x;
       x[i].resp_du = y[i].resp_du;
       
       if (y[i].parent == NULL)
@@ -251,6 +254,16 @@ void traversal(subtype* p)
       traversal(p->children[j]);
     }
 }
+
+// void mark_inherited(subtype* p)
+// {
+//   for (int j = 0; j < (int)p->children.size(); ++j)
+//     {
+//       p->children[j]->inherited = true;
+//       p->children[j]->x = Log(1);
+//       mark_inherited(p->children[j]);
+//     }
+// }
 
 void calc_t(params& pa, hyperparams& hpa, subtypes& sts)
 {
