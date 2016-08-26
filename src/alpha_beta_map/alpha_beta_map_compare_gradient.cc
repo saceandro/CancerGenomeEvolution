@@ -307,11 +307,11 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
     }
 }
 
-void deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction, Log d_t, Log d_n)
+Log deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction, VLog& d_t, VLog& d_n)
 {
   Log denom = Log(0);
-  Log d_t_num = Log(0);
-  Log d_n_num = Log(0);
+  // VLog d_t_num = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
+  // VLog d_n_num = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
   
   VLog vf (FRACTIONS + 1, Log(0));
   VLog dtvf (FRACTIONS + 1, Log(0));
@@ -326,14 +326,22 @@ void deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog
       double mu = calc_mu(st, hpa);
       denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
 
-      d_t_num += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dtvf[s];
-
-      d_n_num += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dnvf[s]
-        + d_mu_n * d_bin_mu // implementing here
+      for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          d_t[i] += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dtvf[s];
+          d_n[i] += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dnvf[s] + d_mu_n(st, hpa, i) * d_bin_mu(re, mu) * vf[s]; // implementing here
+        }
     }
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      d_t[i] /= denom;
+      d_n[i] /= denom;
+    }
+  return denom;
 }
 
-double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr)
+double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction)
 {
   int K;
   K = res.size();
@@ -344,32 +352,39 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr)
   
   for (int k=0; k<K; ++k)
     {
-      responsibility_numerator_all(*res[k], sts[k], tr, pa, hpa, 1);
-      lik *= responsibility_partition(sts[k], hpa);
+      VLog d_t_k = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
+      VLog d_n_k = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
+
+      lik *= deriv_k(*res[k], tr, hpa, q, gegen, gegen_int, d_x_variant_fraction, d_t_k, d_n_k);
     }
 
-  for (int k=0; k<K; ++k)
-    {
-      delete_states(sts[k]);
-    }
+  // for (int k=0; k<K; ++k)
+  //   {
+  //     delete_states(sts[k]);
+  //   }
 
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa.second - 1.0);
-    }
-  
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa_u.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa_u.second - 1.0);
+
+      for (int j=0; j<(int)tr[i].children.size(); ++j)
         {
-          lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
-          
-          for (int r=1; r<=l; ++r)
-            {
-              lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
-            }
+          lik *= pa.pa[i]->beta[j].take_pow(hpa.be_hpa_beta.first - 1.0) * (Log(1) - pa.pa[i]->beta[j]).take_pow(hpa.be_hpa_beta.second - 1.0);
         }
     }
+  
+  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       {
+  //         lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
+          
+  //         for (int r=1; r<=l; ++r)
+  //           {
+  //             lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
+  //           }
+  //       }
+  //   }
 
   return lik.take_log();
 }
@@ -423,7 +438,7 @@ double calc_llik_for_dkappa(double x_ilr, void* dk)
   return calc_llik(p->res, pa, p->hpa, p->tr);
 }
 
-double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, subtypes& tr)
+double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction)
 {
   int K;
   K = res.size();
@@ -434,74 +449,85 @@ double d_llik(READS& res, params& pa, params& grad_by_param, hyperparams& hpa, s
 
   for (int k=0; k<K; ++k)
     {
-      responsibility_numerator_all(*res[k], sts[k], tr, pa, hpa, 1);
-      lik *= responsibility_partition(sts[k], hpa);
+      VLog d_t_k = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
+      VLog d_n_k = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
 
-      VLog u_numerator_num_k (hpa.MAX_SUBTYPE + 1, Log(0));
-      VVLog pi_numerator_num_k (hpa.MAX_SUBTYPE + 1, VLog (hpa.TOTAL_CN + 1, Log(0)));
-      VVVLog kappa_numerator_num_k (hpa.MAX_SUBTYPE + 1, VVLog (hpa.TOTAL_CN + 1, VLog(hpa.TOTAL_CN + 1, Log(0))));
+      lik *= deriv_k(*res[k], tr, hpa, q, gegen, gegen_int, d_x_variant_fraction, d_t_k, d_n_k);
+
+      // responsibility_numerator_all(*res[k], sts[k], tr, pa, hpa, 1);
+      // lik *= responsibility_partition(sts[k], hpa);
+
+      // VLog u_numerator_num_k (hpa.MAX_SUBTYPE + 1, Log(0));
+      // VVLog pi_numerator_num_k (hpa.MAX_SUBTYPE + 1, VLog (hpa.TOTAL_CN + 1, Log(0)));
+      // VVVLog kappa_numerator_num_k (hpa.MAX_SUBTYPE + 1, VVLog (hpa.TOTAL_CN + 1, VLog(hpa.TOTAL_CN + 1, Log(0))));
           
-      for (states::iterator it = sts[k].begin(); it != sts[k].end(); ++it)
-        {
-          for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-            {
-              u_numerator_num_k[i] += (*it)->st[i].resp_du;
-            }
+      // for (states::iterator it = sts[k].begin(); it != sts[k].end(); ++it)
+      //   {
+      //     for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+      //       {
+      //         u_numerator_num_k[i] += (*it)->st[i].resp_du;
+      //       }
 
-          for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-            {
-              for (int l=1; l<=hpa.TOTAL_CN; ++l)
-                {
-                  if ((*it)->st[i].total_cn == l)
-                    {
-                      pi_numerator_num_k[i][l] += (*it)->resp;
+      //     for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+      //       {
+      //         for (int l=1; l<=hpa.TOTAL_CN; ++l)
+      //           {
+      //             if ((*it)->st[i].total_cn == l)
+      //               {
+      //                 pi_numerator_num_k[i][l] += (*it)->resp;
 
-                      for (int r=1; r<=l; ++r)
-                        {
-                          if ((*it)->st[i].variant_cn == r)
-                            {
-                              kappa_numerator_num_k[i][l][r] += (*it)->resp;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+      //                 for (int r=1; r<=l; ++r)
+      //                   {
+      //                     if ((*it)->st[i].variant_cn == r)
+      //                       {
+      //                         kappa_numerator_num_k[i][l][r] += (*it)->resp;
+      //                       }
+      //                   }
+      //               }
+      //           }
+      //       }
+      //   }
           
       for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
         {
-          grad_by_param.pa[i]->u += u_numerator_num_k[i];
+          grad.pa[i]->u += d_t_k[i];
+
+          for (int j=0; j<(int)tr[i].children.size(); ++j)
+            {
+              grad.pa[i]->beta[j] += d_n_k[i];
+            }
+          
         }
 
-      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-        {
-          for (int l=1; l<=hpa.TOTAL_CN; ++l)
-            {
-              grad_by_param.pa[i]->pi[l] += pi_numerator_num_k[i][l];
+      // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+      //   {
+      //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+      //       {
+      //         grad.pa[i]->pi[l] += pi_numerator_num_k[i][l];
                   
-              for (int r=1; r<=l; ++r)
-                {
-                  grad_by_param.pa[i]->kappa[l][r] += kappa_numerator_num_k[i][l][r];
-                }
-            }
-        }
-      delete_states(sts[k]);
+      //         for (int r=1; r<=l; ++r)
+      //           {
+      //             grad.pa[i]->kappa[l][r] += kappa_numerator_num_k[i][l][r];
+      //           }
+      //       }
+      //   }
+      // delete_states(sts[k]);
     }
       
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      grad_by_param.pa[i]->u += Log(hpa.be_hpa.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
+      grad.pa[i]->u += Log(hpa.be_hpa.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
     }
   
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       for (int l=1; l<=hpa.TOTAL_CN; ++l)
         {
-          grad_by_param.pa[i]->pi[l] += Log(hpa.alpha[l] - 1.0);
+          grad.pa[i]->pi[l] += Log(hpa.alpha[l] - 1.0);
 
           for (int r=1; r<=l; ++r)
             {
-              grad_by_param.pa[i]->kappa[l][r] += Log(hpa.beta[l][r] - 1.0);
+              grad.pa[i]->kappa[l][r] += Log(hpa.beta[l][r] - 1.0);
             }
         }
     }
