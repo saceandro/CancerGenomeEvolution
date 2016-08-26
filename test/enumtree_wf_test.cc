@@ -109,13 +109,13 @@ int main(int argc, char** argv)
             cerr << i << ":\t" << trs[t][i].t.eval() << endl;
           cerr << "---------------------------------------" << endl;
 
-          for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+          for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
             {
               // if (i==0)
               //   cerr << "1\t";
               // else
               //   cerr << "0\t";
-              for (int j=0; j<=hpa.MAX_SUBTYPE; ++j)
+              for (int j=1; j<=hpa.MAX_SUBTYPE; ++j)
                 {
                   // cerr << above_time(trs[t], i, j) << "\t";
                   cerr << d_t_u(pa, trs[t], i, j).eval() << "\t";

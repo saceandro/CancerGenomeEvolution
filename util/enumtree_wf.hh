@@ -235,7 +235,7 @@ void trees_cons(trees& trs, int max_subtype)
   // child_matrix(a, acc);
   // write_bool_matrix(a);
   
-  trs.assign(acc.size(), subtypes (max_subtype + 1, subtype (0, 0, 0, 0, Log(0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
+  trs.assign(acc.size(), subtypes (max_subtype + 1, subtype (0, 0, 0, 0, Log(0), Log(0), Log(0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
   trees_cons(trs, acc);
 }
 
@@ -267,11 +267,9 @@ void traversal(subtype* p)
 
 void calc_t(params& pa, hyperparams& hpa, subtypes& sts)
 {
-  sts[0].t = pa.pa[0]->u;
-  if (hpa.MAX_SUBTYPE >= 1)
-    sts[1].t = pa.pa[1]->u;
+  sts[0].t = Log(1);
   
-  for (int i=2; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       sts[i].t = sts[sts[i].above->index].t * pa.pa[i]->u;
     }
@@ -279,8 +277,8 @@ void calc_t(params& pa, hyperparams& hpa, subtypes& sts)
 
 bool above_time(subtypes& sts, int j, int y)
 {
-  if (y == 0)
-    return (j == y);
+  if (j == 0 || y == 0)
+    return false;
   
   for (subtype* p = &sts[j]; p->index != 0; p = p->above)
     {

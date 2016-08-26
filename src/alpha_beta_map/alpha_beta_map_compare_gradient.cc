@@ -1,3 +1,4 @@
+#include "setting.hh"
 #include <fstream>
 #include <algorithm>
 #include <numeric>
@@ -6,10 +7,20 @@
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_deriv.h>
 #include <gsl/gsl_sf.h>
-#include "../../util/enumtree_prior.hh"
+#include "../../util/enumtree_wf.hh"
+#include <xmmintrin.h>
+
 using namespace std;
 
 #define calc_sigmoid(x) ((tanh((x)/2.0) + 1.0) / 2.0)
+
+typedef void (*myfunc) (int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition);
+
+extern void d_variant_fraction_all(myfunc d_x_variant_fraction, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& dvf);
+extern void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition);
+extern void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& denominator);
+extern void set_gegen(VVLog &gegen);
+extern void set_gegen_integral(VLog &gegen_int, VLog &gegen_int_err);
 
 typedef vector<int> Vint;
 typedef vector<double> Vdouble;
@@ -32,43 +43,43 @@ public:
 
 typedef std::vector<state*> states;
 
-typedef struct _du
-{
-  READS &res;
-  gsl_vector *x;
-  int i;
-  hyperparams &hpa;
-  subtypes& tr;
+// typedef struct _du
+// {
+//   READS &res;
+//   gsl_vector *x;
+//   int i;
+//   hyperparams &hpa;
+//   subtypes& tr;
   
-  _du (READS& _res, gsl_vector* _x, int _i, hyperparams& _hpa, subtypes& _tr) : res(_res), x(_x), i(_i), hpa(_hpa), tr(_tr) {}
-}
-  du;
+//   _du (READS& _res, gsl_vector* _x, int _i, hyperparams& _hpa, subtypes& _tr) : res(_res), x(_x), i(_i), hpa(_hpa), tr(_tr) {}
+// }
+//   du;
 
-typedef struct _dpi
-{
-  READS &res;
-  gsl_vector *x;
-  int i;
-  int l;
-  hyperparams &hpa;
-  subtypes& tr;
+// typedef struct _dpi
+// {
+//   READS &res;
+//   gsl_vector *x;
+//   int i;
+//   int l;
+//   hyperparams &hpa;
+//   subtypes& tr;
   
-  _dpi (READS& _res, gsl_vector* _x, int _i, int _l, hyperparams& _hpa, subtypes& _tr) : res(_res), x(_x), i(_i), l(_l), hpa(_hpa), tr(_tr) {}
-}
-  dpi;
+//   _dpi (READS& _res, gsl_vector* _x, int _i, int _l, hyperparams& _hpa, subtypes& _tr) : res(_res), x(_x), i(_i), l(_l), hpa(_hpa), tr(_tr) {}
+// }
+//   dpi;
 
-typedef struct _dkappa
-{
-  READS &res;
-  gsl_vector *x;
-  int i;
-  int l;
-  int r;
-  hyperparams &hpa;
-  subtypes& tr;
-  _dkappa (READS& _res, gsl_vector* _x, int _i, int _l, int _r, hyperparams& _hpa, subtypes& _tr) : res(_res), x(_x), i(_i), l(_l), r(_r), hpa(_hpa), tr(_tr) {}
-}
-  dkappa;
+// typedef struct _dkappa
+// {
+//   READS &res;
+//   gsl_vector *x;
+//   int i;
+//   int l;
+//   int r;
+//   hyperparams &hpa;
+//   subtypes& tr;
+//   _dkappa (READS& _res, gsl_vector* _x, int _i, int _l, int _r, hyperparams& _hpa, subtypes& _tr) : res(_res), x(_x), i(_i), l(_l), r(_r), hpa(_hpa), tr(_tr) {}
+// }
+//   dkappa;
 
 double calc_dx_sigmoid(double x)
 {
@@ -84,32 +95,37 @@ double sum_vector(Vdouble& v, int s, int e)
   return sum;
 }
 
-void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
+void write_params(std::ofstream& f, params& pa, hyperparams& hpa, subtypes& tr)
 {
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     f << pa.pa[i]->u.eval() << "\t";
   f << endl << endl;
 
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      double sum = 0;
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
-        f << pa.pa[i]->pi[l].eval() << "\t";
-      f << endl;
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    for (int j=0; j<(int)tr[i].children.size(); ++j)
+      f << pa.pa[i]->beta[j].eval() << "\t";
+  f << endl;
 
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
-        {
-          for (int r=1; r<=l; ++r)
-            f << pa.pa[i]->kappa[l][r].eval() << "\t";
-          f << endl;
-        }
-      f << endl;
-    }
+  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     double sum = 0;
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       f << pa.pa[i]->pi[l].eval() << "\t";
+  //     f << endl;
+
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       {
+  //         for (int r=1; r<=l; ++r)
+  //           f << pa.pa[i]->kappa[l][r].eval() << "\t";
+  //         f << endl;
+  //       }
+  //     f << endl;
+  //   }
 }
 
 void init_state(state& st, hyperparams& hpa)
 {
-  st.st.assign(hpa.MAX_SUBTYPE + 1, subtype (0, 0, 0, Log(0), Log(0), Log(0), Log(0), NULL, NULL, vector<subtype*> (0, NULL)));
+  st.st.assign(hpa.MAX_SUBTYPE + 1, subtype (0, 0, 0, 0, Log(0), Log(0), Log(0), Log(0), Log(0), NULL, NULL, vector<subtype*> (0, NULL)));
   st.st[0].total_cn = 2;
   st.st[0].variant_cn = 0;
 }
@@ -255,56 +271,66 @@ void delete_states(states& sts)
     }
 }
 
-void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
+void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa, subtypes& tr)
 {
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       pa.pa[i]->u = Log(calc_sigmoid(gsl_vector_get(x, i)));
     }
 
-  int params_per_subtype = hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2;
-
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  int count = 0;
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      double m = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1));
-      
-      for (int l=2; l<=hpa.TOTAL_CN; ++l)
+      for (int j=0; j<(int)tr[i].children.size(); ++j)
         {
-          double s = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1);
-          if (m < s) m = s;
-        }
-  
-      Log sum;
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
-        {
-          pa.pa[i]->pi[l] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1) - m, 1);
-          sum += pa.pa[i]->pi[l];
-        }
-
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
-        pa.pa[i]->pi[l] /= sum;
-
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
-        {
-          m = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2);
-          for (int r=2; r<=l; ++r)
-            {
-              double s = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1);
-              if (m < s) m = s;
-            }
-      
-          sum = Log(0);
-      
-          for (int r=1; r<=l; ++r)
-            {
-              pa.pa[i]->kappa[l][r] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1) - m, 1);
-              sum += pa.pa[i]->kappa[l][r];
-            }
-
-          for (int r=1; r<=l; ++r)
-            pa.pa[i]->kappa[l][r] /= sum;
+          pa.pa[i]->beta[j] = Log(calc_sigmoid(gsl_vector_get(x, hpa.MAX_SUBTYPE + count)));
+          count++;
         }
     }
+  
+  // int params_per_subtype = hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2;
+
+  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     double m = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1));
+      
+  //     for (int l=2; l<=hpa.TOTAL_CN; ++l)
+  //       {
+  //         double s = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1);
+  //         if (m < s) m = s;
+  //       }
+  
+  //     Log sum;
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       {
+  //         pa.pa[i]->pi[l] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1) - m, 1);
+  //         sum += pa.pa[i]->pi[l];
+  //       }
+
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       pa.pa[i]->pi[l] /= sum;
+
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       {
+  //         m = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2);
+  //         for (int r=2; r<=l; ++r)
+  //           {
+  //             double s = gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1);
+  //             if (m < s) m = s;
+  //           }
+      
+  //         sum = Log(0);
+      
+  //         for (int r=1; r<=l; ++r)
+  //           {
+  //             pa.pa[i]->kappa[l][r] = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1) - m, 1);
+  //             sum += pa.pa[i]->kappa[l][r];
+  //           }
+
+  //         for (int r=1; r<=l; ++r)
+  //           pa.pa[i]->kappa[l][r] /= sum;
+  //       }
+  //   }
 }
 
 Log deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction, VLog& d_t, VLog& d_n)
@@ -363,10 +389,13 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, 
   //     delete_states(sts[k]);
   //   }
 
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       lik *= pa.pa[i]->u.take_pow(hpa.be_hpa_u.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa_u.second - 1.0);
+    }
 
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
       for (int j=0; j<(int)tr[i].children.size(); ++j)
         {
           lik *= pa.pa[i]->beta[j].take_pow(hpa.be_hpa_beta.first - 1.0) * (Log(1) - pa.pa[i]->beta[j]).take_pow(hpa.be_hpa_beta.second - 1.0);
@@ -389,54 +418,54 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, 
   return lik.take_log();
 }
 
-double calc_llik_for_du(double x_i, void* _du)
-{
-  du* p = (du*) _du;
+// double calc_llik_for_du(double x_i, void* _du)
+// {
+//   du* p = (du*) _du;
 
-  gsl_vector_set(p->x, p->i, x_i);
+//   gsl_vector_set(p->x, p->i, x_i);
 
-  params pa (p->hpa);
-  calc_params(p->x, pa, p->hpa);
+//   params pa (p->hpa);
+//   calc_params(p->x, pa, p->hpa);
   
-  calc_t(pa, p->hpa, p->tr);
-  calc_n(p->tr, p->hpa);
+//   calc_t(pa, p->hpa, p->tr);
+//   calc_n(p->tr, p->hpa);
 
-  return calc_llik(p->res, pa, p->hpa, p->tr);
-}
+//   return calc_llik(p->res, pa, p->hpa, p->tr);
+// }
 
-double calc_llik_for_dpi(double x_il, void* dp)
-{
-  dpi* p = (dpi*) dp;
+// double calc_llik_for_dpi(double x_il, void* dp)
+// {
+//   dpi* p = (dpi*) dp;
   
-  int params_per_subtype = p->hpa.TOTAL_CN * (p->hpa.TOTAL_CN + 3) / 2;
+//   int params_per_subtype = p->hpa.TOTAL_CN * (p->hpa.TOTAL_CN + 3) / 2;
   
-  gsl_vector_set(p->x, p->hpa.MAX_SUBTYPE + 1 + params_per_subtype * (p->i - 1) + p->l - 1, x_il);
+//   gsl_vector_set(p->x, p->hpa.MAX_SUBTYPE + 1 + params_per_subtype * (p->i - 1) + p->l - 1, x_il);
 
-  params pa (p->hpa);
-  calc_params(p->x, pa, p->hpa);
+//   params pa (p->hpa);
+//   calc_params(p->x, pa, p->hpa);
   
-  calc_t(pa, p->hpa, p->tr);
-  calc_n(p->tr, p->hpa);
+//   calc_t(pa, p->hpa, p->tr);
+//   calc_n(p->tr, p->hpa);
 
-  return calc_llik(p->res, pa, p->hpa, p->tr);
-}
+//   return calc_llik(p->res, pa, p->hpa, p->tr);
+// }
 
-double calc_llik_for_dkappa(double x_ilr, void* dk)
-{
-  dkappa* p = (dkappa*) dk;
+// double calc_llik_for_dkappa(double x_ilr, void* dk)
+// {
+//   dkappa* p = (dkappa*) dk;
 
-  int params_per_subtype = p->hpa.TOTAL_CN * (p->hpa.TOTAL_CN + 3) / 2;
+//   int params_per_subtype = p->hpa.TOTAL_CN * (p->hpa.TOTAL_CN + 3) / 2;
 
-  gsl_vector_set(p->x, p->hpa.MAX_SUBTYPE + 1 + params_per_subtype * (p->i - 1) + p->hpa.TOTAL_CN + (p->l - 1) * p->l / 2 + p->r - 1, x_ilr);
+//   gsl_vector_set(p->x, p->hpa.MAX_SUBTYPE + 1 + params_per_subtype * (p->i - 1) + p->hpa.TOTAL_CN + (p->l - 1) * p->l / 2 + p->r - 1, x_ilr);
 
-  params pa (p->hpa);
-  calc_params(p->x, pa, p->hpa);
+//   params pa (p->hpa);
+//   calc_params(p->x, pa, p->hpa);
   
-  calc_t(pa, p->hpa, p->tr);
-  calc_n(p->tr, p->hpa);
+//   calc_t(pa, p->hpa, p->tr);
+//   calc_n(p->tr, p->hpa);
 
-  return calc_llik(p->res, pa, p->hpa, p->tr);
-}
+//   return calc_llik(p->res, pa, p->hpa, p->tr);
+// }
 
 double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction)
 {
@@ -488,15 +517,27 @@ double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& 
       //       }
       //   }
           
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          Log acc = Log(0);
+          for (int j=1; j<=hpa.MAX_SUBTYPE; ++j)
+            {
+              acc += d_t_u(pa, tr, j, i) * d_t_k[j];
+            }
+          grad.pa[i]->u += acc;
+        }
+      
       for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
         {
-          grad.pa[i]->u += d_t_k[i];
-
           for (int j=0; j<(int)tr[i].children.size(); ++j)
             {
-              grad.pa[i]->beta[j] += d_n_k[i];
+              Log acc2 = Log(0);
+              for (int l=0; l<=hpa.MAX_SUBTYPE; ++l)
+                {
+                  acc2 += d_n_beta(pa, tr, l, i, j) * d_n_k[l];
+                }
+              grad.pa[i]->beta[j] += acc2;
             }
-          
         }
 
       // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
@@ -514,41 +555,54 @@ double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& 
       // delete_states(sts[k]);
     }
       
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      grad.pa[i]->u += Log(hpa.be_hpa_u.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa_u.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
+    }
+
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      grad.pa[i]->u += Log(hpa.be_hpa.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
+      for (int j=0; j<(int)tr[i].children.size(); ++j)
+        {
+          grad.pa[i]->beta[j] += Log(hpa.be_hpa_beta.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa_beta.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
+        }
     }
   
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
-        {
-          grad.pa[i]->pi[l] += Log(hpa.alpha[l] - 1.0);
+  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       {
+  //         grad.pa[i]->pi[l] += Log(hpa.alpha[l] - 1.0);
 
-          for (int r=1; r<=l; ++r)
-            {
-              grad.pa[i]->kappa[l][r] += Log(hpa.beta[l][r] - 1.0);
-            }
-        }
-    }
+  //         for (int r=1; r<=l; ++r)
+  //           {
+  //             grad.pa[i]->kappa[l][r] += Log(hpa.beta[l][r] - 1.0);
+  //           }
+  //       }
+  //   }
 
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa.second - 1.0);
-    }
+      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa_u.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa_u.second - 1.0);
 
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+      for (int j=0; j<(int)tr[i].children.size(); ++j)
         {
-          lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
-          
-          for (int r=1; r<=l; ++r)
-            {
-              lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
-            }
+          lik *= pa.pa[i]->beta[j].take_pow(hpa.be_hpa_beta.first - 1.0) * (Log(1) - pa.pa[i]->beta[j]).take_pow(hpa.be_hpa_beta.second - 1.0);
         }
     }
+
+  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     for (int l=1; l<=hpa.TOTAL_CN; ++l)
+  //       {
+  //         lik *= pa.pa[i]->pi[l].take_pow(hpa.alpha[l] - 1.0);
+          
+  //         for (int r=1; r<=l; ++r)
+  //           {
+  //             lik *= pa.pa[i]->kappa[l][r].take_pow(hpa.beta[l][r] - 1.0);
+  //           }
+  //       }
+  //   }
 
   return lik.take_log();
 }
@@ -558,101 +612,101 @@ double calc_rel_err(double x, double y)
   return fabs(x - y) / fabs(x);
 }
 
-double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, subtypes& tr)
-{
-  gsl_function F;
-  du _du (res, x, i, hpa, tr);
+// double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, subtypes& tr)
+// {
+//   gsl_function F;
+//   du _du (res, x, i, hpa, tr);
 
-  F.function = &calc_llik_for_du;
-  F.params = &_du;
+//   F.function = &calc_llik_for_du;
+//   F.params = &_du;
 
-  double result, abserr;
-  gsl_deriv_central(&F, gsl_vector_get(x, i), 1e-5, &result, &abserr);
+//   double result, abserr;
+//   gsl_deriv_central(&F, gsl_vector_get(x, i), 1e-5, &result, &abserr);
   
-  return result;
-}
+//   return result;
+// }
 
-double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, int j, hyperparams& hpa, subtypes& tr)
+double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, int j, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int)
 {
   int K = res.size();
 
   params pa (hpa);
-  calc_params(x, pa, hpa);
+  calc_params(x, pa, hpa, tr);
 
   calc_t(pa, hpa, tr);
-  calc_n(tr, hpa);
+  calc_n(pa, hpa, tr);
   
-  params grad_by_param (hpa);
+  params grad (hpa);
 
-  double llik = d_llik(res, pa, grad_by_param, hpa, tr);
+  double llik = d_llik(res, pa, grad, hpa, tr, q, gegen, gegen_int, d_t_variant_fraction);
 
-  return (Log(calc_dx_sigmoid(gsl_vector_get(x, j))) * grad_by_param.pa[j]->u).eval();
+  return (Log(calc_dx_sigmoid(gsl_vector_get(x, j))) * grad.pa[j]->u).eval();
 }
 
-double calc_dx_pi_llik_numeric(READS& res, gsl_vector* x, int i, int l, hyperparams& hpa, subtypes& tr)
-{
-  gsl_function F;
-  dpi dp (res, x, i, l, hpa, tr);
+// double calc_dx_pi_llik_numeric(READS& res, gsl_vector* x, int i, int l, hyperparams& hpa, subtypes& tr)
+// {
+//   gsl_function F;
+//   dpi dp (res, x, i, l, hpa, tr);
 
-  F.function = &calc_llik_for_dpi;
-  F.params = &dp;
+//   F.function = &calc_llik_for_dpi;
+//   F.params = &dp;
 
-  double result, abserr;
-  int params_per_subtype = hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2;
-  gsl_deriv_central(&F, gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1), 1e-5, &result, &abserr);
+//   double result, abserr;
+//   int params_per_subtype = hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2;
+//   gsl_deriv_central(&F, gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + l-1), 1e-5, &result, &abserr);
 
-  return result;
-}
+//   return result;
+// }
 
-double calc_dx_pi_llik_analytic(READS& res, gsl_vector* x, int i, int s, hyperparams& hpa, subtypes& tr)
-{
-  int K = res.size();
+// double calc_dx_pi_llik_analytic(READS& res, gsl_vector* x, int i, int s, hyperparams& hpa, subtypes& tr)
+// {
+//   int K = res.size();
 
-  params pa (hpa);
-  calc_params(x, pa, hpa);
+//   params pa (hpa);
+//   calc_params(x, pa, hpa);
 
-  calc_t(pa, hpa, tr);
-  calc_n(tr, hpa);
+//   calc_t(pa, hpa, tr);
+//   calc_n(tr, hpa);
   
-  params grad_by_param (hpa);
+//   params grad_by_param (hpa);
 
-  double llik = d_llik(res, pa, grad_by_param, hpa, tr);
-  double sum_alpha = sum_vector(hpa.alpha, 1, hpa.TOTAL_CN);
-  return (grad_by_param.pa[i]->pi[s] - pa.pa[i]->pi[s] * Log(sum_alpha - hpa.TOTAL_CN + K)).eval();
-}
+//   double llik = d_llik(res, pa, grad_by_param, hpa, tr);
+//   double sum_alpha = sum_vector(hpa.alpha, 1, hpa.TOTAL_CN);
+//   return (grad_by_param.pa[i]->pi[s] - pa.pa[i]->pi[s] * Log(sum_alpha - hpa.TOTAL_CN + K)).eval();
+// }
 
-double calc_dx_kappa_llik_numeric(READS& res, gsl_vector* x, int i, int l, int r, hyperparams& hpa, subtypes& tr)
-{
-  gsl_function F;
-  dkappa dk (res, x, i, l, r, hpa, tr);
+// double calc_dx_kappa_llik_numeric(READS& res, gsl_vector* x, int i, int l, int r, hyperparams& hpa, subtypes& tr)
+// {
+//   gsl_function F;
+//   dkappa dk (res, x, i, l, r, hpa, tr);
 
-  F.function = &calc_llik_for_dkappa;
-  F.params = &dk;
+//   F.function = &calc_llik_for_dkappa;
+//   F.params = &dk;
 
-  double result, abserr;
-  int params_per_subtype = hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2;
-  gsl_deriv_central(&F, gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1), 1e-5, &result, &abserr);
+//   double result, abserr;
+//   int params_per_subtype = hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2;
+//   gsl_deriv_central(&F, gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1), 1e-5, &result, &abserr);
   
-  return result;
-}
+//   return result;
+// }
 
-double calc_dx_kappa_llik_analytic(READS& res, gsl_vector* x, int i, int l, int t, hyperparams& hpa, subtypes& tr)
-{
-  int K = res.size();
+// double calc_dx_kappa_llik_analytic(READS& res, gsl_vector* x, int i, int l, int t, hyperparams& hpa, subtypes& tr)
+// {
+//   int K = res.size();
 
-  params pa (hpa);
-  calc_params(x, pa, hpa);
+//   params pa (hpa);
+//   calc_params(x, pa, hpa);
 
-  calc_t(pa, hpa, tr);
-  calc_n(tr, hpa);
+//   calc_t(pa, hpa, tr);
+//   calc_n(tr, hpa);
   
-  params grad_by_param (hpa);
+//   params grad_by_param (hpa);
 
-  double llik = d_llik(res, pa, grad_by_param, hpa, tr);
+//   double llik = d_llik(res, pa, grad_by_param, hpa, tr);
 
-  double sum_beta = sum_vector(hpa.beta[l], 1, l);
-  return (grad_by_param.pa[i]->kappa[l][t] - pa.pa[i]->kappa[l][t] * ( Log(sum_beta - l - hpa.alpha[l] + 1.0) + grad_by_param.pa[i]->pi[l] )).eval();
-}
+//   double sum_beta = sum_vector(hpa.beta[l], 1, l);
+//   return (grad_by_param.pa[i]->kappa[l][t] - pa.pa[i]->kappa[l][t] * ( Log(sum_beta - l - hpa.alpha[l] + 1.0) + grad_by_param.pa[i]->pi[l] )).eval();
+// }
 
 void gsl_set_random(gsl_vector* x, hyperparams& hpa, gsl_rng* rng)
 {
@@ -664,7 +718,7 @@ void gsl_set_random(gsl_vector* x, hyperparams& hpa, gsl_rng* rng)
   //   pa[i]->u = gsl_ran_beta(r, hpa.be_hpa.first, hpa.be_hpa.second);
   // pa[0]->u *= 0.1;
 
-  for (int i = 0; i<hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2; ++i)
+  for (int i = 0; i<2*hpa.MAX_SUBTYPE; ++i)
     {
       double a = gsl_rng_uniform(rng);
       gsl_vector_set(x, i, a);
@@ -676,11 +730,14 @@ int main(int argc, char** argv)
   cout << scientific;
   cerr << scientific;
   
-  feenableexcept(FE_INVALID | FE_OVERFLOW);
+  // feenableexcept(FE_INVALID | FE_OVERFLOW);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   
-  if (argc != 10)
+  gsl_set_error_handler_off ();
+  
+  if (argc != 6)
     {
-      cerr << "usage: ./lda_tree_ms_compare_gradient max_subtype total_cn n step (reads) (rho diff outfile) (u diff outfile) (pi diff outfile) (kappa diff outfile) tree_number" << endl;
+      cerr << "usage: ./alpha_beta_map_compare_gradient max_subtype total_cn n step (reads) (u diff outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -712,83 +769,85 @@ int main(int argc, char** argv)
 
   ifstream f (argv[5]);
   ofstream ff (argv[6]);
-  ofstream g (argv[7]);
-  ofstream h (argv[8]);
+  // ofstream g (argv[7]);
+  // ofstream h (argv[8]);
 
   int a = atoi(argv[9]);
 
   ff << scientific;
-  g << scientific;
-  h << scientific;
+  // g << scientific;
+  // h << scientific;
 
-  gsl_vector* x = gsl_vector_alloc(hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2);
+  VVLog gegen;
+  gegen.assign(FRACTIONS+1, VLog(GEGEN_MAX+1, Log(0)));
 
-  for (int i=0; i<n; ++i)
+  set_gegen(gegen);
+
+  VLog gegen_int (FRACTIONS+1, Log(0));
+  VLog gegen_int_err (FRACTIONS+1, Log(0));
+
+  set_gegen_integral(gegen_int, gegen_int_err);
+
+  gsl_vector* x = gsl_vector_alloc(2*hpa.MAX_SUBTYPE);
+
+  for (int k=0; k<n; ++k)
     {
       READ *re = new READ;
-      f >> re->first >> re->second;
+      f >> re->first >> re->second >> q;
       res.push_back(re);
+
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          f >> trs[a][i].total_cn >> trs[a][i].variant_cn;
+        }
     }
 
   for (int i=-step; i<=step; ++i)
     {
       gsl_set_random(x, hpa, r);
       gsl_vector_set(x, 1, 1.0 * ((double)i) / step);
-      double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs[a]);
-      double analytic = calc_dx_u_llik_analytic(res, x, 1, hpa, trs[a]);
-      
-      if (fabs(num) > 0)
-        ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-      else
-        ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
-    }
+      // double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs[a]);
+      double analytic = calc_dx_u_llik_analytic(res, x, 1, hpa, trs[a], q, gegen, gegen_int);
 
-  for (int i=-step; i<=step; ++i)
-    {
-      gsl_set_random(x, hpa, r);
-      gsl_vector_set(x, hpa.MAX_SUBTYPE + 1, 1.0 * ((double)i) / step);
-      double num = calc_dx_pi_llik_numeric(res, x, 1, 1, hpa, trs[a]);
-      double analytic = calc_dx_pi_llik_analytic(res, x, 1, 1, hpa, trs[a]);
-      
-      if (fabs(num) > 0)
-        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-      else
-        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
-    }
-
-  for (int i=-step; i<=step; ++i)
-    {
-      gsl_set_random(x, hpa, r);
-      gsl_vector_set(x, hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2 - 1, 1.0 * ((double)i) / step);
-      double num = calc_dx_kappa_llik_numeric(res, x, hpa.MAX_SUBTYPE, hpa.TOTAL_CN, hpa.TOTAL_CN, hpa, trs[a]);
-      double analytic = calc_dx_kappa_llik_analytic(res, x, hpa.MAX_SUBTYPE, hpa.TOTAL_CN, hpa.TOTAL_CN, hpa, trs[a]);
-      
-      if (fabs(num) > 0)
-        h << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2 - 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-      else
-        h << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2 - 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
+      ff << gsl_vector_get(x, 1) << "\t" << analytic << endl;
+      // if (fabs(num) > 0)
+      //   ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+      // else
+      //   ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
     }
 
   // for (int i=-step; i<=step; ++i)
   //   {
   //     gsl_set_random(x, hpa, r);
-  //     gsl_vector_set(x, hpa.MAX_SUBTYPE + 1 + hpa.TOTAL_CN + 1, 1.0 * ((double)i) / step);
-  //     double num = calc_dx_kappa_llik_numeric(res, x, 1, 2, 1, hpa, trs[a]);
-  //     double analytic = calc_dx_kappa_llik_analytic(res, x, 1, 2, 1, hpa, trs[a]);
+  //     gsl_vector_set(x, hpa.MAX_SUBTYPE + 1, 1.0 * ((double)i) / step);
+  //     double num = calc_dx_pi_llik_numeric(res, x, 1, 1, hpa, trs[a]);
+  //     double analytic = calc_dx_pi_llik_analytic(res, x, 1, 1, hpa, trs[a]);
       
   //     if (fabs(num) > 0)
-  //       h << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + hpa.TOTAL_CN + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+  //       g << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
   //     else
-  //       h << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + hpa.TOTAL_CN + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
+  //       g << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
   //   }
 
-  // hpa.MAX_SUBTYPE + 1 + params_per_subtype * (i-1) + hpa.TOTAL_CN + (l-1) * l / 2 + r-1
+  // for (int i=-step; i<=step; ++i)
+  //   {
+  //     gsl_set_random(x, hpa, r);
+  //     gsl_vector_set(x, hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2 - 1, 1.0 * ((double)i) / step);
+  //     double num = calc_dx_kappa_llik_numeric(res, x, hpa.MAX_SUBTYPE, hpa.TOTAL_CN, hpa.TOTAL_CN, hpa, trs[a]);
+  //     double analytic = calc_dx_kappa_llik_analytic(res, x, hpa.MAX_SUBTYPE, hpa.TOTAL_CN, hpa.TOTAL_CN, hpa, trs[a]);
+      
+  //     if (fabs(num) > 0)
+  //       h << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2 - 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+  //     else
+  //       h << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + hpa.MAX_SUBTYPE * hpa.TOTAL_CN * (hpa.TOTAL_CN + 3) / 2 - 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
+  //   }
+
   for (int i=0; i<n; ++i)
     delete res[i];
 
   f.close();
-  g.close();
-  h.close();
+  // g.close();
+  // h.close();
   ff.close();
 
   return 0;
