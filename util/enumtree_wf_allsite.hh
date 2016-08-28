@@ -23,6 +23,7 @@ public:
   Log nu;
   Log n;
   Log x;
+  Log xi;
   VLog total_cn;
   VLog variant_cn;
   subtype* parent;

@@ -75,6 +75,7 @@ public:
   std::pair<double,double> be_hpa_beta;
   Vdouble alpha;
   VVdouble beta;
+  Vdouble gamma;
   int MAX_SUBTYPE;
   int TOTAL_CN;
   int MAX_TREE;
@@ -87,11 +88,12 @@ class param
 {
 public:
   Log u;
+  Log xi;
   VLog beta;
   VLog pi;
   VVLog kappa;
 
-  param (Log _u, VLog _beta, VLog _pi, VVLog _kappa) : u(_u), beta(_beta), pi(_pi), kappa(_kappa) {}
+  param (Log _u, Log _xi, VLog _beta, VLog _pi, VVLog _kappa) : u(_u), xi(_xi), beta(_beta), pi(_pi), kappa(_kappa) {}
 };
 
 class params
@@ -106,7 +108,7 @@ public:
 params::params(hyperparams& hpa)
 {
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    pa.push_back(new param (Log(0), VLog (hpa.MAX_SUBTYPE - 1, Log(0)), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0)))));
+    pa.push_back(new param (Log(0), Log(0), VLog (hpa.MAX_SUBTYPE - 1, Log(0)), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0)))));
 }
 
 params::~params()

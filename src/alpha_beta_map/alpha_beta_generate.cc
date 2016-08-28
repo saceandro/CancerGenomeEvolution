@@ -1,3 +1,4 @@
+#include "setting.hh"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
@@ -6,8 +7,12 @@
 #include <fenv.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
-#include "../../util/enumtree_prior.hh"
+#include "../../util/enumtree_wf.hh"
 using namespace std;
+
+extern void variant_fraction_partition(int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& vf_numerator, VLog& vf_denominator, Log& partition);
+extern void set_gegen(VVLog &gegen);
+extern void set_gegen_integral(VLog &gegen_int, VLog &gegen_int_err);
 
 void write_params(std::ofstream& f, params& pa, hyperparams& hpa, subtypes& tr)
 {
@@ -19,6 +24,26 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa, subtypes& tr)
     {
       for (int j=0; j<tr[i].children.size(); ++j)
         f << pa.pa[i]->beta[j].eval() << "\t";
+      f << endl;
+    }
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    f << pa.pa[i]->xi.eval() << "\t";
+  f << endl;
+    
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      double sum = 0;
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        f << pa.pa[i]->pi[l].eval() << "\t";
+      f << endl;
+
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        {
+          for (int r=1; r<=l; ++r)
+            f << pa.pa[i]->kappa[l][r].eval() << "\t";
+          f << endl;
+        }
       f << endl;
     }
 }
@@ -66,7 +91,7 @@ void generate_params(params& pa, hyperparams& hpa, subtypes& tr, gsl_rng* rng)
     gsl_rng_uniform(rng);
 
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    pa.pa[i].u = Log(gsl_rng_uniform(rng));
+    pa.pa[i]->u = Log(gsl_rng_uniform(rng));
 
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
@@ -76,12 +101,44 @@ void generate_params(params& pa, hyperparams& hpa, subtypes& tr, gsl_rng* rng)
 
   calc_t(pa, hpa, tr);
   calc_n(pa, hpa, tr);
+
+  Vdouble w (hpa.TOTAL_CN, 0);
+  
+  gsl_ran_dirichlet(rng, hpa.MAX_SUBTYPE, &hpa.gamma[1], &w[0]);
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      pa.pa[i]->xi = Log(w[i-1]);
+    }
+  
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      gsl_ran_dirichlet(rng, hpa.TOTAL_CN, &hpa.alpha[1], &w[0]);
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        pa.pa[i]->pi[l] = Log(w[l-1]);
+
+      for (int l=1; l<=hpa.TOTAL_CN; ++l)
+        {
+          gsl_ran_dirichlet(rng, l, &hpa.beta[l][1], &w[0]);
+          for (int r=1; r<=l; ++r)
+            pa.pa[i]->kappa[l][r] = Log(w[r-1]);
+        }
+    }
 }
 
-void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperparams& hpa, subtypes& tr, int seed, gsl_rng* rng)
+void generate_binom(ofstream& f, int M, int n, params& pa, hyperparams& hpa, subtypes& tr, int seed, gsl_rng* rng, VVLog& gegen, VLog& gegen_int)
 {
   params pa_cum (hpa);
 
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      pa_cum.pa[i]->xi = pa.pa[i]->xi;
+    }
+
+  for (int i=2; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      pa_cum.pa[i]->xi = pa_cum.pa[i-1]->xi + pa_cum.pa[i]->xi;
+    }
+  
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       for (int l=1; l<=hpa.TOTAL_CN; ++l)
@@ -108,16 +165,19 @@ void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperpar
         }
     }
 
-  for (int a=0; a<hpa.MAX_TREE; ++a)
-    {
-      calc_n(tr[a], hpa); // deleted calc_t() because t is the variables generated. Indeed, n = t for all i because I set labmda to be 1.
-    }
-  write_t_n(g, tr[2], hpa);
+  int q;
   
   for (int k=0; k<n; ++k)
     {
-      int topology = 2;
       Log w = Log(gsl_rng_uniform(rng));
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          if (w < pa_cum.pa[i]->xi)
+            {
+              q = i;
+              break;
+            }
+        }
       
       for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
         {
@@ -126,38 +186,73 @@ void generate_binom(ofstream& f, ofstream& g, int M, int n, params& pa, hyperpar
             {
               if (x < pa_cum.pa[i]->pi[l])
                 {
-                  tr[topology][i].total_cn = l;
+                  tr[i].total_cn = l;
                   break;
                 }
             }
           
           Log y = Log(gsl_rng_uniform(rng));
-          for (int r=1; r<=tr[topology][i].total_cn; ++r)
+          for (int r=1; r<=tr[i].total_cn; ++r)
             {
-              if (y < pa_cum.pa[i]->kappa[tr[topology][i].total_cn][r])
+              if (y < pa_cum.pa[i]->kappa[tr[i].total_cn][r])
                 {
-                  tr[topology][i].variant_cn = r;
+                  tr[i].variant_cn = r;
                   break;
                 }
             }
         }
 
-      double mu = calc_mu(tr[topology], hpa);
+      VLog vf(FRACTIONS + 1, Log(0));
+      VLog vf_numerator(FRACTIONS + 1, Log(0));
+      VLog vf_denominator(FRACTIONS + 1, Log(0));
+      Log partition = Log(0);
+      
+      variant_fraction_partition(0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, vf_numerator, vf_denominator, partition);
+
+      VLog vf_cum(FRACTIONS + 1, Log(0));
+      for (int s=1; s<=FRACTIONS; ++s)
+        {
+          vf_cum[s] = vf[s];
+        }
+      
+      for (int s=2; s<=FRACTIONS; ++s)
+        {
+          vf_cum[s] = vf_cum[s-1] + vf_cum[s];
+        }
+
+      Log z = Log(gsl_rng_uniform(rng));
+      for (int s=1; s<=FRACTIONS; ++s)
+        {
+          if (z < vf_cum[s])
+            {
+              tr[q].x = ((double) s) / FRACTIONS;
+              break;
+            }
+        }
+      
+      double mu = calc_mu(tr, hpa);
       // cerr << "mu: " << mu << endl;
       
       unsigned int m = gsl_ran_binomial(rng, mu, M);
-      f << m << "\t" << M << endl;
+      f << m << "\t" << M << "\t" << q << "\t";
+      
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          f << tr[i].total_cn << "\t" << tr[i].variant_cn << "\t";
+        }
+      f << endl;
     }
 }
 
 int main(int argc, char** argv)
 {
   feenableexcept(FE_INVALID | FE_OVERFLOW);
+  // _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   cerr << scientific;
   
-  if (argc != 9)
+  if (argc != 10)
     {
-      cerr << "usage: ./lda_tree_generate_ms max_subtype total_cn M n seed (u_pi_kappa outfile) (t_n outfile) (reads outfile)" << endl;
+      cerr << "usage: ./alpha_beta_generate max_subtype total_cn M n seed (u_pi_kappa outfile) (t_n outfile) (reads outfile) topology" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -169,12 +264,6 @@ int main(int argc, char** argv)
   n = atoi(argv[4]);
   seed = atoi(argv[5]);
 
-  if (MAX_SUBTYPE != 4)
-    {
-      cerr << "This program assumes max_subtype to be 4." << endl;
-      exit(EXIT_FAILURE);
-    }
-  
   trees tr;
   trees_cons(tr, MAX_SUBTYPE);
   MAX_TREE = tr.size();
@@ -182,6 +271,8 @@ int main(int argc, char** argv)
   ofstream f (argv[6]);
   ofstream g (argv[7]);
   ofstream h (argv[8]);
+
+  int a = atoi(argv[9]);
   
   f << scientific;
   g << scientific;
@@ -196,16 +287,27 @@ int main(int argc, char** argv)
   T = gsl_rng_mt19937;
   r = gsl_rng_alloc(T);
   gsl_rng_set(r, seed);
+
+  VVLog gegen;
+  gegen.assign(FRACTIONS+1, VLog(GEGEN_MAX+1, Log(0)));
+
+  set_gegen(gegen);
+
+  VLog gegen_int (FRACTIONS+1, Log(0));
+  VLog gegen_int_err (FRACTIONS+1, Log(0));
+
+  set_gegen_integral(gegen_int, gegen_int_err);
+
   hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
    
   params pa (hpa);
   
-  generate_params(pa, hpa, tr, r);
+  generate_params(pa, hpa, tr[a], r);
   
-  calc_u_from_t(pa, hpa, tr[2]);
-  write_params(f, pa, hpa);
+  write_params(f, pa, hpa, tr[a]);
+  write_t_n(g, tr[a], hpa);
   
-  generate_binom(h, g, M, n, pa, hpa, tr, seed, r);
+  generate_binom(h, M, n, pa, hpa, tr[a], seed, r, gegen, gegen_int);
 
   gsl_rng_free (r);
   
