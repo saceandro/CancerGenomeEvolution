@@ -126,8 +126,9 @@ hyperparams::hyperparams(int _MAX_SUBTYPE, int _TOTAL_CN, int _MAX_TREE) : MAX_S
   be_hpa_beta.first = 1.0;
   be_hpa_beta.second = 1.0;
 
-  alpha.assign(_TOTAL_CN + 1, 1.0);
-  beta.assign(_TOTAL_CN + 1, Vdouble (_TOTAL_CN + 1, 1.0));
+  alpha.assign(_TOTAL_CN + 1, 0.1);
+  beta.assign(_TOTAL_CN + 1, Vdouble (_TOTAL_CN + 1, 0.1));
+  gamma.assign(_MAX_SUBTYPE, 0.1);
 }
 
 void write_Vint(std::ofstream& f, Vint& v)

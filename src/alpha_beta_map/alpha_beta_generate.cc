@@ -7,6 +7,7 @@
 #include <fenv.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
+#include <xmmintrin.h>
 #include "../../util/enumtree_wf.hh"
 using namespace std;
 
@@ -247,8 +248,9 @@ void generate_binom(ofstream& f, int M, int n, params& pa, hyperparams& hpa, sub
 
 int main(int argc, char** argv)
 {
-  feenableexcept(FE_INVALID | FE_OVERFLOW);
-  // _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
+  // feenableexcept(FE_INVALID | FE_OVERFLOW);
+  _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
+  gsl_set_error_handler_off ();
   cerr << scientific;
   
   if (argc != 10)
