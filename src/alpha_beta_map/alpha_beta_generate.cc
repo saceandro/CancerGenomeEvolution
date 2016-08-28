@@ -102,12 +102,13 @@ void generate_params(params& pa, hyperparams& hpa, subtypes& tr, gsl_rng* rng)
   calc_t(pa, hpa, tr);
   calc_n(pa, hpa, tr);
 
+  Vdouble v (hpa.MAX_SUBTYPE, 0);
   Vdouble w (hpa.TOTAL_CN, 0);
   
-  gsl_ran_dirichlet(rng, hpa.MAX_SUBTYPE, &hpa.gamma[1], &w[0]);
+  gsl_ran_dirichlet(rng, hpa.MAX_SUBTYPE, &hpa.gamma[1], &v[0]);
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa.pa[i]->xi = Log(w[i-1]);
+      pa.pa[i]->xi = Log(v[i-1]);
     }
   
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)

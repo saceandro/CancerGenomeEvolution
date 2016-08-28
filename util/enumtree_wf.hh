@@ -2,7 +2,7 @@
 #define ENUMTREE_H_
 
 #include <fstream>
-#include "loglib.hh"
+#include "loglib_header.hh"
 #include <iostream>
 
 typedef std::vector<int> Vint;

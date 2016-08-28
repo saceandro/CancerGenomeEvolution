@@ -1,12 +1,13 @@
 #include "setting.hh"
+#include <iostream>
 #include <gsl/gsl_sf_gegenbauer.h>
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_sf_expint.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_deriv.h>
-#include <xmmintrin.h>
+// #include <xmmintrin.h>
 #include <fstream>
-#include "../../util/loglib.hh"
+#include "../../util/loglib_header.hh"
 
 using namespace std;
 
