@@ -128,7 +128,7 @@ void variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta
           Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
           
           double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-          if (abs(e1_diff) <= DBL_MIN)
+          if (fabs(e1_diff) <= DBL_MIN)
             continue;
 
           part_acc += Log((2.0*i + 1.0) / i / (i+1.0)) *
@@ -150,7 +150,7 @@ void variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
               
               double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-              if (abs(e1_diff) <= DBL_MIN)
+              if (fabs(e1_diff) <= DBL_MIN)
                 continue;
 
               acc += 
@@ -168,7 +168,7 @@ void variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
               double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-              if (abs(e1_diff) <= DBL_MIN)
+              if (fabs(e1_diff) <= DBL_MIN)
                 continue;
               
               Log a = Log((2.0*i + 1.0) / i / (i+1.0)) *
@@ -477,7 +477,7 @@ void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
           Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
           double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-          if (abs(e1_diff) <= DBL_MIN)
+          if (fabs(e1_diff) <= DBL_MIN)
             continue;
 
           part_acc += Log(2.0*i + 1.0) *
@@ -499,7 +499,7 @@ void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
               double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-              if (abs(e1_diff) <= DBL_MIN)
+              if (fabs(e1_diff) <= DBL_MIN)
                 continue;
 
               acc += 
@@ -517,7 +517,7 @@ void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
               double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-              if (abs(e1_diff) <= DBL_MIN)
+              if (fabs(e1_diff) <= DBL_MIN)
                 continue;
 
               Log a = Log(2.0*i + 1.0) *
@@ -735,7 +735,7 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
           Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
           double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-          if (abs(e1_diff) <= DBL_MIN)
+          if (fabs(e1_diff) <= DBL_MIN)
             continue;
 
           part_acc += Log(2.0*i + 1.0) *
@@ -758,7 +758,7 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
               double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-              if (abs(e1_diff) <= DBL_MIN)
+              if (fabs(e1_diff) <= DBL_MIN)
                 continue;
               
               acc += 
@@ -778,7 +778,7 @@ void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log 
               Log g = calc_gamma_i(i, n_q, t_q, beta_tilda_q);
 
               double e1_diff = gsl_sf_expint_E1(g.eval()) - gsl_sf_expint_E1((g*Nnq).eval());
-              if (abs(e1_diff) <= DBL_MIN)
+              if (fabs(e1_diff) <= DBL_MIN)
                 continue;
 
               Log a = Log(2.0*i + 1.0) *

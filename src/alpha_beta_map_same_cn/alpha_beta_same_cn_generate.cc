@@ -101,6 +101,16 @@ void generate_binom(ofstream& f, int M, int n, params& pa, hyperparams& hpa, sub
 {
   params pa_cum (hpa);
   int q;
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      pa_cum.pa[i]->xi = pa.pa[i]->xi;
+    }
+
+  for (int i=2; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      pa_cum.pa[i]->xi = pa_cum.pa[i-1]->xi + pa_cum.pa[i]->xi;
+    }
   
   for (int k=0; k<n; ++k)
     {
@@ -143,7 +153,7 @@ void generate_binom(ofstream& f, int M, int n, params& pa, hyperparams& hpa, sub
         {
           if (z < vf_cum[s])
             {
-              tr[q].x = ((double) s) / FRACTIONS;
+              tr[q].x = Log(((double) s) / FRACTIONS);
               break;
             }
         }

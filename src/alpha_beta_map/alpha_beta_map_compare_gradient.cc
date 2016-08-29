@@ -564,7 +564,7 @@ double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& 
     {
       for (int j=0; j<(int)tr[i].children.size(); ++j)
         {
-          grad.pa[i]->beta[j] += Log(hpa.be_hpa_beta.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa_beta.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
+          grad.pa[i]->beta[j] += Log(hpa.be_hpa_beta.first - 1.0) / pa.pa[i]->beta[j] - Log(hpa.be_hpa_beta.second - 1.0) / (Log(1.0) - pa.pa[i]->beta[j]);
         }
     }
   

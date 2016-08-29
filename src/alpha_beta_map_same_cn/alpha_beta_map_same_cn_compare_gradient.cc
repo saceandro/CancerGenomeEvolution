@@ -43,17 +43,21 @@ public:
 
 typedef std::vector<state*> states;
 
-// typedef struct _du
-// {
-//   READS &res;
-//   gsl_vector *x;
-//   int i;
-//   hyperparams &hpa;
-//   subtypes& tr;
+typedef struct _du
+{
+  READS &res;
+  gsl_vector *x;
+  int i;
+  hyperparams &hpa;
+  subtypes& tr;
+  int q;
+  VVLog gegen;
+  VLog gegen_int;
+  myfunc* d_x_variant_fraction;
   
-//   _du (READS& _res, gsl_vector* _x, int _i, hyperparams& _hpa, subtypes& _tr) : res(_res), x(_x), i(_i), hpa(_hpa), tr(_tr) {}
-// }
-//   du;
+  _du (READS& _res, gsl_vector* _x, int _i, hyperparams& _hpa, subtypes& _tr, int _q, VVLog& _gegen, VLog& _gegen_int, myfunc* _d_x_variant_fraction) : res(_res), x(_x), i(_i), hpa(_hpa), tr(_tr), q(_q), gegen(_gegen), gegen_int(_gegen_int), d_x_variant_fraction(_d_x_variant_fraction) {}
+}
+  du;
 
 // typedef struct _dpi
 // {
@@ -364,6 +368,7 @@ Log deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog&
       d_t[i] /= denom;
       d_n[i] /= denom;
     }
+  
   return denom;
 }
 
@@ -389,18 +394,18 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, 
   //     delete_states(sts[k]);
   //   }
 
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa_u.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa_u.second - 1.0);
-    }
+  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     lik *= pa.pa[i]->u.take_pow(hpa.be_hpa_u.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa_u.second - 1.0);
+  //   }
 
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      for (int j=0; j<(int)tr[i].children.size(); ++j)
-        {
-          lik *= pa.pa[i]->beta[j].take_pow(hpa.be_hpa_beta.first - 1.0) * (Log(1) - pa.pa[i]->beta[j]).take_pow(hpa.be_hpa_beta.second - 1.0);
-        }
-    }
+  // for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     for (int j=0; j<(int)tr[i].children.size(); ++j)
+  //       {
+  //         lik *= pa.pa[i]->beta[j].take_pow(hpa.be_hpa_beta.first - 1.0) * (Log(1) - pa.pa[i]->beta[j]).take_pow(hpa.be_hpa_beta.second - 1.0);
+  //       }
+  //   }
   
   // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
   //   {
@@ -418,20 +423,20 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, 
   return lik.take_log();
 }
 
-// double calc_llik_for_du(double x_i, void* _du)
-// {
-//   du* p = (du*) _du;
+double calc_llik_for_du(double x_i, void* _du)
+{
+  du* p = (du*) _du;
 
-//   gsl_vector_set(p->x, p->i, x_i);
+  gsl_vector_set(p->x, p->i, x_i);
 
-//   params pa (p->hpa);
-//   calc_params(p->x, pa, p->hpa);
+  params pa (p->hpa);
+  calc_params(p->x, pa, p->hpa, p->tr);
   
-//   calc_t(pa, p->hpa, p->tr);
-//   calc_n(p->tr, p->hpa);
+  calc_t(pa, p->hpa, p->tr);
+  calc_n(pa, p->hpa, p->tr);
 
-//   return calc_llik(p->res, pa, p->hpa, p->tr);
-// }
+  return calc_llik(p->res, pa, p->hpa, p->tr, p->q, p->gegen, p->gegen_int, *(p->d_x_variant_fraction));
+}
 
 // double calc_llik_for_dpi(double x_il, void* dp)
 // {
@@ -554,19 +559,20 @@ double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& 
       //   }
       // delete_states(sts[k]);
     }
-      
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      grad.pa[i]->u += Log(hpa.be_hpa_u.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa_u.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
-    }
 
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      for (int j=0; j<(int)tr[i].children.size(); ++j)
-        {
-          grad.pa[i]->beta[j] += Log(hpa.be_hpa_beta.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa_beta.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
-        }
-    }
+  // use MAP
+  // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     grad.pa[i]->u += Log(hpa.be_hpa_u.first - 1.0) / pa.pa[i]->u - Log(hpa.be_hpa_u.second - 1.0) / (Log(1.0) - pa.pa[i]->u);
+  //   }
+
+  // for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     for (int j=0; j<(int)tr[i].children.size(); ++j)
+  //       {
+  //         grad.pa[i]->beta[j] += Log(hpa.be_hpa_beta.first - 1.0) / pa.pa[i]->beta[j] - Log(hpa.be_hpa_beta.second - 1.0) / (Log(1.0) - pa.pa[i]->beta[j]);
+  //       }
+  //   }
   
   // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
   //   {
@@ -581,15 +587,16 @@ double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& 
   //       }
   //   }
 
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      lik *= pa.pa[i]->u.take_pow(hpa.be_hpa_u.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa_u.second - 1.0);
+  // use MAP
+  // for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     lik *= pa.pa[i]->u.take_pow(hpa.be_hpa_u.first - 1.0) * (Log(1) - pa.pa[i]->u).take_pow(hpa.be_hpa_u.second - 1.0);
 
-      for (int j=0; j<(int)tr[i].children.size(); ++j)
-        {
-          lik *= pa.pa[i]->beta[j].take_pow(hpa.be_hpa_beta.first - 1.0) * (Log(1) - pa.pa[i]->beta[j]).take_pow(hpa.be_hpa_beta.second - 1.0);
-        }
-    }
+  //     for (int j=0; j<(int)tr[i].children.size(); ++j)
+  //       {
+  //         lik *= pa.pa[i]->beta[j].take_pow(hpa.be_hpa_beta.first - 1.0) * (Log(1) - pa.pa[i]->beta[j]).take_pow(hpa.be_hpa_beta.second - 1.0);
+  //       }
+  //   }
 
   // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
   //   {
@@ -612,19 +619,19 @@ double calc_rel_err(double x, double y)
   return fabs(x - y) / fabs(x);
 }
 
-// double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, subtypes& tr)
-// {
-//   gsl_function F;
-//   du _du (res, x, i, hpa, tr);
+double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, subtypes& tr, int q, VLog& gegen, VVLog& gegen_int, myfunc d_x_variant_fraction)
+{
+  gsl_function F;
+  du _du (res, x, i, hpa, tr, q, gegen, gegen_int, &d_x_variant_fraction);
 
-//   F.function = &calc_llik_for_du;
-//   F.params = &_du;
+  F.function = &calc_llik_for_du;
+  F.params = &_du;
 
-//   double result, abserr;
-//   gsl_deriv_central(&F, gsl_vector_get(x, i), 1e-5, &result, &abserr);
+  double result, abserr;
+  gsl_deriv_central(&F, gsl_vector_get(x, i), 1e-5, &result, &abserr);
   
-//   return result;
-// }
+  return result;
+}
 
 double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, int j, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int)
 {
@@ -735,9 +742,9 @@ int main(int argc, char** argv)
   
   gsl_set_error_handler_off ();
   
-  if (argc != 6)
+  if (argc != 8)
     {
-      cerr << "usage: ./alpha_beta_map_compare_gradient max_subtype total_cn n step (reads) (u diff outfile)" << endl;
+      cerr << "usage: ./alpha_beta_map_same_cn_compare_gradient max_subtype total_cn n step (reads) (u diff outfile) topology" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -772,7 +779,7 @@ int main(int argc, char** argv)
   // ofstream g (argv[7]);
   // ofstream h (argv[8]);
 
-  int a = atoi(argv[9]);
+  int a = atoi(argv[7]);
 
   ff << scientific;
   // g << scientific;
@@ -790,26 +797,29 @@ int main(int argc, char** argv)
 
   gsl_vector* x = gsl_vector_alloc(2*hpa.MAX_SUBTYPE);
 
+  int q;
+  
   for (int k=0; k<n; ++k)
     {
       READ *re = new READ;
       f >> re->first >> re->second >> q;
       res.push_back(re);
-
-      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-        {
-          f >> trs[a][i].total_cn >> trs[a][i].variant_cn;
-        }
+    }
+  
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      trs[a][i].total_cn = 2;
+      trs[a][i].variant_cn = 1;
     }
 
   for (int i=-step; i<=step; ++i)
     {
       gsl_set_random(x, hpa, r);
       gsl_vector_set(x, 1, 1.0 * ((double)i) / step);
-      // double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs[a]);
+      double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs[a], q, gegen, gegen_int, d_t_variant_fracton);
       double analytic = calc_dx_u_llik_analytic(res, x, 1, hpa, trs[a], q, gegen, gegen_int);
 
-      ff << gsl_vector_get(x, 1) << "\t" << analytic << endl;
+      ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
       // if (fabs(num) > 0)
       //   ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
       // else
