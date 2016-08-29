@@ -16,6 +16,7 @@ using namespace std;
 
 typedef void (*myfunc) (int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition);
 
+extern void variant_fraction_partition(int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& vf_numerator, VLog& vf_denominator, Log& partition);
 extern void d_variant_fraction_all(myfunc d_x_variant_fraction, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& dvf);
 extern void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition);
 extern void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& denominator);
@@ -53,9 +54,8 @@ typedef struct _du
   int q;
   VVLog gegen;
   VLog gegen_int;
-  myfunc* d_x_variant_fraction;
   
-  _du (READS& _res, gsl_vector* _x, int _i, hyperparams& _hpa, subtypes& _tr, int _q, VVLog& _gegen, VLog& _gegen_int, myfunc* _d_x_variant_fraction) : res(_res), x(_x), i(_i), hpa(_hpa), tr(_tr), q(_q), gegen(_gegen), gegen_int(_gegen_int), d_x_variant_fraction(_d_x_variant_fraction) {}
+  _du (READS& _res, gsl_vector* _x, int _i, hyperparams& _hpa, subtypes& _tr, int _q, VVLog& _gegen, VLog& _gegen_int) : res(_res), x(_x), i(_i), hpa(_hpa), tr(_tr), q(_q), gegen(_gegen), gegen_int(_gegen_int)  {}
 }
   du;
 
@@ -352,7 +352,7 @@ Log deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog&
 
   for (int s=1; s<=FRACTIONS; ++s)
     {
-      st[q].x = ((double) s) / FRACTIONS;
+      st[q].x = Log(((double) s) / FRACTIONS);
       double mu = calc_mu(st, hpa);
       denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
 
@@ -372,7 +372,27 @@ Log deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog&
   return denom;
 }
 
-double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction)
+Log lik_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog& gegen_int)
+{
+  Log denom = Log(0);
+  VLog vf (FRACTIONS + 1, Log(0));
+  VLog vf_numerator (FRACTIONS + 1, Log(0));
+  VLog vf_denominator (FRACTIONS + 1, Log(0));
+  Log partition = Log(0);
+  
+  variant_fraction_partition(0, q, st[q].n, st[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, vf_numerator, vf_denominator, partition);
+
+  for (int s=1; s<=FRACTIONS; ++s)
+    {
+      st[q].x = Log(((double) s) / FRACTIONS);
+      double mu = calc_mu(st, hpa);
+      denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
+    }
+
+  return denom;
+}
+
+double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int)
 {
   int K;
   K = res.size();
@@ -383,10 +403,7 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, 
   
   for (int k=0; k<K; ++k)
     {
-      VLog d_t_k = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
-      VLog d_n_k = VLog(hpa.MAX_SUBTYPE + 1, Log(0));
-
-      lik *= deriv_k(*res[k], tr, hpa, q, gegen, gegen_int, d_x_variant_fraction, d_t_k, d_n_k);
+      lik *= lik_k(*res[k], tr, hpa, q, gegen, gegen_int);
     }
 
   // for (int k=0; k<K; ++k)
@@ -435,7 +452,7 @@ double calc_llik_for_du(double x_i, void* _du)
   calc_t(pa, p->hpa, p->tr);
   calc_n(pa, p->hpa, p->tr);
 
-  return calc_llik(p->res, pa, p->hpa, p->tr, p->q, p->gegen, p->gegen_int, *(p->d_x_variant_fraction));
+  return calc_llik(p->res, pa, p->hpa, p->tr, p->q, p->gegen, p->gegen_int);
 }
 
 // double calc_llik_for_dpi(double x_il, void* dp)
@@ -619,10 +636,10 @@ double calc_rel_err(double x, double y)
   return fabs(x - y) / fabs(x);
 }
 
-double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, subtypes& tr, int q, VLog& gegen, VVLog& gegen_int, myfunc d_x_variant_fraction)
+double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, subtypes& tr, int q, VVLog& gegen, VLog& gegen_int)
 {
   gsl_function F;
-  du _du (res, x, i, hpa, tr, q, gegen, gegen_int, &d_x_variant_fraction);
+  du _du (res, x, i, hpa, tr, q, gegen, gegen_int);
 
   F.function = &calc_llik_for_du;
   F.params = &_du;
@@ -816,7 +833,7 @@ int main(int argc, char** argv)
     {
       gsl_set_random(x, hpa, r);
       gsl_vector_set(x, 1, 1.0 * ((double)i) / step);
-      double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs[a], q, gegen, gegen_int, d_t_variant_fracton);
+      double num = calc_dx_u_llik_numeric(res, x, 1, hpa, trs[a], q, gegen, gegen_int);
       double analytic = calc_dx_u_llik_analytic(res, x, 1, hpa, trs[a], q, gegen, gegen_int);
 
       ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
