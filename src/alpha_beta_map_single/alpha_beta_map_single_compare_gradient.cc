@@ -36,13 +36,12 @@ typedef struct _du
 {
   READS &res;
   gsl_vector *x;
-  int i;
   hyperparams &hpa;
   subtype& st;
   VVLog gegen;
   VLog gegen_int;
   
-  _du (READS& _res, gsl_vector* _x, int _i, hyperparams& _hpa, subtype& _st, VVLog& _gegen, VLog& _gegen_int) : res(_res), x(_x), i(_i), hpa(_hpa), st(_st), gegen(_gegen), gegen_int(_gegen_int)  {}
+  _du (READS& _res, gsl_vector* _x, hyperparams& _hpa, subtype& _st, VVLog& _gegen, VLog& _gegen_int) : res(_res), x(_x), hpa(_hpa), st(_st), gegen(_gegen), gegen_int(_gegen_int)  {}
 }
   du;
 
@@ -185,7 +184,7 @@ Log d_bin_mu(READ& re, double mu)
 
 void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
 {
-  pa.pa[1]->u = Log(calc_sigmoid(gsl_vector_get(x, 1)));
+  pa.pa[1]->u = Log(calc_sigmoid(gsl_vector_get(x, 0)));
 }
 
 Log deriv_k(READ& re, subtype& st, hyperparams& hpa, VVLog& gegen, VLog& gegen_int, myfunc d_x_variant_fraction, Log& d_t)
@@ -272,7 +271,7 @@ double calc_llik_for_du(double x_i, void* _du)
 {
   du* p = (du*) _du;
 
-  gsl_vector_set(p->x, p->i, x_i);
+  gsl_vector_set(p->x, 0, x_i);
 
   params pa (p->hpa);
   calc_params(p->x, pa, p->hpa);
@@ -407,21 +406,21 @@ double calc_rel_err(double x, double y)
   return fabs(x - y) / fabs(x);
 }
 
-double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa, subtype& st, VVLog& gegen, VLog& gegen_int)
+double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, hyperparams& hpa, subtype& st, VVLog& gegen, VLog& gegen_int)
 {
   gsl_function F;
-  du _du (res, x, i, hpa, st, gegen, gegen_int);
+  du _du (res, x, hpa, st, gegen, gegen_int);
 
   F.function = &calc_llik_for_du;
   F.params = &_du;
 
   double result, abserr;
-  gsl_deriv_central(&F, gsl_vector_get(x, i), 1e-5, &result, &abserr);
+  gsl_deriv_central(&F, gsl_vector_get(x, 0), 1e-5, &result, &abserr);
   
   return result;
 }
 
-double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, int j, hyperparams& hpa, subtype& st, VVLog& gegen, VLog& gegen_int)
+double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, hyperparams& hpa, subtype& st, VVLog& gegen, VLog& gegen_int)
 {
   int K = res.size();
 
@@ -435,7 +434,7 @@ double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, int j, hyperparams& hp
 
   double llik = d_llik(res, pa, grad, hpa, st, gegen, gegen_int, d_t_variant_fraction);
 
-  return (Log(calc_dx_sigmoid(gsl_vector_get(x, j))) * grad.pa[j]->u).eval();
+  return (Log(calc_dx_sigmoid(gsl_vector_get(x, 0))) * grad.pa[1]->u).eval();
 }
 
 void gsl_set_random(gsl_vector* x, hyperparams& hpa, gsl_rng* rng)
@@ -443,11 +442,8 @@ void gsl_set_random(gsl_vector* x, hyperparams& hpa, gsl_rng* rng)
   for (int i=0; i<1024; ++i) // for appropriet random number generation
     gsl_rng_uniform(rng);
 
-  for (int i=0; i<2; ++i)
-    {
-      double a = gsl_rng_uniform(rng);
-      gsl_vector_set(x, i, a);
-    }
+  double a = gsl_rng_uniform(rng);
+  gsl_vector_set(x, 0, a);
 }
 
 int main(int argc, char** argv)
@@ -526,11 +522,11 @@ int main(int argc, char** argv)
   for (int i=-step; i<=step; ++i)
     {
       gsl_set_random(x, hpa, r);
-      gsl_vector_set(x, 1, 1.0 * ((double)i) / step);
-      double num = calc_dx_u_llik_numeric(res, x, 1, hpa, st, gegen, gegen_int);
-      double analytic = calc_dx_u_llik_analytic(res, x, 1, hpa, st, gegen, gegen_int);
+      gsl_vector_set(x, 0, 1.0 * ((double)i) / step);
+      double num = calc_dx_u_llik_numeric(res, x, hpa, st, gegen, gegen_int);
+      double analytic = calc_dx_u_llik_analytic(res, x, hpa, st, gegen, gegen_int);
 
-      ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+      ff << gsl_vector_get(x, 0) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
       // if (fabs(num) > 0)
       //   ff << gsl_vector_get(x, 1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
       // else
