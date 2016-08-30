@@ -213,9 +213,31 @@ Log deriv_k(READ& re, subtype& st, hyperparams& hpa, VVLog& gegen, VLog& gegen_i
   return denom;
 }
 
-Log lik_k(READ& re, subtype& st, hyperparams& hpa, VVLog& gegen, VLog& gegen_int)
+// Log lik_k(READ& re, subtype& st, hyperparams& hpa, VVLog& gegen, VLog& gegen_int)
+// {
+//   Log denom = Log(0);
+//   VLog vf (FRACTIONS + 1, Log(0));
+//   VLog vf_numerator (FRACTIONS + 1, Log(0));
+//   VLog vf_denominator (FRACTIONS + 1, Log(0));
+//   Log partition = Log(0);
+  
+//   variant_fraction_partition(0, 1, st.n, st.t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, vf_numerator, vf_denominator, partition);
+
+//   for (int s=1; s<=FRACTIONS; ++s)
+//     {
+//       st.x = Log(((double) s) / FRACTIONS);
+//       double mu = calc_mu(st, hpa);
+//       denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
+//     }
+
+//   return denom;
+// }
+
+double calc_llik(READS& res, params& pa, hyperparams& hpa, subtype& st, VVLog& gegen, VLog& gegen_int)
 {
-  Log denom = Log(0);
+  int K;
+  K = res.size();
+
   VLog vf (FRACTIONS + 1, Log(0));
   VLog vf_numerator (FRACTIONS + 1, Log(0));
   VLog vf_denominator (FRACTIONS + 1, Log(0));
@@ -223,26 +245,19 @@ Log lik_k(READ& re, subtype& st, hyperparams& hpa, VVLog& gegen, VLog& gegen_int
   
   variant_fraction_partition(0, 1, st.n, st.t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, vf_numerator, vf_denominator, partition);
 
-  for (int s=1; s<=FRACTIONS; ++s)
-    {
-      st.x = Log(((double) s) / FRACTIONS);
-      double mu = calc_mu(st, hpa);
-      denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
-    }
-
-  return denom;
-}
-
-double calc_llik(READS& res, params& pa, hyperparams& hpa, subtype& st, VVLog& gegen, VLog& gegen_int)
-{
-  int K;
-  K = res.size();
-  
   Log lik = Log(1);
   
   for (int k=0; k<K; ++k)
     {
-      lik *= lik_k(*res[k], st, hpa, gegen, gegen_int);
+      Log lik_k = Log(0);
+      for (int s=1; s<=FRACTIONS; ++s)
+        {
+          st.x = Log(((double) s) / FRACTIONS);
+          double mu = calc_mu(st, hpa);
+          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[s];
+        }
+      
+      lik *= lik_k;
     }
 
   // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
@@ -307,13 +322,28 @@ double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtype& s
   int K;
   K = res.size();
 
+  VLog vf (FRACTIONS + 1, Log(0));
+  VLog dtvf (FRACTIONS + 1, Log(0));
+      
+  d_variant_fraction_all(d_t_variant_fraction, 0, 1, st.n, st.t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, dtvf);
+
   Log lik = Log(1);
 
   for (int k=0; k<K; ++k)
     {
+      Log lik_k = Log(0);
       Log d_t = Log(0);
 
-      lik *= deriv_k(*res[k], st, hpa, gegen, gegen_int, d_x_variant_fraction, d_t);
+      for (int s=1; s<=FRACTIONS; ++s)
+        {
+          st.x = Log(((double) s) / FRACTIONS);
+          double mu = calc_mu(st, hpa);
+          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[s];
+          d_t += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dtvf[s];
+        }
+      d_t /= lik_k;
+
+      lik *= lik_k;
 
       grad.pa[1]->u += d_t;
     }
