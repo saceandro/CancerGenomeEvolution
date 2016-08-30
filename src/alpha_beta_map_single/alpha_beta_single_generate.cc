@@ -114,7 +114,7 @@ void generate_binom(ofstream& f, int M, int n, params& pa, hyperparams& hpa, sub
       // cerr << "mu: " << mu << endl;
       
       unsigned int m = gsl_ran_binomial(rng, mu, M);
-      f << m << "\t" << M << "\t" << st.x.eval() << endl;
+      f << m << "\t" << M << endl;
     }
 }
 
