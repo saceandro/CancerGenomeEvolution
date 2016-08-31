@@ -234,9 +234,11 @@ void variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta
         }
     }
 
-  if (numerator < Log(0))
+  if ((numerator / partition).get_sign() < 0)
     {
       cerr << "err: variant_fraction < 0" << endl;
+      cerr << "numerator: " << numerator.eval() << endl;
+      cerr << "denominator: " << partition.eval() << endl;
       exit(EXIT_FAILURE);
     }
 }

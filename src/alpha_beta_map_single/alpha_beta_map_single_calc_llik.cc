@@ -368,9 +368,9 @@ int main(int argc, char** argv)
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   gsl_set_error_handler_off ();
   
-  if (argc != 6)
+  if (argc != 5)
     {
-      cerr << "usage: ./alpha_beta_map_single_grad n (reads) (u outfile) (llik outfile) (llik final outfile)" << endl;
+      cerr << "usage: ./alpha_beta_map_single_calc_llik n u (reads) (llik_outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -409,10 +409,10 @@ int main(int argc, char** argv)
 
   set_gegen_integral(gegen_int, gegen_int_err);
 
-  ifstream f (argv[2]);
-  ofstream g (argv[3]);
-  ofstream h (argv[4]);
-  ofstream hh (argv[5]);
+  ifstream f (argv[3]);
+  ofstream g (argv[4]);
+
+  g << scientific << setprecision(10);
   
   for (int i=0; i<n; ++i)
     {
@@ -421,39 +421,19 @@ int main(int argc, char** argv)
       res.push_back(re);
     }
 
-  params pa_new (hpa);
-  
-  g << scientific << setprecision(10);
-  h << scientific << setprecision(10);
-  hh << scientific << setprecision(10);
+  params pa (hpa);
+  pa.pa[1]->u = Log(atof(argv[2]));
 
-  diff di (res, hpa, st, gegen, gegen_int);
-      
-  params pa_best (hpa);
-  double llik_best = -DBL_MAX;
-  for (int i=0; i<10; ++i)
-    {
-      cout << "minimize_iter: " << i << endl << endl;
-      h << "minimize_iter: " << i << endl << endl;
-      hh << "minimize_iter: " << i << endl << endl;
-      double llik = minimize(di, pa_new, h, r);
-      if (llik > llik_best)
-        {
-          copy_params(pa_new, pa_best, hpa);
-          llik_best = llik;
-        }
-      hh << "llik: " << llik << endl;
-      hh << "u: " << pa_new.pa[1]->u.eval() << endl;
-    }
-  write_params(g, pa_best, hpa);
+  st.t = pa.pa[1]->u;
+  st.n = Log(1);
+  
+  g << calc_llik(res, pa, hpa, st, gegen, gegen_int) << endl;
   
   for (int i=0; i<n; ++i)
     delete res[i];
 
   f.close();
   g.close();
-  h.close();
-  hh.close();
 
   return 0;
 }
