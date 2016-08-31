@@ -166,8 +166,14 @@ Log d_bin_mu(READ& re, double mu)
 Log d_mu_n(subtypes& st, hyperparams& hpa, int j, int q)
 {
   Log a = st[0].n + st[q].n;
-  
-  return st[0].n * st[q].x / Log(2) / a / a;
+
+  if (j == 0)
+    return -st[q].n * st[q].x / Log(2) / a / a;
+
+  if (j == q)
+    return st[0].n * st[q].x / Log(2) / a / a;
+
+  return Log(0);
 }
 
 // void responsibility_numerator(READ& re, states& sts, subtypes& st, params& pa, hyperparams& hpa, int index, int s)
@@ -785,7 +791,7 @@ int main(int argc, char** argv)
 
   gsl_vector* x = gsl_vector_alloc(2*hpa.MAX_SUBTYPE);
 
-  int q = 1;
+  int q = 2;
   
   for (int k=0; k<n; ++k)
     {
