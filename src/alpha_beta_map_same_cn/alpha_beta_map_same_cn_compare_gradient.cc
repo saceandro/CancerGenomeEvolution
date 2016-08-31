@@ -134,17 +134,9 @@ void init_state(state& st, hyperparams& hpa)
   st.st[0].variant_cn = 0;
 }
 
-double calc_mu(subtypes& st, hyperparams& hpa)
+double calc_mu(subtypes& st, hyperparams& hpa, int q)
 {
-  Log denom;
-  Log num;
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      denom += st[i].n * Log(st[i].total_cn);
-      num += st[i].n * st[i].x * Log(st[i].variant_cn);
-    }
-    
-  return (num / denom).eval();
+  return (st[q].x / Log(2) / (Log(1) + st[0].n/st[q].n)).eval();
 }
 
 #define log_binomial_pdf(m, mu, M) ((m) * log((mu)) + ((M) - (m)) * log1p(-(mu)) + gsl_sf_lnchoose((M), (m)))
@@ -171,20 +163,11 @@ Log d_bin_mu(READ& re, double mu)
 //     return -st[i].n * st[i].n / st[i].t;
 // }
 
-Log d_mu_n(subtypes& st, hyperparams& hpa, int j)
+Log d_mu_n(subtypes& st, hyperparams& hpa, int j, int q)
 {
-  Log normal = Log(0);
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    normal += st[i].n * Log(st[i].total_cn);
-
-  Log variant;
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    variant += st[i].n * st[i].x * Log(st[i].variant_cn);
-
-  Log a = st[j].x * Log(st[j].variant_cn) / normal;
-  Log b = Log(st[j].total_cn) / normal * variant / normal;
-
-  return a - b;
+  Log a = st[0].n + st[q].n;
+  
+  return st[0].n * st[q].x / Log(2) / a / a;
 }
 
 // void responsibility_numerator(READ& re, states& sts, subtypes& st, params& pa, hyperparams& hpa, int index, int s)
@@ -267,19 +250,11 @@ Log d_mu_n(subtypes& st, hyperparams& hpa, int j)
 //   return partition;
 // }
 
-void delete_states(states& sts)
-{
-  for (int i=0; i<sts.size(); ++i)
-    {
-      delete sts[i];
-    }
-}
-
 void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa, subtypes& tr)
 {
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa.pa[i]->u = Log(calc_sigmoid(gsl_vector_get(x, i)));
+      pa.pa[i]->u = Log(calc_sigmoid(gsl_vector_get(x, i-1)));
     }
 
   int count = 0;
@@ -353,13 +328,13 @@ Log deriv_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog&
   for (int s=1; s<=FRACTIONS; ++s)
     {
       st[q].x = Log(((double) s) / FRACTIONS);
-      double mu = calc_mu(st, hpa);
+      double mu = calc_mu(st, hpa, q);
       denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
 
       for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
         {
           d_t[i] += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dtvf[s];
-          d_n[i] += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dnvf[s] + d_mu_n(st, hpa, i) * d_bin_mu(re, mu) * vf[s]; // implementing here
+          d_n[i] += Log(log_binomial_pdf(re.first, mu, re.second), 1) * dnvf[s] + d_mu_n(st, hpa, i, q) * d_bin_mu(re, mu) * vf[s]; // implementing here
         }
     }
 
@@ -385,7 +360,7 @@ Log lik_k(READ& re, subtypes& st, hyperparams& hpa, int q, VVLog& gegen, VLog& g
   for (int s=1; s<=FRACTIONS; ++s)
     {
       st[q].x = Log(((double) s) / FRACTIONS);
-      double mu = calc_mu(st, hpa);
+      double mu = calc_mu(st, hpa, q);
       denom += Log(log_binomial_pdf(re.first, mu, re.second), 1) * vf[s];
     }
 
@@ -397,8 +372,6 @@ double calc_llik(READS& res, params& pa, hyperparams& hpa, subtypes& tr, int q, 
   int K;
   K = res.size();
   
-  vector<states> sts (K);
-
   Log lik = Log(1);
   
   for (int k=0; k<K; ++k)
@@ -444,7 +417,7 @@ double calc_llik_for_du(double x_i, void* _du)
 {
   du* p = (du*) _du;
 
-  gsl_vector_set(p->x, p->i, x_i);
+  gsl_vector_set(p->x, p->i-1, x_i);
 
   params pa (p->hpa);
   calc_params(p->x, pa, p->hpa, p->tr);
@@ -493,8 +466,6 @@ double d_llik(READS& res, params& pa, params& grad, hyperparams& hpa, subtypes& 
 {
   int K;
   K = res.size();
-
-  vector<states> sts (K);
 
   Log lik = Log(1);
 
@@ -645,7 +616,7 @@ double calc_dx_u_llik_numeric(READS& res, gsl_vector* x, int i, hyperparams& hpa
   F.params = &_du;
 
   double result, abserr;
-  gsl_deriv_central(&F, gsl_vector_get(x, i), 1e-5, &result, &abserr);
+  gsl_deriv_central(&F, gsl_vector_get(x, i-1), 1e-5, &result, &abserr);
   
   return result;
 }
@@ -664,7 +635,7 @@ double calc_dx_u_llik_analytic(READS& res, gsl_vector* x, int j, hyperparams& hp
 
   double llik = d_llik(res, pa, grad, hpa, tr, q, gegen, gegen_int, d_t_variant_fraction);
 
-  return (Log(calc_dx_sigmoid(gsl_vector_get(x, j))) * grad.pa[j]->u).eval();
+  return (Log(calc_dx_sigmoid(gsl_vector_get(x, j-1))) * grad.pa[j]->u).eval();
 }
 
 // double calc_dx_pi_llik_numeric(READS& res, gsl_vector* x, int i, int l, hyperparams& hpa, subtypes& tr)
@@ -814,12 +785,12 @@ int main(int argc, char** argv)
 
   gsl_vector* x = gsl_vector_alloc(2*hpa.MAX_SUBTYPE);
 
-  int q;
+  int q = 1;
   
   for (int k=0; k<n; ++k)
     {
       READ *re = new READ;
-      f >> re->first >> re->second >> q;
+      f >> re->first >> re->second;
       res.push_back(re);
     }
   
