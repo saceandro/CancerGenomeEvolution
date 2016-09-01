@@ -271,10 +271,13 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
           d_n_k[*qs[k]] += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dnvf[*qs[k]][s];
         }
       tr[*qs[k]].x = Log(0);
-
-      d_t[*qs[k]] += d_t_k / lik_k;
+      d_t_k /= lik_k;
       for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-        d_n[i] += d_n_k[i] / lik_k;
+        d_n_k[i] /= lik_k;
+
+      d_t[*qs[k]] += d_t_k;
+      for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+        d_n[i] += d_n_k[i];
         
       lik *= lik_k;
     }
@@ -395,8 +398,22 @@ double calc_dx_beta_llik_analytic(int index, READS& res, QS& qs, gsl_vector* x, 
 
   double llik = d_llik(res, qs, pa, grad, hpa, tr, gegen, gegen_int);
 
+  // int count = 0;
   int i,j;
+  
+ //  for (i=0; i<hpa.MAX_SUBTYPE; ++i)
+ //    {
+ //      for (j=0; j<(int)tr[i].children.size(); ++j)
+ //        {
+ //          if (count == index)
+ //            goto OUT;
+ //          count++;
+ //        }
+ //    }
+ // OUT:
   index_to_beta_i_j(index, i, j, hpa, tr);
+  
+  // cerr << i << "\t" << j << endl;
   
   return (Log(calc_dx_sigmoid(gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + index))) * grad.pa[i]->beta[j]).eval();
 }
@@ -464,6 +481,18 @@ int main(int argc, char** argv)
   int u_index = atoi(argv[8]);
   int beta_index = atoi(argv[9]);
 
+  for (int a=0; a<hpa.MAX_TREE; ++a)
+    {
+      int i, j;
+      cerr << "a: " << a << endl;
+      for (int bi=0; bi<hpa.MAX_SUBTYPE; ++bi)
+        {
+          index_to_beta_i_j(bi, i, j, hpa, trs[a]);
+          cerr << i << "\t" << j << endl;
+        }
+      cerr << "------------------------------------------------" << endl;
+    }
+  
   ff << scientific;
   g << scientific;
 
