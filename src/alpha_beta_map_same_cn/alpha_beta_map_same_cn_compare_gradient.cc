@@ -501,8 +501,10 @@ int main(int argc, char** argv)
       double num = calc_dx_u_llik_numeric(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int);
       double analytic = calc_dx_u_llik_analytic(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int);
 
-      g << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + beta_index) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-      // cerr << "-----------------------------------------------------------------------------------------------------------------" << endl;
+      if (fabs(num) > 0)
+        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + beta_index) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+      else
+        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + 1 + beta_index) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
     }
 
   for (int i=0; i<n; ++i)
