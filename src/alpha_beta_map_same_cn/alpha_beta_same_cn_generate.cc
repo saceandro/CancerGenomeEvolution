@@ -45,18 +45,23 @@ void write_t_n(std::ofstream& f, subtypes& st, hyperparams& hpa)
   f << endl << endl;
 }
 
-double calc_mu(subtypes& st, hyperparams& hpa)
+double calc_mu(subtypes& tr, hyperparams& hpa, int q)
 {
-  Log denom;
-  Log num;
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    {
-      denom += st[i].n * Log(st[i].total_cn);
-      num += st[i].n * st[i].x * Log(st[i].variant_cn);
-    }
-    
-  return (num / denom).eval();
+  return (tr[q].x / Log(2) / (Log(1) + tr[0].n/tr[q].n)).eval();
 }
+
+// double calc_mu(subtypes& st, hyperparams& hpa)
+// {
+//   Log denom;
+//   Log num;
+//   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+//     {
+//       denom += st[i].n * Log(st[i].total_cn);
+//       num += st[i].n * st[i].x * Log(st[i].variant_cn);
+//     }
+    
+//   return (num / denom).eval();
+// }
 
 bool strictly_greater_than(double i, double j)
 {
@@ -99,6 +104,29 @@ void generate_params(params& pa, hyperparams& hpa, subtypes& tr, gsl_rng* rng)
 
 void generate_binom(ofstream& f, int M, int n, params& pa, hyperparams& hpa, subtypes& tr, int seed, gsl_rng* rng, VVLog& gegen, VLog& gegen_int)
 {
+  VVLog vf (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
+  VVLog vf_numerator (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
+  VVLog vf_denominator (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
+  VLog partition (hpa.MAX_SUBTYPE + 1, Log(0));
+
+  for (int q=1; q<=hpa.MAX_SUBTYPE; ++q)
+    variant_fraction_partition(0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q], vf_numerator[q], vf_denominator[q], partition[q]);
+
+  VVLog vf_cum(hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
+
+  for (int q=1; q<=hpa.MAX_SUBTYPE; ++q)
+    {
+      for (int s=1; s<=FRACTIONS; ++s)
+        {
+          vf_cum[q][s] = vf[q][s];
+        }
+      
+      for (int s=2; s<=FRACTIONS; ++s)
+        {
+          vf_cum[q][s] = vf_cum[q][s-1] + vf_cum[q][s];
+        }
+    }
+  
   params pa_cum (hpa);
   int q;
 
@@ -124,41 +152,23 @@ void generate_binom(ofstream& f, int M, int n, params& pa, hyperparams& hpa, sub
             }
         }
       
-      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-        {
-          tr[i].total_cn = 2;
-          tr[i].variant_cn = 1;
-        }
-
-      VLog vf(FRACTIONS + 1, Log(0));
-      VLog vf_numerator(FRACTIONS + 1, Log(0));
-      VLog vf_denominator(FRACTIONS + 1, Log(0));
-      Log partition = Log(0);
-
-      variant_fraction_partition(0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf, vf_numerator, vf_denominator, partition);
-
-      VLog vf_cum(FRACTIONS + 1, Log(0));
-      for (int s=1; s<=FRACTIONS; ++s)
-        {
-          vf_cum[s] = vf[s];
-        }
-      
-      for (int s=2; s<=FRACTIONS; ++s)
-        {
-          vf_cum[s] = vf_cum[s-1] + vf_cum[s];
-        }
+      // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+      //   {
+      //     tr[i].total_cn = 2;
+      //     tr[i].variant_cn = 1;
+      //   }
       
       Log z = Log(gsl_rng_uniform(rng));
       for (int s=1; s<=FRACTIONS; ++s)
         {
-          if (z < vf_cum[s])
+          if (z < vf_cum[q][s])
             {
               tr[q].x = Log(((double) s) / FRACTIONS);
               break;
             }
         }
       
-      double mu = calc_mu(tr, hpa);
+      double mu = calc_mu(tr, hpa, q);
       // cerr << "mu: " << mu << endl;
       
       unsigned int m = gsl_ran_binomial(rng, mu, M);
