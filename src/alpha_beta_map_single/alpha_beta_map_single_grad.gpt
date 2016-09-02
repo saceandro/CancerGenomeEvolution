@@ -1,0 +1,6 @@
+set term postscript enhanced eps color
+set xlabel "#locus"
+set ylabel "absolute error"
+set out "alpha_beta_map_single_accuracy.2.accuracy.eps"
+plot "alpha_beta_map_single_accuracy.2.accuracy" u 1:2 w lp
+set out
