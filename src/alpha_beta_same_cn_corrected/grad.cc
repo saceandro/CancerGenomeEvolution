@@ -69,7 +69,7 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
     }
   f << endl;
 
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
       f << pa.pa[i]->n.eval() << "\t";
     }
@@ -349,13 +349,13 @@ double minimize(diff& di, params& pa, ofstream& h, gsl_rng* rng)
           if (status == GSL_ENOPROG)
             {
               cout << "No more improvement can be made for current estimate" << endl << endl;
-              pa.pa[0]->n = di.purity;
+              pa.pa[0]->n = Log(1) - di.purity;
               calc_params(s->x, pa, di.hpa);
             }
           break;
         }
 
-      pa.pa[0]->n = di.purity;
+      pa.pa[0]->n = Log(1) - di.purity;
       calc_params(s->x, pa, di.hpa);
       write_params((ofstream&)cout, pa, di.hpa);
       cout << -s->f << endl << endl;
