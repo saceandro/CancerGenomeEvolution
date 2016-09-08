@@ -43,8 +43,9 @@ typedef struct _du
   subtypes& tr;
   VVLog gegen;
   VLog gegen_int;
+  Log purity;
   
-  _du (int _i, READS& _res, QS& _qs, gsl_vector* _x, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int) : i(_i), res(_res), qs(_qs), x(_x), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int)  {}
+  _du (int _i, READS& _res, QS& _qs, gsl_vector* _x, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int, Log& _purity) : i(_i), res(_res), qs(_qs), x(_x), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int), purity(_purity) {}
 }
   du;
 
@@ -58,8 +59,9 @@ typedef struct _dn
   subtypes& tr;
   VVLog gegen;
   VLog gegen_int;
+  Log purity;
   
-  _dn (int _index, READS& _res, QS& _qs, gsl_vector* _x, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int) : index(_index), res(_res), qs(_qs), x(_x), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int)  {}
+  _dn (int _index, READS& _res, QS& _qs, gsl_vector* _x, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int, Log& _purity) : index(_index), res(_res), qs(_qs), x(_x), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int), purity(_purity) {}
 }
   dn;
 
@@ -85,7 +87,7 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa, subtypes& tr)
     }
   f << endl;
 
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       f << pa.pa[i]->n.eval() << "\t";
     }
@@ -141,15 +143,15 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
 
   Log sum = Log(0);
   
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa.pa[i]->n = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + i)).take_exp();
+      pa.pa[i]->n = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + i-1)).take_exp();
       sum += pa.pa[i]->n;
     }
 
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa.pa[i]->n /= sum;
+      pa.pa[i]->n = (Log(1) - pa.pa[0]->n) * pa.pa[i]->n / sum;
     }
 }
 
@@ -192,6 +194,7 @@ double calc_llik_for_du(double x_i, void* _du)
   gsl_vector_set(p->x, p->i-1, x_i);
 
   params pa (p->hpa);
+  pa.pa[0]->n = Log(1) - p->purity;
   calc_params(p->x, pa, p->hpa);
 
   calc_t(pa, p->hpa, p->tr);
@@ -210,9 +213,10 @@ double calc_llik_for_dn(double x_i_j, void* _dn)
 {
   dn* p = (dn*) _dn;
 
-  gsl_vector_set(p->x, p->hpa.MAX_SUBTYPE + p->index, x_i_j);
+  gsl_vector_set(p->x, p->hpa.MAX_SUBTYPE + p->index-1, x_i_j);
 
   params pa (p->hpa);
+  pa.pa[0]->n = Log(1) - p->purity;
   calc_params(p->x, pa, p->hpa);
 
   calc_t(pa, p->hpa, p->tr);
@@ -295,10 +299,10 @@ double calc_rel_err(double x, double y)
   return fabs(x - y) / fabs(x);
 }
 
-double calc_dx_u_llik_numeric(int i, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int)
+double calc_dx_u_llik_numeric(int i, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
 {
   gsl_function F;
-  du _du (i, res, qs, x, hpa, tr, gegen, gegen_int);
+  du _du (i, res, qs, x, hpa, tr, gegen, gegen_int, purity);
 
   F.function = &calc_llik_for_du;
   F.params = &_du;
@@ -309,11 +313,12 @@ double calc_dx_u_llik_numeric(int i, READS& res, QS& qs, gsl_vector* x, hyperpar
   return result;
 }
 
-double calc_dx_u_llik_analytic(int i, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int)
+double calc_dx_u_llik_analytic(int i, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
 {
   int K = res.size();
 
   params pa (hpa);
+  pa.pa[0]->n = Log(1) - purity;
   calc_params(x, pa, hpa);
 
   calc_t(pa, hpa, tr);
@@ -332,33 +337,34 @@ double calc_dx_u_llik_analytic(int i, READS& res, QS& qs, gsl_vector* x, hyperpa
   return (Log(calc_dx_sigmoid(gsl_vector_get(x, i-1))) * grad.pa[i]->u).eval();
 }
 
-double calc_dx_n_llik_numeric(int index, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int)
+double calc_dx_n_llik_numeric(int index, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
 {
   gsl_function F;
-  dn _dn (index, res, qs, x, hpa, tr, gegen, gegen_int);
+  dn _dn (index, res, qs, x, hpa, tr, gegen, gegen_int, purity);
 
   F.function = &calc_llik_for_dn;
   F.params = &_dn;
 
   double result, abserr;
-  gsl_deriv_central(&F, gsl_vector_get(x, hpa.MAX_SUBTYPE + index), 1e-5, &result, &abserr);
+  gsl_deriv_central(&F, gsl_vector_get(x, hpa.MAX_SUBTYPE + index-1), 1e-5, &result, &abserr);
   
   return result;
 }
 
-Log d_n_s(params& pa, int i, int j)
+Log d_n_s(params& pa, int i, int j) // corrected
 {
   if (i == j)
-    return pa.pa[i]->n * (Log(1.0) - pa.pa[i]->n);
-
-  return -pa.pa[i]->n * pa.pa[j]->n;
+    return pa.pa[i]->n * (Log(1) - pa.pa[i]->n/(Log(1) - pa.pa[0]->n));
+  
+  return -pa.pa[i]->n * pa.pa[j]->n/(Log(1) - pa.pa[0]->n);
 }
 
-double calc_dx_n_llik_analytic(int index, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int)
+double calc_dx_n_llik_analytic(int index, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
 {
   int K = res.size();
 
   params pa (hpa);
+  pa.pa[0]->n = Log(1) - purity;
   calc_params(x, pa, hpa);
 
   calc_t(pa, hpa, tr);
@@ -400,9 +406,9 @@ int main(int argc, char** argv)
   
   gsl_set_error_handler_off ();
   
-  if (argc != 10)
+  if (argc != 11)
     {
-      cerr << "usage: ./compare max_subtype n step (reads) (u diff outfile) (n diff outfile) topology u_index beta_index" << endl;
+      cerr << "usage: ./compare max_subtype n step tumor_purity (reads) (u diff outfile) (n diff outfile) topology u_index beta_index" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -421,6 +427,7 @@ int main(int argc, char** argv)
   
   n = atoi(argv[2]);
   step = atoi(argv[3]);
+  Log purity = Log(atof(argv[4]));
   
   const gsl_rng_type * T;
 
@@ -433,13 +440,13 @@ int main(int argc, char** argv)
   r = gsl_rng_alloc(T);
   gsl_rng_set(r, 1);
 
-  ifstream f (argv[4]);
-  ofstream ff (argv[5]);
-  ofstream g (argv[6]);
+  ifstream f (argv[5]);
+  ofstream ff (argv[6]);
+  ofstream g (argv[7]);
 
-  int a = atoi(argv[7]);
-  int u_index = atoi(argv[8]);
-  int beta_index = atoi(argv[9]);
+  int a = atoi(argv[8]);
+  int u_index = atoi(argv[9]);
+  int beta_index = atoi(argv[10]);
 
   ff << scientific;
   g << scientific;
@@ -469,8 +476,8 @@ int main(int argc, char** argv)
     {
       gsl_set_random(x, hpa, r);
       gsl_vector_set(x, u_index-1, 1.0 * ((double)i) / step);
-      double num = calc_dx_u_llik_numeric(u_index, res, qs, x, hpa, trs[a], gegen, gegen_int);
-      double analytic = calc_dx_u_llik_analytic(u_index, res, qs, x, hpa, trs[a], gegen, gegen_int);
+      double num = calc_dx_u_llik_numeric(u_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
+      double analytic = calc_dx_u_llik_analytic(u_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
 
       ff << gsl_vector_get(x, u_index-1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
       // cerr << "-----------------------------------------------------------------------------------------------------------------" << endl;
@@ -479,14 +486,14 @@ int main(int argc, char** argv)
   for (int i=-step; i<=step; ++i)
     {
       gsl_set_random(x, hpa, r);
-      gsl_vector_set(x, hpa.MAX_SUBTYPE + beta_index, 1.0 * ((double)i) / step);
-      double num = calc_dx_n_llik_numeric(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int);
-      double analytic = calc_dx_n_llik_analytic(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int);
+      gsl_vector_set(x, hpa.MAX_SUBTYPE + beta_index-1, 1.0 * ((double)i) / step);
+      double num = calc_dx_n_llik_numeric(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
+      double analytic = calc_dx_n_llik_analytic(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
 
       if (fabs(num) > 0)
-        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + beta_index) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
+        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + beta_index-1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
       else
-        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + beta_index) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
+        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + beta_index-1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
     }
 
   for (int i=0; i<n; ++i)
