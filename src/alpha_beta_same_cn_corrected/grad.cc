@@ -76,17 +76,6 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
   f << endl;
 }
 
-void write_t_n(std::ostream& f, subtypes& st, hyperparams& hpa)
-{
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    f << st[i].t.eval() << "\t";
-  f << endl;
-
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    f << st[i].n.eval() << "\t";
-  f << endl << endl;
-}
-
 void copy_params(params& pa, params& target, hyperparams& hpa)
 {
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
@@ -403,9 +392,9 @@ int main(int argc, char** argv)
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   gsl_set_error_handler_off ();
   
-  if (argc != 10)
+  if (argc != 9)
     {
-      cerr << "usage: ./grad subtype topology n purity (reads infile) (u n outfile) (t_n outfile) (llik outfile) (llik final outfile)" << endl;
+      cerr << "usage: ./grad subtype topology n purity (reads infile) (u n outfile) (llik outfile) (llik final outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -451,9 +440,8 @@ int main(int argc, char** argv)
 
   ifstream f (argv[5]);
   ofstream g (argv[6]);
-  ofstream t_n_out (argv[7]);
-  ofstream h (argv[8]);
-  ofstream hh (argv[9]);
+  ofstream h (argv[7]);
+  ofstream hh (argv[8]);
            
   for (int i=0; i<n; ++i)
     {
@@ -488,11 +476,6 @@ int main(int argc, char** argv)
       write_params(hh, pa_new, hpa);
     }
   write_params(g, pa_best, hpa);
-
-  subtypes tr_best (MAX_SUBTYPE + 1, subtype (0, 0, 0, 0, Log(0), Log(0), Log(0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) ));
-  calc_t(pa_best, hpa, tr_best);
-  calc_n(pa_best, hpa, tr_best);
-  write_t_n(t_n_out, tr_best, hpa);
   
   for (int i=0; i<n; ++i)
     {
@@ -502,7 +485,6 @@ int main(int argc, char** argv)
   
   f.close();
   g.close();
-  t_n_out.close();
   h.close();
   hh.close();
 
