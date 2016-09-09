@@ -9,7 +9,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 #include <xmmintrin.h>
-#include "../../util/enumtree_wf_n.hh"
+#include "../../util/enumtree_wf_n_r.hh"
 using namespace std;
 
 extern void variant_fraction_partition(int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& vf_numerator, VLog& vf_denominator, Log& partition);

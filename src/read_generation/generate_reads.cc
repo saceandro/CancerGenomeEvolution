@@ -169,6 +169,7 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
                     }
                 }
 
+              vector<char> inherited (hpa.MAX_SUBTYPE + 1, 0);
               for (std::vector<subtype*>::iterator ch=tr[i].children.begin(); ch!=tr[i].children.end(); ++ch)
                 {
                   int y = gsl_ran_bernoulli(rng, Nni_t.inverse().eval());
@@ -176,6 +177,7 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
                   if (y == 1)
                     {
                       observed = true;
+                      inherited[(*ch)->index] = 1;
                     }
                 }
               
@@ -195,7 +197,12 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
                     }
                   else
                     {
-                      f << m << "\t" << M << "\t" << i << "\t" << endl;
+                      f << m << "\t" << M << "\t" << i << "\t";
+                      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+                        {
+                          f << (int) inherited[i] << "\t";
+                        }
+                      f << endl;
                     }
                 }
             }

@@ -7,7 +7,7 @@
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_deriv.h>
 #include <gsl/gsl_sf.h>
-#include "../../util/enumtree_wf_n.hh"
+#include "../../util/enumtree_wf_n_r_inherited.hh"
 #include <xmmintrin.h>
 
 using namespace std;
@@ -31,7 +31,10 @@ typedef vector<Vbool> VVbool;
 typedef pair<int, int> READ;
 typedef vector<READ*> READS;
 typedef vector<VVLog> VVVLog;
-typedef vector<int*> QS;
+typedef vector<int> INHERITEDS;
+typedef pair<int*, INHERITEDS*> Q;
+typedef vector< Q* > QS;
+// typedef vector<int*> QS;
 
 typedef struct _du
 {
@@ -105,14 +108,16 @@ void write_t_n(std::ostream& f, subtypes& st, hyperparams& hpa)
   f << endl << endl;
 }
 
-double calc_mu(subtypes& tr, hyperparams& hpa, int q)
+double calc_mu(subtypes& tr, hyperparams& hpa)
 {
   Log sum = Log(0);
+  
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
-
-      return (tr[q].n * tr[q].x / Log(2)).eval(); // corrected
+      sum += tr[i].n * tr[i].x;
     }
+
+  return sum.eval() / 2.0;
 }
 
 #define log_binomial_pdf(m, mu, M) ((m) * log((mu)) + ((M) - (m)) * log1p(-(mu)) + gsl_sf_lnchoose((M), (m)))
@@ -131,12 +136,9 @@ Log d_bin_mu(READ& re, double mu)
     }
 }
 
-Log d_mu_n(subtypes& st, hyperparams& hpa, int i, int q)
+Log d_mu_n(subtypes& st, hyperparams& hpa, int i)
 {
-  if (i == q)
-    return st[q].x / Log(2);
-
-  return Log(0);
+  return st[i].x / Log(2);
 }
 
 void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
@@ -180,11 +182,11 @@ double calc_llik(READS& res, QS& qs, params& pa, hyperparams& hpa, subtypes& tr,
       Log lik_k = Log(0);
       for (int s=1; s<=FRACTIONS; ++s)
         {
-          tr[*qs[k]].x = Log(((double) s) / FRACTIONS);
-          double mu = calc_mu(tr, hpa, *qs[k]);
-          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[*qs[k]][s];
+          tr[*(qs[k]->first)].x = Log(((double) s) / FRACTIONS);
+          double mu = calc_mu(tr, hpa);
+          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[*(qs[k]->first)][s];
         }
-      tr[*qs[k]].x = Log(0);
+      tr[*(qs[k]->first)].x = Log(0);
       
       lik *= lik_k;
     }
@@ -263,19 +265,19 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
 
       for (int s=1; s<=FRACTIONS; ++s)
         {
-          tr[*qs[k]].x = Log(((double) s) / FRACTIONS);
-          double mu = calc_mu(tr, hpa, *qs[k]);
-          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[*qs[k]][s];
-          d_t_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dtvf[*qs[k]][s];
+          tr[*(qs[k]->first)].x = Log(((double) s) / FRACTIONS);
+          double mu = calc_mu(tr, hpa);
+          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[*(qs[k]->first)][s];
+          d_t_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dtvf[*(qs[k]->first)][s];
 
           for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
-            d_n_k[i] += d_mu_n(tr, hpa, i, *qs[k]) * d_bin_mu(*res[k], mu) * vf[*qs[k]][s];
+            d_n_k[i] += d_mu_n(tr, hpa, i) * d_bin_mu(*res[k], mu) * vf[*(qs[k]->first)][s];
 
-          d_n_k[*qs[k]] += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dnvf[*qs[k]][s];
+          d_n_k[*(qs[k]->first)] += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dnvf[*(qs[k]->first)][s];
         }
-      tr[*qs[k]].x = Log(0);
+      tr[*(qs[k]->first)].x = Log(0);
 
-      d_t[*qs[k]] += d_t_k / lik_k;
+      d_t[*(qs[k]->first)] += d_t_k / lik_k;
       for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
         grad.pa[i]->n += d_n_k[i] / lik_k;
         
@@ -471,8 +473,22 @@ int main(int argc, char** argv)
   for (int k=0; k<n; ++k)
     {
       READ *re = new READ;
-      int *q = new int;
-      f >> re->first >> re->second >> *q;
+      int *a = new int;
+      INHERITEDS *ih = new INHERITEDS (MAX_SUBTYPE + 1, 0);
+
+      f >> re->first >> re->second >> *a;
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          f >> (*ih)[i];
+        }
+      
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          cout << (*ih)[i] << "\t";
+        }
+      cout << endl;
+      
+      Q *q = new Q (a, ih);
       res.push_back(re);
       qs.push_back(q);
     }
