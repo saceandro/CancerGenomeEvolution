@@ -22,6 +22,7 @@ public:
   int total_cn;
   int variant_cn;
   int brother_index;
+  int inherited;
   Log t;
   Log nu;
   Log n;
@@ -32,7 +33,7 @@ public:
   std::vector<subtype*> children;
 
   subtype () {}
-  subtype (int _index, int _total_cn, int _variant_cn, int _brother_index, Log _t, Log _nu, Log _n, Log _x, Log _growth, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), brother_index(_brother_index), t(_t), nu(_nu), n(_n), x(_x), growth(_growth), parent(_parent), above(_above), children(_children) {}
+  subtype (int _index, int _total_cn, int _variant_cn, int _brother_index, int _inherited, Log _t, Log _nu, Log _n, Log _x, Log _growth, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), brother_index(_brother_index), inherited(_inherited), t(_t), nu(_nu), n(_n), x(_x), growth(_growth), parent(_parent), above(_above), children(_children) {}
 };
 
 typedef std::vector<subtype> subtypes;
@@ -45,6 +46,7 @@ void copy(subtypes& x, const subtypes& y)
       x[i].total_cn = y[i].total_cn;
       x[i].variant_cn = y[i].variant_cn;
       x[i].brother_index = y[i].brother_index;
+      x[i].inherited = y[i].inherited;
       x[i].t = y[i].t;
       x[i].nu = y[i].nu;
       x[i].n = y[i].n;
@@ -239,7 +241,7 @@ void trees_cons(trees& trs, int max_subtype)
   // child_matrix(a, acc);
   // write_bool_matrix(a);
   
-  trs.assign(acc.size(), subtypes (max_subtype + 1, subtype (0, 0, 0, 0, Log(0), Log(0), Log(0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
+  trs.assign(acc.size(), subtypes (max_subtype + 1, subtype (0, 0, 0, 0, 0, Log(0), Log(0), Log(0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
   trees_cons(trs, acc);
 }
 
@@ -259,15 +261,25 @@ void traversal(subtype* p)
     }
 }
 
-// void mark_inherited(subtype* p)
-// {
-//   for (int j = 0; j < (int)p->children.size(); ++j)
-//     {
-//       p->children[j]->inherited = true;
-//       p->children[j]->x = Log(1);
-//       mark_inherited(p->children[j]);
-//     }
-// }
+void mark_inherited(subtype* p)
+{
+  p->inherited = 1;
+  p->x = Log(1);
+  for (int j = 0; j < (int)p->children.size(); ++j)
+    {
+      // p->children[j]->x = Log(1);
+      mark_inherited(p->children[j]);
+    }
+}
+
+void clear_inherited(subtypes& tr, hyperparams& hpa)
+{
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      tr[i].inherited = 0;
+      tr[i].x = Log(0);
+    }
+}
 
 void calc_t(params& pa, hyperparams& hpa, subtypes& sts)
 {
