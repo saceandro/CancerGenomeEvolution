@@ -5,6 +5,7 @@
 #include <vector>
 #include <math.h>
 #include <fenv.h>
+#include <iomanip>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_rng.h>
 #include <xmmintrin.h>
@@ -187,9 +188,9 @@ int main(int argc, char** argv)
   gsl_set_error_handler_off ();
   cerr << scientific;
   
-  if (argc != 8)
+  if (argc != 9)
     {
-      cerr << "usage: ./generate_params max_subtype total_cn M seed (u_n_xi outfile) (t_n outfile) topology" << endl;
+      cerr << "usage: ./generate_params max_subtype total_cn M seed (purity outfile) (u_n_xi outfile) (t_n outfile) topology" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -204,13 +205,15 @@ int main(int argc, char** argv)
   trees_cons(tr, MAX_SUBTYPE);
   MAX_TREE = tr.size();
 
-  ofstream f (argv[5]);
-  ofstream g (argv[6]);
+  ofstream purity_out (argv[5]);
+  ofstream f (argv[6]);
+  ofstream g (argv[7]);
 
-  int a = atoi(argv[7]);
-  
-  f << scientific;
-  g << scientific;
+  int a = atoi(argv[8]);
+
+  purity_out << scientific << setprecision(10);
+  f << scientific << setprecision(10);
+  g << scientific << setprecision(10);
   
   const gsl_rng_type * T;
 
@@ -238,12 +241,14 @@ int main(int argc, char** argv)
   params pa (hpa);
   
   generate_params(pa, hpa, tr[a], r);
-  
+
+  purity_out << (Log(1) - tr[a][0].n).eval() << endl;
   write_params(f, pa, hpa, tr[a]);
   write_t_n(g, tr[a], hpa);
   
   gsl_rng_free (r);
-  
+
+  purity_out.close();
   f.close();
   g.close();
   

@@ -42,10 +42,28 @@ public:
   subtypes& tr;
   VVLog& gegen;
   VLog& gegen_int;
-  Log purity;
-  
-  diff (READS& _res, QS& _qs, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int, Log& _purity) : res(_res), qs(_qs), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int), purity(_purity) {}
+
+  diff (READS& _res, QS& _qs, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int) : res(_res), qs(_qs), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int) {}
 };
+
+double calc_accuracy(params& pa, params& pa_ans, hyperparams& hpa)
+{
+  Log accuracy = Log(0);
+  
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      Log diff = pa.pa[i]->u - pa_ans.pa[i]->u;
+      accuracy += diff * diff;
+    }
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      Log diff = pa.pa[i]->n - pa_ans.pa[i]->n;
+      accuracy += diff * diff;
+    }
+
+  return accuracy.eval();
+}
 
 double calc_dx_sigmoid(double x)
 {
@@ -59,6 +77,23 @@ double sum_vector(Vdouble& v, int s, int e)
   for (int i=s; i<=e; ++i)
     sum += v[i];
   return sum;
+}
+
+void read_params(std::ifstream& f, params& pa, hyperparams& hpa)
+{
+  double a;
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->u = Log(a);
+    }
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->n = Log(a);
+    }
 }
 
 void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
@@ -91,7 +126,7 @@ void copy_params(params& pa, params& target, hyperparams& hpa)
 
 double calc_mu(subtypes& tr, hyperparams& hpa, int q)
 {
-  return (tr[q].n * tr[q].x / Log(2)).eval(); // corrected
+  return (tr[q].x / Log(2) / (Log(1) + tr[0].n/tr[q].n)).eval();
 }
 
 #define log_binomial_pdf(m, mu, M) ((m) * log((mu)) + ((M) - (m)) * log1p(-(mu)) + gsl_sf_lnchoose((M), (m)))
@@ -110,10 +145,15 @@ Log d_bin_mu(READ& re, double mu)
     }
 }
 
-Log d_mu_n(subtypes& st, hyperparams& hpa, int i, int q) // corrected
+Log d_mu_n(subtypes& st, hyperparams& hpa, int i, int q)
 {
+  Log a = st[0].n + st[q].n;
+  
+  if (i == 0)
+    return -st[q].n * st[q].x / Log(2) / a / a;
+
   if (i == q)
-    return st[q].x / Log(2);
+    return st[0].n * st[q].x / Log(2) / a / a;
 
   return Log(0);
 }
@@ -127,15 +167,15 @@ void calc_params(const gsl_vector* x, params& pa, hyperparams& hpa)
 
   Log sum = Log(0);
   
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa.pa[i]->n = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + i-1)).take_exp();
+      pa.pa[i]->n = Log(gsl_vector_get(x, hpa.MAX_SUBTYPE + i)).take_exp();
       sum += pa.pa[i]->n;
     }
 
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
-      pa.pa[i]->n = (Log(1) - pa.pa[0]->n) * pa.pa[i]->n / sum;
+      pa.pa[i]->n /= sum;
     }
 }
 
@@ -203,7 +243,7 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
           lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[*qs[k]][s];
           d_t_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dtvf[*qs[k]][s];
 
-          for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
+          for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
             d_n_k[i] += d_mu_n(tr, hpa, i, *qs[k]) * d_bin_mu(*res[k], mu) * vf[*qs[k]][s];
 
           d_n_k[*qs[k]] += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dnvf[*qs[k]][s];
@@ -211,7 +251,7 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
       tr[*qs[k]].x = Log(0);
 
       d_t[*qs[k]] += d_t_k / lik_k;
-      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
+      for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
         grad.pa[i]->n += d_n_k[i] / lik_k;
         
       lik *= lik_k;
@@ -239,7 +279,6 @@ double my_f (const gsl_vector *v, void *par)
   diff *p = (diff *) par;
 
   params pa (p->hpa);
-  pa.pa[0]->n = Log(1) - p->purity;
   calc_params(v, pa, p->hpa);
 
   calc_t(pa, p->hpa, p->tr);
@@ -250,12 +289,12 @@ double my_f (const gsl_vector *v, void *par)
   return -llik;
 }
 
-Log d_n_s(params& pa, int i, int j) // corrected
+Log d_n_s(params& pa, int i, int j)
 {
   if (i == j)
-    return pa.pa[i]->n * (Log(1) - pa.pa[i]->n/(Log(1) - pa.pa[0]->n));
-  
-  return -pa.pa[i]->n * pa.pa[j]->n/(Log(1) - pa.pa[0]->n);
+    return pa.pa[i]->n * (Log(1.0) - pa.pa[i]->n);
+
+  return -pa.pa[i]->n * pa.pa[j]->n;
 }
 
 /* The gradient of f, df = (df/dx). */
@@ -266,7 +305,6 @@ void my_df (const gsl_vector *v, void *par, gsl_vector *df)
   int K = p->res.size();
   
   params pa (p->hpa);
-  pa.pa[0]->n = Log(1) - p->purity;
   calc_params(v, pa, p->hpa);
 
   calc_t(pa, p->hpa, p->tr);
@@ -282,15 +320,15 @@ void my_df (const gsl_vector *v, void *par, gsl_vector *df)
       gsl_vector_set(df, i-1, -gr);
     }
 
-  for (int index=1; index<=p->hpa.MAX_SUBTYPE; ++index)
+  for (int index=0; index<=p->hpa.MAX_SUBTYPE; ++index)
     {
       Log gr = Log(0);
       
-      for (int i=1; i<=p->hpa.MAX_SUBTYPE; ++i)
+      for (int i=0; i<=p->hpa.MAX_SUBTYPE; ++i)
         {
           gr += d_n_s(pa, index, i) * grad.pa[i]->n;
         }
-      gsl_vector_set(df, p->hpa.MAX_SUBTYPE + index-1, (-gr).eval());
+      gsl_vector_set(df, p->hpa.MAX_SUBTYPE + index, (-gr).eval());
     }
 }
 
@@ -349,13 +387,11 @@ double minimize(diff& di, params& pa, ofstream& h, gsl_rng* rng)
           if (status == GSL_ENOPROG)
             {
               cout << "No more improvement can be made for current estimate" << endl << endl;
-              pa.pa[0]->n = Log(1) - di.purity;
               calc_params(s->x, pa, di.hpa);
             }
           break;
         }
-
-      pa.pa[0]->n = Log(1) - di.purity;
+      
       calc_params(s->x, pa, di.hpa);
       write_params((ofstream&)cout, pa, di.hpa);
       cout << -s->f << endl << endl;
@@ -385,16 +421,16 @@ double minimize(diff& di, params& pa, ofstream& h, gsl_rng* rng)
 
 int main(int argc, char** argv)
 {
-  cout << scientific << setprecision(10);
+  cout << scientific;
   cerr << scientific;
   
   // feenableexcept(FE_INVALID);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   gsl_set_error_handler_off ();
   
-  if (argc != 9)
+  if (argc != 10)
     {
-      cerr << "usage: ./grad subtype topology n purity (reads infile) (u n outfile) (llik outfile) (llik final outfile)" << endl;
+      cerr << "usage: ./accuracy subtype topology n (reads infile) (u n outfile) (llik outfile) (llik final outfile) (u n infile) (accuracy outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -414,8 +450,6 @@ int main(int argc, char** argv)
   int topology = atoi(argv[2]);
   
   n = atoi(argv[3]);
-
-  Log purity = Log(atof(argv[4]));
 
   const gsl_rng_type * T;
 
@@ -438,10 +472,12 @@ int main(int argc, char** argv)
 
   set_gegen_integral(gegen_int, gegen_int_err);
 
-  ifstream f (argv[5]);
-  ofstream g (argv[6]);
-  ofstream h (argv[7]);
-  ofstream hh (argv[8]);
+  ifstream f (argv[4]);
+  ofstream g (argv[5]);
+  ofstream h (argv[6]);
+  ofstream hh (argv[7]);
+  ifstream u_n_f (argv[8]);
+  ofstream accuracy_f (argv[9]);
            
   for (int i=0; i<n; ++i)
     {
@@ -457,8 +493,12 @@ int main(int argc, char** argv)
   g << scientific << setprecision(10);
   h << scientific << setprecision(10);
   hh << scientific << setprecision(10);
+  accuracy_f << scientific << setprecision(10);
+
+  params pa_ans(hpa);
+  read_params(u_n_f, pa_ans, hpa);
   
-  diff di (res, qs, hpa, trs[topology], gegen, gegen_int, purity);
+  diff di (res, qs, hpa, trs[topology], gegen, gegen_int);
   params pa_best (hpa);
   double llik_best = -DBL_MAX;
   for (int i=0; i<10; ++i)
@@ -476,6 +516,7 @@ int main(int argc, char** argv)
       write_params(hh, pa_new, hpa);
     }
   write_params(g, pa_best, hpa);
+  accuracy_f << res.size() << "\t" << calc_accuracy(pa_best, pa_ans, hpa) << endl;
   
   for (int i=0; i<n; ++i)
     {
@@ -487,6 +528,8 @@ int main(int argc, char** argv)
   g.close();
   h.close();
   hh.close();
+  u_n_f.close();
+  accuracy_f.close();
 
   return 0;
 }

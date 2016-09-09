@@ -394,7 +394,7 @@ int main(int argc, char** argv)
   
   if (argc != 9)
     {
-      cerr << "usage: ./grad subtype topology n purity (reads infile) (u n outfile) (llik outfile) (llik final outfile)" << endl;
+      cerr << "usage: ./grad subtype topology n (purity infile) (reads infile) (u n outfile) (llik outfile) (llik final outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -415,7 +415,10 @@ int main(int argc, char** argv)
   
   n = atoi(argv[3]);
 
-  Log purity = Log(atof(argv[4]));
+  ifstream purity_in (argv[4]);
+  double pu = 0;
+  purity_in >> pu;
+  Log purity = Log(pu);
 
   const gsl_rng_type * T;
 

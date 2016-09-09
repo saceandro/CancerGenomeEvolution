@@ -61,6 +61,23 @@ double sum_vector(Vdouble& v, int s, int e)
   return sum;
 }
 
+void read_params(std::ifstream& f, params& pa, hyperparams& hpa)
+{
+  double a;
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->u = Log(a);
+    }
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->n = Log(a);
+    }
+}
+
 void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
 {
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
@@ -74,6 +91,17 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
       f << pa.pa[i]->n.eval() << "\t";
     }
   f << endl;
+}
+
+void write_t_n(std::ostream& f, subtypes& st, hyperparams& hpa)
+{
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    f << st[i].t.eval() << "\t";
+  f << endl;
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    f << st[i].n.eval() << "\t";
+  f << endl << endl;
 }
 
 void copy_params(params& pa, params& target, hyperparams& hpa)
@@ -385,108 +413,42 @@ double minimize(diff& di, params& pa, ofstream& h, gsl_rng* rng)
 
 int main(int argc, char** argv)
 {
-  cout << scientific << setprecision(10);
-  cerr << scientific;
-  
-  // feenableexcept(FE_INVALID);
+  // feenableexcept(FE_INVALID | FE_OVERFLOW);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   gsl_set_error_handler_off ();
+  cerr << scientific;
   
-  if (argc != 9)
+  if (argc != 5)
     {
-      cerr << "usage: ./grad subtype topology n purity (reads infile) (u n outfile) (llik outfile) (llik final outfile)" << endl;
+      cerr << "usage: ./calc_params max_subtype topology (u_n infile) (t_n outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
-  READS res;
-  QS qs;
-  int n, MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
-
+  int MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
+  
   MAX_SUBTYPE = atoi(argv[1]);
   TOTAL_CN = 2;
-  
-  trees trs;
-  trees_cons(trs, MAX_SUBTYPE);
-  MAX_TREE = trs.size();
-
-  hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
-
   int topology = atoi(argv[2]);
   
-  n = atoi(argv[3]);
+  trees tr;
+  trees_cons(tr, MAX_SUBTYPE);
+  MAX_TREE = tr.size();
 
-  Log purity = Log(atof(argv[4]));
-
-  const gsl_rng_type * T;
-
-  gsl_rng * r;
-
-  gsl_rng_env_setup();
-
-  // T = gsl_rng_default; // default is mt19937
-  T = gsl_rng_mt19937;
-  r = gsl_rng_alloc(T);
-  gsl_rng_set(r, 1);
-
-  VVLog gegen;
-  gegen.assign(FRACTIONS+1, VLog(GEGEN_MAX+1, Log(0)));
-
-  set_gegen(gegen);
-
-  VLog gegen_int (FRACTIONS+1, Log(0));
-  VLog gegen_int_err (FRACTIONS+1, Log(0));
-
-  set_gegen_integral(gegen_int, gegen_int_err);
-
-  ifstream f (argv[5]);
-  ofstream g (argv[6]);
-  ofstream h (argv[7]);
-  ofstream hh (argv[8]);
-           
-  for (int i=0; i<n; ++i)
-    {
-      READ *re = new READ;
-      int *q = new int;
-      f >> re->first >> re->second >> *q;
-      res.push_back(re);
-      qs.push_back(q);
-    }
+  ifstream u_n_in (argv[3]);
+  ofstream t_n_out (argv[4]);
+  t_n_out << scientific << setprecision(10);
   
-  params pa_new (hpa);
+  hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
+   
+  params pa (hpa);
+  read_params(u_n_in, pa, hpa);
   
-  g << scientific << setprecision(10);
-  h << scientific << setprecision(10);
-  hh << scientific << setprecision(10);
+  calc_t(pa, hpa, tr[topology]);
+  calc_n(pa, hpa, tr[topology]);
+  write_t_n(t_n_out, tr[topology], hpa);
   
-  diff di (res, qs, hpa, trs[topology], gegen, gegen_int, purity);
-  params pa_best (hpa);
-  double llik_best = -DBL_MAX;
-  for (int i=0; i<10; ++i)
-    {
-      cout << "minimize_iter: " << i << endl << endl;
-      h << "minimize_iter: " << i << endl << endl;
-      hh << "minimize_iter: " << i << endl << endl;
-      double llik = minimize(di, pa_new, h, r);
-      if (llik > llik_best)
-        {
-          copy_params(pa_new, pa_best, hpa);
-          llik_best = llik;
-        }
-      hh << "llik: " << llik << endl;
-      write_params(hh, pa_new, hpa);
-    }
-  write_params(g, pa_best, hpa);
+  u_n_in.close();
+  t_n_out.close();
   
-  for (int i=0; i<n; ++i)
-    {
-      delete res[i];
-      delete qs[i];
-    }
-  
-  f.close();
-  g.close();
-  h.close();
-  hh.close();
-
   return 0;
 }
