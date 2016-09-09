@@ -222,7 +222,14 @@ double calc_llik(READS& res, QS& qs, params& pa, hyperparams& hpa, subtypes& tr,
         }
       
       Log lik_k = Log(0);
-      for (int s=1; s<=FRACTIONS; ++s)
+
+      int s = 1;
+      if (eldest_ch_index != index)
+        {
+          s = 0;
+        }
+      
+      for (; s<=FRACTIONS; ++s)
         {
           tr[index].x = Log(((double) s) / FRACTIONS);
           calc_child_x(tr, hpa, inh);
@@ -339,7 +346,13 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
       Log d_th_k = Log(0);
       VLog d_n_k (hpa.MAX_SUBTYPE + 1, Log(0));
 
-      for (int s=1; s<=FRACTIONS; ++s)
+      int s = 1;
+      if (eldest_ch_index != index)
+        {
+          s = 0;
+        }
+
+      for (; s<=FRACTIONS; ++s)
         {
           tr[index].x = Log(((double) s) / FRACTIONS);
           calc_child_x(tr, hpa, inh);
