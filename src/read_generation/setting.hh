@@ -1,4 +1,4 @@
-#define CELL_MAX 10000
+#define CELL_MAX 100000
 #define FRACTIONS 10
 #define GEGEN_MAX 200
 #define BETA_TILDA 0.2
