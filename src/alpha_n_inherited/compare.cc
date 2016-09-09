@@ -301,6 +301,7 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
           int ch_index = (*ch)->index;
           d_variant_fraction_all(d_t_variant_fraction, 1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], dtvf[q][ch_index]);
           d_variant_fraction_all(d_th_variant_fraction, 1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], dthvf[q][ch_index]);
+          d_variant_fraction_all(d_n_variant_fraction, 1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], dnvf[q][ch_index]);
 
           // variant_fraction_partition(1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], vf_numerator[q][ch_index], vf_denominator[q][ch_index], partition[q][ch_index]);
         }
@@ -354,7 +355,9 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
       clear_x(tr, hpa, inh);
 
       d_t[index] += d_t_k / lik_k;
-      d_t[eldest_ch_index] += d_th_k / lik_k;
+      
+      if (eldest_ch_index != index)
+        d_t[eldest_ch_index] += d_th_k / lik_k;
       
       for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
         grad.pa[i]->n += d_n_k[i] / lik_k;
