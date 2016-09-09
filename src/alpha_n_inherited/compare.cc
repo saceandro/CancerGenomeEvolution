@@ -19,6 +19,7 @@ typedef void (*myfunc) (int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log be
 extern void variant_fraction_partition(int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& vf_numerator, VLog& vf_denominator, Log& partition);
 extern void d_variant_fraction_all(myfunc d_x_variant_fraction, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, VLog& vf, VLog& dvf);
 extern void d_t_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition);
+extern void d_th_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& denominator);
 extern void d_n_variant_fraction(int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& denominator);
 extern void set_gegen(VVLog &gegen);
 extern void set_gegen_integral(VLog &gegen_int, VLog &gegen_int_err);
@@ -108,6 +109,25 @@ void write_t_n(std::ostream& f, subtypes& st, hyperparams& hpa)
   f << endl << endl;
 }
 
+void calc_child_x(subtypes& tr, hyperparams&hpa, INHERITEDS& ihs)
+{
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      if (ihs[i] == 1)
+        {
+          tr[i].x = Log(1);
+        }
+    }
+}
+
+void clear_x(subtypes& tr, hyperparams&hpa, INHERITEDS& ihs)
+{
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      tr[i].x = Log(0);
+    }
+}
+
 double calc_mu(subtypes& tr, hyperparams& hpa)
 {
   Log sum = Log(0);
@@ -167,26 +187,49 @@ double calc_llik(READS& res, QS& qs, params& pa, hyperparams& hpa, subtypes& tr,
   int K;
   K = res.size();
 
-  VVLog vf (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
-  VVLog vf_numerator (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
-  VVLog vf_denominator (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
-  VLog partition (hpa.MAX_SUBTYPE + 1, Log(0));
+  VVVLog vf (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+  VVVLog vf_numerator (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+  VVVLog vf_denominator (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+  VVLog partition (hpa.MAX_SUBTYPE + 1, VLog (hpa.MAX_SUBTYPE + 1, Log(0)));
 
   for (int q=1; q<=hpa.MAX_SUBTYPE; ++q)
-    variant_fraction_partition(0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q], vf_numerator[q], vf_denominator[q], partition[q]);
-
+    {
+      variant_fraction_partition(0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q][q], vf_numerator[q][q], vf_denominator[q][q], partition[q][q]);
+      for (std::vector<subtype*>::iterator ch=tr[q].children.begin(); ch!=tr[q].children.end(); ++ch)
+        {
+          int ch_index = (*ch)->index;
+          variant_fraction_partition(1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], vf_numerator[q][ch_index], vf_denominator[q][ch_index], partition[q][ch_index]);
+          // variant_fraction_partition(0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q], vf_numerator[q], vf_denominator[q], partition[q]);
+        }
+    }
+  
   Log lik = Log(1);
   
   for (int k=0; k<K; ++k)
     {
+      int index = *(qs[k]->first);
+      INHERITEDS inh = *(qs[k]->second);
+
+      int eldest_ch_index = index;
+      for (std::vector<subtype*>::iterator ch=tr[index].children.begin(); ch!=tr[index].children.end(); ++ch)
+        {
+          int ch_index = (*ch)->index;
+          if (inh[ch_index] == 1)
+            {
+              eldest_ch_index = ch_index;
+              break;
+            }
+        }
+      
       Log lik_k = Log(0);
       for (int s=1; s<=FRACTIONS; ++s)
         {
-          tr[*(qs[k]->first)].x = Log(((double) s) / FRACTIONS);
+          tr[index].x = Log(((double) s) / FRACTIONS);
+          calc_child_x(tr, hpa, inh);
           double mu = calc_mu(tr, hpa);
-          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[*(qs[k]->first)][s];
+          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[index][eldest_ch_index][s];
         }
-      tr[*(qs[k]->first)].x = Log(0);
+      clear_x(tr, hpa, inh);
       
       lik *= lik_k;
     }
@@ -243,15 +286,31 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
   int K;
   K = res.size();
 
-  VVLog vf (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
-  VVLog dtvf (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
-  VVLog dnvf (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0)));
-  
+  VVVLog vf (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+  VVVLog dtvf (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+  VVVLog dthvf (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+  VVVLog dnvf (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+
   for (int q=1; q<=hpa.MAX_SUBTYPE; ++q)
     {
-      d_variant_fraction_all(d_t_variant_fraction, 0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q], dtvf[q]);
-      d_variant_fraction_all(d_n_variant_fraction, 0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q], dnvf[q]);
+      d_variant_fraction_all(d_t_variant_fraction, 0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q][q], dtvf[q][q]);
+      d_variant_fraction_all(d_n_variant_fraction, 0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q][q], dnvf[q][q]);
+      
+      for (std::vector<subtype*>::iterator ch=tr[q].children.begin(); ch!=tr[q].children.end(); ++ch)
+        {
+          int ch_index = (*ch)->index;
+          d_variant_fraction_all(d_t_variant_fraction, 1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], dtvf[q][ch_index]);
+          d_variant_fraction_all(d_th_variant_fraction, 1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], dthvf[q][ch_index]);
+
+          // variant_fraction_partition(1, q, tr[q].n, tr[q].t, tr[ch_index].t, Log(BETA_TILDA), gegen, gegen_int, vf[q][ch_index], vf_numerator[q][ch_index], vf_denominator[q][ch_index], partition[q][ch_index]);
+        }
     }
+
+  // for (int q=1; q<=hpa.MAX_SUBTYPE; ++q)
+  //   {
+  //     d_variant_fraction_all(d_t_variant_fraction, 0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q], dtvf[q]);
+  //     d_variant_fraction_all(d_n_variant_fraction, 0, q, tr[q].n, tr[q].t, Log(0), Log(BETA_TILDA), gegen, gegen_int, vf[q], dnvf[q]);
+  //   }
 
   Log lik = Log(1);
 
@@ -259,25 +318,44 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
   
   for (int k=0; k<K; ++k)
     {
+      int index = *(qs[k]->first);
+      INHERITEDS inh = *(qs[k]->second);
+
+      int eldest_ch_index = index;
+      for (std::vector<subtype*>::iterator ch=tr[index].children.begin(); ch!=tr[index].children.end(); ++ch)
+        {
+          int ch_index = (*ch)->index;
+          if (inh[ch_index] == 1)
+            {
+              eldest_ch_index = ch_index;
+              break;
+            }
+        }
+
       Log lik_k = Log(0);
       Log d_t_k = Log(0);
+      Log d_th_k = Log(0);
       VLog d_n_k (hpa.MAX_SUBTYPE + 1, Log(0));
 
       for (int s=1; s<=FRACTIONS; ++s)
         {
-          tr[*(qs[k]->first)].x = Log(((double) s) / FRACTIONS);
+          tr[index].x = Log(((double) s) / FRACTIONS);
+          calc_child_x(tr, hpa, inh);
           double mu = calc_mu(tr, hpa);
-          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[*(qs[k]->first)][s];
-          d_t_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dtvf[*(qs[k]->first)][s];
+          lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[index][eldest_ch_index][s];
+          d_t_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dtvf[index][eldest_ch_index][s];
+          d_th_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dthvf[index][eldest_ch_index][s];
 
           for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
-            d_n_k[i] += d_mu_n(tr, hpa, i) * d_bin_mu(*res[k], mu) * vf[*(qs[k]->first)][s];
+            d_n_k[i] += d_mu_n(tr, hpa, i) * d_bin_mu(*res[k], mu) * vf[index][eldest_ch_index][s];
 
-          d_n_k[*(qs[k]->first)] += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dnvf[*(qs[k]->first)][s];
+          d_n_k[index] += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dnvf[index][eldest_ch_index][s];
         }
-      tr[*(qs[k]->first)].x = Log(0);
+      clear_x(tr, hpa, inh);
 
-      d_t[*(qs[k]->first)] += d_t_k / lik_k;
+      d_t[index] += d_t_k / lik_k;
+      d_t[eldest_ch_index] += d_th_k / lik_k;
+      
       for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
         grad.pa[i]->n += d_n_k[i] / lik_k;
         
