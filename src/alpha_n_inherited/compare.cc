@@ -332,6 +332,7 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
               break;
             }
         }
+      // cerr << eldest_ch_index << endl;
 
       Log lik_k = Log(0);
       Log d_t_k = Log(0);
@@ -342,6 +343,16 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
         {
           tr[index].x = Log(((double) s) / FRACTIONS);
           calc_child_x(tr, hpa, inh);
+
+          // if (s == 2)
+          //   {
+          //     for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+          //       {
+          //         cerr << tr[i].x.eval() << "\t";
+          //       }
+          //     cerr << endl;
+          //   }
+          
           double mu = calc_mu(tr, hpa);
           lik_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * vf[index][eldest_ch_index][s];
           d_t_k += Log(log_binomial_pdf(res[k]->first, mu, res[k]->second), 1) * dtvf[index][eldest_ch_index][s];
@@ -354,6 +365,11 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
         }
       clear_x(tr, hpa, inh);
 
+      // cerr << lik_k.get_val() << "\t" << (d_t_k / lik_k).eval() << "\t" << (d_th_k / lik_k).eval() << endl;
+      // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i) // start from subtype 1
+      //   cerr << (d_n_k[i] / lik_k).eval() << "\t";
+      // cerr << endl << endl;
+
       d_t[index] += d_t_k / lik_k;
       
       if (eldest_ch_index != index)
@@ -364,11 +380,8 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
         
       lik *= lik_k;
     }
-
-  // for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-  //   cerr << d_n[i].eval() << "\t";
   // cerr << endl;
-  
+
   for (int j=1; j<=hpa.MAX_SUBTYPE; ++j)
     {
       Log acc = Log(0);
