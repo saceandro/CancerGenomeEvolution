@@ -115,12 +115,18 @@ void generate_params(params& pa, hyperparams& hpa, subtypes& tr, gsl_rng* rng)
   calc_n(pa, hpa, tr);
 }
 
-void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams& hpa, subtypes& tr, int seed, gsl_rng* rng, VVLog& gegen)
+void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams& hpa, subtypes& tr, int seed, gsl_rng* rng, VVLog& gegen, long long int bp)
 {
   double dt = 1.0 / t_fractions;
 
+  int until = 0;
+  if (bp >= 7500000000LL) // to avoid time consume
+    {
+      until = 9;
+    }
+  
   Log t;
-  for (int h = t_fractions - 1; h > 0; --h)
+  for (int h = t_fractions - 1; h > until; --h)
     {
       t = h*dt;
 
@@ -132,7 +138,9 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
           Log Nni = Log(CELL_MAX) * tr[i].n;
           Log lNni = Nni.take_log_Log();
           Log Nni_t = ((Log(1) - t / tr[i].t) * lNni).take_exp();
-          unsigned int s = gsl_ran_binomial(rng, pa.pa[i]->r.eval(), (unsigned int) Nni_t.eval());
+          Log lambda = Nni_t * Log(bp) * pa.pa[i]->r * Log(dt);
+          cout << "lambda: " << lambda.eval() << endl;
+          unsigned int s = gsl_ran_poisson(rng, lambda.eval());
           
           VLog vf (FRACTIONS + 1, Log(0));
           variant_fraction_t_partition(Nni_t.inverse(), tr[i].n, tr[i].t, t, BETA_TILDA, gegen, vf);
@@ -241,9 +249,9 @@ int main(int argc, char** argv)
   gsl_set_error_handler_off ();
   cerr << scientific;
   
-  if (argc != 8)
+  if (argc != 9)
     {
-      cerr << "usage: ./generate_reads_allinherited max_subtype M t_fractions topology seed (u_n infile) (reads outfile)" << endl;
+      cerr << "usage: ./generate_reads_poisson max_subtype M t_fractions topology bp seed (u_n infile) (reads outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
@@ -254,14 +262,17 @@ int main(int argc, char** argv)
   M = atoi(argv[2]);
   t_fractions = atoi(argv[3]);
   topology = atoi(argv[4]);
-  seed = atoi(argv[5]);
+  long long int bp = atoll(argv[5]);
+  cout << "bp: " << bp << endl;
+  
+  seed = atoi(argv[6]);
 
   trees tr;
   trees_cons(tr, MAX_SUBTYPE);
   MAX_TREE = tr.size();
 
-  ifstream f (argv[6]);
-  ofstream h (argv[7]);
+  ifstream f (argv[7]);
+  ofstream h (argv[8]);
   
   const gsl_rng_type * T;
 
@@ -287,7 +298,7 @@ int main(int argc, char** argv)
   calc_t(pa, hpa, tr[topology]);
   calc_n(pa, hpa, tr[topology]);
 
-  generate_binom(h, M, t_fractions, pa, hpa, tr[topology], seed, r, gegen);
+  generate_binom(h, M, t_fractions, pa, hpa, tr[topology], seed, r, gegen, bp);
   
   gsl_rng_free (r);
   

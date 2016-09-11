@@ -111,7 +111,7 @@ public:
 params::params(hyperparams& hpa)
 {
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    pa.push_back(new param (Log(0), Log(1), Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0))))); // set mutation rate to be 1 for all subtype
+    pa.push_back(new param (Log(0), Log((1e-6) / 6.0), Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0))))); // set mutation rate to be 0.5 for all subtype
 }
 
 params::~params()

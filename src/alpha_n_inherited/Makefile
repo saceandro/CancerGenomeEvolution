@@ -19,7 +19,10 @@ grad: grad.cc variant_fraction.cc setting.hh ../../util/loglib.hh ../../util/enu
 	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ grad.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
 grad_foraccuracy: grad_foraccuracy.cc variant_fraction.cc setting.hh ../../util/loglib.hh ../../util/enumtree_wf.hh
-	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ grad_foraccuracy.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
+	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ grad_foraccuracy.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
+
+grad_foraccuracy_n: grad_foraccuracy_n.cc variant_fraction.cc setting.hh ../../util/loglib.hh ../../util/enumtree_wf.hh
+	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ grad_foraccuracy_n.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
 accuracy: accuracy.cc variant_fraction.cc setting.hh ../../util/loglib.hh ../../util/enumtree_wf.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ accuracy.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
