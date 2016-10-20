@@ -1,19 +1,19 @@
-#include "setting.hh"
 #include <fstream>
 #include <algorithm>
 #include <numeric>
 #include <fenv.h>
-#include <bitset>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_multimin.h>
 #include <gsl/gsl_deriv.h>
 #include <gsl/gsl_sf.h>
-#include "../../util/enumtree_wf_n_r_pattern_multinomial.hh"
+#include <iomanip>
+#include "../../util/enumtree_wf_n_r_inherited.hh"
+#include "setting.hh"
 #include <xmmintrin.h>
-
 using namespace std;
 
 #define calc_sigmoid(x) ((tanh((x)/2.0) + 1.0) / 2.0)
+#define calc_asigmoid(x) (2.0 * atanh(2.0 * (x) - 1.0))
 
 typedef void (*myfunc) (int s, int h, int q, Log n_q, Log t_q, Log t_q_h, Log beta_tilda_q, VVLog& gegen, VLog& gegen_int, Log& numerator, Log& partition);
 
@@ -36,39 +36,20 @@ typedef vector<VVLog> VVVLog;
 typedef vector<int> INHERITEDS;
 typedef pair<int*, INHERITEDS*> Q;
 typedef vector< Q* > QS;
-// typedef vector<int*> QS;
 
-typedef struct _du
+class diff
 {
-  int i;
-  READS &res;
-  QS &qs;
-  gsl_vector *x;
-  hyperparams &hpa;
+public:
+  READS& res;
+  QS& qs;
+  hyperparams& hpa;
   subtypes& tr;
-  VVLog gegen;
-  VLog gegen_int;
+  VVLog& gegen;
+  VLog& gegen_int;
   Log purity;
   
-  _du (int _i, READS& _res, QS& _qs, gsl_vector* _x, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int, Log& _purity) : i(_i), res(_res), qs(_qs), x(_x), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int), purity(_purity) {}
-}
-  du;
-
-typedef struct _dn
-{
-  int index;
-  READS &res;
-  QS &qs;
-  gsl_vector *x;
-  hyperparams &hpa;
-  subtypes& tr;
-  VVLog gegen;
-  VLog gegen_int;
-  Log purity;
-  
-  _dn (int _index, READS& _res, QS& _qs, gsl_vector* _x, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int, Log& _purity) : index(_index), res(_res), qs(_qs), x(_x), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int), purity(_purity) {}
-}
-  dn;
+  diff (READS& _res, QS& _qs, hyperparams& _hpa, subtypes& _tr, VVLog& _gegen, VLog& _gegen_int, Log& _purity) : res(_res), qs(_qs), hpa(_hpa), tr(_tr), gegen(_gegen), gegen_int(_gegen_int), purity(_purity) {}
+};
 
 double calc_dx_sigmoid(double x)
 {
@@ -84,7 +65,7 @@ double sum_vector(Vdouble& v, int s, int e)
   return sum;
 }
 
-void write_params(std::ofstream& f, params& pa, hyperparams& hpa, subtypes& tr)
+void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
 {
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
@@ -92,22 +73,24 @@ void write_params(std::ofstream& f, params& pa, hyperparams& hpa, subtypes& tr)
     }
   f << endl;
 
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
     {
       f << pa.pa[i]->n.eval() << "\t";
     }
   f << endl;
 }
 
-void write_t_n(std::ostream& f, subtypes& st, hyperparams& hpa)
+void copy_params(params& pa, params& target, hyperparams& hpa)
 {
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      target.pa[i]->u = pa.pa[i]->u;
+    }
+  
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    f << st[i].t.eval() << "\t";
-  f << endl;
-
-  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    f << st[i].n.eval() << "\t";
-  f << endl << endl;
+    {
+      target.pa[i]->n = pa.pa[i]->n;
+    }
 }
 
 void calc_child_x(subtype& st, hyperparams&hpa, int pat)
@@ -251,50 +234,6 @@ double calc_llik(READS& res, QS& qs, params& pa, hyperparams& hpa, subtypes& tr,
   return lik.take_log();
 }
 
-double calc_llik_for_du(double x_i, void* _du)
-{
-  du* p = (du*) _du;
-
-  gsl_vector_set(p->x, p->i-1, x_i);
-
-  params pa (p->hpa);
-  pa.pa[0]->n = Log(1) - p->purity;
-  calc_params(p->x, pa, p->hpa);
-
-  calc_t(pa, p->hpa, p->tr);
-  calc_n(pa, p->hpa, p->tr);
-
-  // cerr << "calc_llik_for_du" << endl;
-  // cerr << "params" << endl;
-  // write_params((ofstream&)cerr, pa, p->hpa, p->tr);
-  // cerr << "t_n" << endl;
-  // write_t_n(cerr, p->tr, p->hpa);
-
-  return calc_llik(p->res, p->qs, pa, p->hpa, p->tr, p->gegen, p->gegen_int);
-}
-
-double calc_llik_for_dn(double x_i_j, void* _dn)
-{
-  dn* p = (dn*) _dn;
-
-  gsl_vector_set(p->x, p->hpa.MAX_SUBTYPE + p->index-1, x_i_j);
-
-  params pa (p->hpa);
-  pa.pa[0]->n = Log(1) - p->purity;
-  calc_params(p->x, pa, p->hpa);
-
-  calc_t(pa, p->hpa, p->tr);
-  calc_n(pa, p->hpa, p->tr);
-
-  // cerr << "calc_llik_for_du" << endl;
-  // cerr << "params" << endl;
-  // write_params((ofstream&)cerr, pa, p->hpa, p->tr);
-  // cerr << "t_n" << endl;
-  // write_t_n(cerr, p->tr, p->hpa);
-
-  return calc_llik(p->res, p->qs, pa, p->hpa, p->tr, p->gegen, p->gegen_int);
-}
-
 double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int)
 {
   int K;
@@ -398,61 +337,20 @@ double d_llik(READS& res, QS& qs, params& pa, params& grad, hyperparams& hpa, su
   return lik.take_log();
 }
 
-double calc_rel_err(double x, double y)
+double my_f (const gsl_vector *v, void *par)
 {
-  return fabs(x - y) / fabs(x);
-}
+  diff *p = (diff *) par;
 
-double calc_dx_u_llik_numeric(int i, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
-{
-  gsl_function F;
-  du _du (i, res, qs, x, hpa, tr, gegen, gegen_int, purity);
+  params pa (p->hpa);
+  pa.pa[0]->n = Log(1) - p->purity;
+  calc_params(v, pa, p->hpa);
 
-  F.function = &calc_llik_for_du;
-  F.params = &_du;
-
-  double result, abserr;
-  gsl_deriv_central(&F, gsl_vector_get(x, i-1), 1e-5, &result, &abserr);
+  calc_t(pa, p->hpa, p->tr);
+  calc_n(pa, p->hpa, p->tr);
   
-  return result;
-}
+  double llik = calc_llik(p->res, p->qs, pa, p->hpa, p->tr, p->gegen, p->gegen_int);
 
-double calc_dx_u_llik_analytic(int i, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
-{
-  int K = res.size();
-
-  params pa (hpa);
-  pa.pa[0]->n = Log(1) - purity;
-  calc_params(x, pa, hpa);
-
-  calc_t(pa, hpa, tr);
-  calc_n(pa, hpa, tr);
-
-  // cerr << "calc_dx_u_llik_analytic" << endl;
-  // cerr << "params" << endl;
-  // write_params((ofstream&)cerr, pa, hpa, tr);
-  // cerr << "t_n" << endl;
-  // write_t_n(cerr, tr, hpa);
-  
-  params grad (hpa);
-
-  double llik = d_llik(res, qs, pa, grad, hpa, tr, gegen, gegen_int);
-
-  return (Log(calc_dx_sigmoid(gsl_vector_get(x, i-1))) * grad.pa[i]->u).eval();
-}
-
-double calc_dx_n_llik_numeric(int index, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
-{
-  gsl_function F;
-  dn _dn (index, res, qs, x, hpa, tr, gegen, gegen_int, purity);
-
-  F.function = &calc_llik_for_dn;
-  F.params = &_dn;
-
-  double result, abserr;
-  gsl_deriv_central(&F, gsl_vector_get(x, hpa.MAX_SUBTYPE + index-1), 1e-5, &result, &abserr);
-  
-  return result;
+  return -llik;
 }
 
 Log d_n_s(params& pa, int i, int j) // corrected
@@ -463,29 +361,48 @@ Log d_n_s(params& pa, int i, int j) // corrected
   return -pa.pa[i]->n * pa.pa[j]->n/(Log(1) - pa.pa[0]->n);
 }
 
-double calc_dx_n_llik_analytic(int index, READS& res, QS& qs, gsl_vector* x, hyperparams& hpa, subtypes& tr, VVLog& gegen, VLog& gegen_int, Log purity)
+/* The gradient of f, df = (df/dx). */
+void my_df (const gsl_vector *v, void *par, gsl_vector *df)
 {
-  int K = res.size();
+  diff *p = (diff *) par;
 
-  params pa (hpa);
-  pa.pa[0]->n = Log(1) - purity;
-  calc_params(x, pa, hpa);
+  int K = p->res.size();
+  
+  params pa (p->hpa);
+  pa.pa[0]->n = Log(1) - p->purity;
+  calc_params(v, pa, p->hpa);
 
-  calc_t(pa, hpa, tr);
-  calc_n(pa, hpa, tr);
+  calc_t(pa, p->hpa, p->tr);
+  calc_n(pa, p->hpa, p->tr);
 
-  params grad (hpa);
+  params grad (p->hpa);
 
-  double llik = d_llik(res, qs, pa, grad, hpa, tr, gegen, gegen_int);
+  double llik = d_llik(p->res, p->qs, pa, grad, p->hpa, p->tr, p->gegen, p->gegen_int);
 
-  Log gr = Log(0);
-
-  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+  for (int i=1; i<=p->hpa.MAX_SUBTYPE; ++i)
     {
-      gr += d_n_s(pa, index, i) * grad.pa[i]->n;
+      double gr = (Log(calc_dx_sigmoid(gsl_vector_get(v, i-1))) * grad.pa[i]->u).eval();
+      gsl_vector_set(df, i-1, -gr);
     }
+
+  for (int index=1; index<=p->hpa.MAX_SUBTYPE; ++index)
+    {
+      Log gr = Log(0);
       
-  return gr.eval();
+      for (int i=1; i<=p->hpa.MAX_SUBTYPE; ++i)
+        {
+          gr += d_n_s(pa, index, i) * grad.pa[i]->n;
+        }
+      gsl_vector_set(df, p->hpa.MAX_SUBTYPE + index-1, (-gr).eval());
+    }
+}
+
+/* Compute both f and df together. */
+void my_fdf (const gsl_vector *x, void *par, double *f, gsl_vector *df)
+{
+  *f = my_f(x, par);
+
+  my_df(x, par, df);
 }
 
 void gsl_set_random(gsl_vector* x, hyperparams& hpa, gsl_rng* rng)
@@ -493,46 +410,131 @@ void gsl_set_random(gsl_vector* x, hyperparams& hpa, gsl_rng* rng)
   for (int i=0; i<1024; ++i) // for appropriet random number generation
     gsl_rng_uniform(rng);
 
-  for (int i=0; i<2*hpa.MAX_SUBTYPE; ++i)
+  for (int i=0; i<hpa.MAX_SUBTYPE; ++i)
+    {
+      double a = 0.6 + 0.3 * gsl_rng_uniform(rng);
+      gsl_vector_set(x, i, calc_asigmoid(a));
+    }
+
+  for (int i=hpa.MAX_SUBTYPE; i<2*hpa.MAX_SUBTYPE; ++i)
     {
       double a = gsl_rng_uniform(rng);
       gsl_vector_set(x, i, a);
     }
+  
+  // for (int i=0; i<2*hpa.MAX_SUBTYPE; ++i)
+  //   {
+  //     cerr << calc_sigmoid(gsl_vector_get(x, i)) << "\t";
+  //   }
+  // cerr << endl;
+}
+
+double minimize(diff& di, params& pa, ofstream& h, gsl_rng* rng)
+{
+  size_t iter = 0;
+  int status;
+
+  const gsl_multimin_fdfminimizer_type *T;
+  gsl_multimin_fdfminimizer *s;
+
+  gsl_vector *x;
+  gsl_multimin_function_fdf my_func;
+
+  my_func.n = 2*di.hpa.MAX_SUBTYPE;
+  my_func.f = my_f;
+  my_func.df = my_df;
+  my_func.fdf = my_fdf;
+  my_func.params = &di;
+
+  x = gsl_vector_alloc (my_func.n);
+  gsl_set_random(x, di.hpa, rng);
+
+  T = gsl_multimin_fdfminimizer_conjugate_fr;
+  s = gsl_multimin_fdfminimizer_alloc (T, my_func.n);
+
+  gsl_multimin_fdfminimizer_set (s, &my_func, x, 0.001, 1e-7);
+
+  do
+    {
+      iter++;
+      status = gsl_multimin_fdfminimizer_iterate (s);
+
+      if (status)
+        {
+          if (status == GSL_ENOPROG)
+            {
+              cout << "No more improvement can be made for current estimate" << endl << endl;
+              pa.pa[0]->n = Log(1) - di.purity;
+              calc_params(s->x, pa, di.hpa);
+            }
+          break;
+        }
+
+      pa.pa[0]->n = Log(1) - di.purity;
+      calc_params(s->x, pa, di.hpa);
+      write_params((ofstream&)cout, pa, di.hpa);
+      cout << -s->f << endl << endl;
+      h << iter << "\t" << -s->f << endl;
+      
+      status = gsl_multimin_test_gradient (s->gradient, 1e-6);
+      if (status == GSL_SUCCESS)
+        {
+          //cerr << "Minimum found at:" << endl;
+        }
+
+      //cerr << "iter: " << iter << endl;
+      //cerr << "kappa\tgrad: " << endl;
+      //for (int r=1; r<=st.TOTAL_CN; ++r)
+        //cerr << kappa[r] << "\t" << -gsl_vector_get(s->gradient, r-1) << endl;
+
+      //cerr << "llik: " << -s->f << endl << endl;
+    }
+  while (status == GSL_CONTINUE && iter < 1000);
+
+  double llik = -s->f;
+  gsl_multimin_fdfminimizer_free (s);
+  gsl_vector_free (x);
+
+  return llik;
 }
 
 int main(int argc, char** argv)
 {
-  cout << scientific;
+  cout << scientific << setprecision(10);
   cerr << scientific;
   
-  // feenableexcept(FE_INVALID | FE_OVERFLOW);
+  // feenableexcept(FE_INVALID);
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
-  
   gsl_set_error_handler_off ();
   
-  if (argc != 11)
+  if (argc != 9)
     {
-      cerr << "usage: ./compare max_subtype n step tumor_purity (reads) (u diff outfile) (n diff outfile) topology u_index beta_index" << endl;
+      cerr << "usage: ./grad_foraccuracy_n subtype topology n (purity infile) (reads infile) (u n outfile) (llik outfile) (llik final outfile)" << endl;
       exit(EXIT_FAILURE);
     }
 
   READS res;
   QS qs;
-  int n, step, MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
+  int n, MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
 
   MAX_SUBTYPE = atoi(argv[1]);
   TOTAL_CN = 2;
-
+  
   trees trs;
   trees_cons(trs, MAX_SUBTYPE);
   MAX_TREE = trs.size();
 
   hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
+
+  int topology = atoi(argv[2]);
   
-  n = atoi(argv[2]);
-  step = atoi(argv[3]);
-  Log purity = Log(atof(argv[4]));
-  
+  n = atoi(argv[3]);
+
+  ifstream purity_in (argv[4]);
+  double pu = 0;
+  purity_in >> pu;
+  Log purity = Log(pu);
+
   const gsl_rng_type * T;
 
   gsl_rng * r;
@@ -544,17 +546,6 @@ int main(int argc, char** argv)
   r = gsl_rng_alloc(T);
   gsl_rng_set(r, 1);
 
-  ifstream f (argv[5]);
-  ofstream ff (argv[6]);
-  ofstream g (argv[7]);
-
-  int a = atoi(argv[8]);
-  int u_index = atoi(argv[9]);
-  int beta_index = atoi(argv[10]);
-
-  ff << scientific;
-  g << scientific;
-
   VVLog gegen;
   gegen.assign(FRACTIONS+1, VLog(GEGEN_MAX+1, Log(0)));
 
@@ -565,7 +556,10 @@ int main(int argc, char** argv)
 
   set_gegen_integral(gegen_int, gegen_int_err);
 
-  gsl_vector* x = gsl_vector_alloc(2*hpa.MAX_SUBTYPE);
+  ifstream f (argv[5]);
+  ofstream g (argv[6]);
+  ofstream h (argv[7]);
+  ofstream hh (argv[8]);
 
   for (int k=0; k<n; ++k)
     {
@@ -579,164 +573,55 @@ int main(int argc, char** argv)
           f >> (*ih)[i];
         }
       
-      // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-      //   {
-      //     cout << (*ih)[i] << "\t";
-      //   }
-      // cout << endl;
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+        {
+          cout << (*ih)[i] << "\t";
+        }
+      cout << endl;
       
       Q *q = new Q (a, ih);
       res.push_back(re);
       qs.push_back(q);
     }
 
-  for (int i=-step; i<=step; ++i)
+  params pa_new (hpa);
+  
+  g << scientific << setprecision(10);
+  h << scientific << setprecision(10);
+  hh << scientific << setprecision(10);
+  
+  diff di (res, qs, hpa, trs[topology], gegen, gegen_int, purity);
+  params pa_best (hpa);
+  double llik_best = -DBL_MAX;
+  for (int i=0; i<10; ++i)
     {
-      gsl_set_random(x, hpa, r);
-      gsl_vector_set(x, u_index-1, 1.0 * ((double)i) / step);
-      double num = calc_dx_u_llik_numeric(u_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
-      double analytic = calc_dx_u_llik_analytic(u_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
-
-      ff << gsl_vector_get(x, u_index-1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-      // cerr << "-----------------------------------------------------------------------------------------------------------------" << endl;
+      cout << "minimize_iter: " << i << endl << endl;
+      h << "minimize_iter: " << i << endl << endl;
+      hh << "minimize_iter: " << i << endl << endl;
+      double llik = minimize(di, pa_new, h, r);
+      if (llik > llik_best)
+        {
+          copy_params(pa_new, pa_best, hpa);
+          llik_best = llik;
+        }
+      hh << "llik: " << llik << endl;
+      write_params(hh, pa_new, hpa);
     }
-
-  for (int i=-step; i<=step; ++i)
-    {
-      gsl_set_random(x, hpa, r);
-      gsl_vector_set(x, hpa.MAX_SUBTYPE + beta_index-1, 1.0 * ((double)i) / step);
-      double num = calc_dx_n_llik_numeric(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
-      double analytic = calc_dx_n_llik_analytic(beta_index, res, qs, x, hpa, trs[a], gegen, gegen_int, purity);
-
-      if (fabs(num) > 0)
-        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + beta_index-1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << calc_rel_err(num, analytic) << endl;
-      else
-        g << gsl_vector_get(x, hpa.MAX_SUBTYPE + beta_index-1) << "\t" << num << "\t" << analytic << "\t" << fabs(num - analytic) << "\t" << -1 << endl;
-    }
-
+  write_params(g, pa_best, hpa);
+  
   for (int i=0; i<n; ++i)
     {
       delete res[i];
+      delete qs[i]->first;
+      delete qs[i]->second;
       delete qs[i];
     }
-
+  
   f.close();
   g.close();
-  ff.close();
+  h.close();
+  hh.close();
+  purity_in.close();
 
   return 0;
 }
-
-// int main(int argc, char** argv)
-// {
-//   cout << scientific;
-//   cerr << scientific;
-  
-//   // feenableexcept(FE_INVALID | FE_OVERFLOW);
-//   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
-  
-//   gsl_set_error_handler_off ();
-  
-//   if (argc != 11)
-//     {
-//       cerr << "usage: ./compare max_subtype n step tumor_purity (reads) (u diff outfile) (n diff outfile) topology u_index beta_index" << endl;
-//       exit(EXIT_FAILURE);
-//     }
-
-//   READS res;
-//   QS qs;
-//   int n, step, MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
-
-//   MAX_SUBTYPE = atoi(argv[1]);
-//   TOTAL_CN = 2;
-
-//   trees trs;
-//   trees_cons(trs, MAX_SUBTYPE);
-//   MAX_TREE = trs.size();
-
-//   hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
-  
-//   n = atoi(argv[2]);
-//   step = atoi(argv[3]);
-//   Log purity = Log(atof(argv[4]));
-  
-//   const gsl_rng_type * T;
-
-//   gsl_rng * r;
-
-//   gsl_rng_env_setup();
-
-//   // T = gsl_rng_default; // default is mt19937
-//   T = gsl_rng_mt19937;
-//   r = gsl_rng_alloc(T);
-//   gsl_rng_set(r, 1);
-
-//   ifstream f (argv[5]);
-//   ofstream ff (argv[6]);
-//   ofstream g (argv[7]);
-
-//   int a = atoi(argv[8]);
-//   int u_index = atoi(argv[9]);
-//   int beta_index = atoi(argv[10]);
-
-//   ff << scientific;
-//   g << scientific;
-
-//   VVLog gegen;
-//   gegen.assign(FRACTIONS+1, VLog(GEGEN_MAX+1, Log(0)));
-
-//   set_gegen(gegen);
-
-//   VLog gegen_int (FRACTIONS+1, Log(0));
-//   VLog gegen_int_err (FRACTIONS+1, Log(0));
-
-//   set_gegen_integral(gegen_int, gegen_int_err);
-
-//   gsl_vector* x = gsl_vector_alloc(2*hpa.MAX_SUBTYPE);
-
-//   for (int k=0; k<n; ++k)
-//     {
-//       READ *re = new READ;
-//       int *a = new int;
-//       INHERITEDS *ih = new INHERITEDS (MAX_SUBTYPE + 1, 0);
-
-//       f >> re->first >> re->second >> *a;
-//       for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-//         {
-//           f >> (*ih)[i];
-//         }
-      
-//       // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-//       //   {
-//       //     cout << (*ih)[i] << "\t";
-//       //   }
-//       // cout << endl;
-      
-//       Q *q = new Q (a, ih);
-//       res.push_back(re);
-//       qs.push_back(q);
-//     }
-
-//   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-//     {
-//       cerr << "i: " << i << endl;
-//       cerr << trs[a][i].children.size() << endl;
-      
-//       for (int pat=0; pat<pow(2,trs[a][i].children.size()); ++pat)
-//         {
-//           cerr << "pat: " << pat << endl;
-//           cerr << static_cast<bitset<8> > (pat) << "\t" << calc_eldest_child_index(trs[a][i], pat) << endl;
-//           trs[a][i].x = Log(0.2);
-//           calc_child_x(trs[a][i], hpa, pat);
-//           for (int j=1; j<=hpa.MAX_SUBTYPE; ++j)
-//             {
-//               cerr << trs[a][j].x.eval() << " ";
-//             }
-//           cerr << endl;
-//           clear_x(trs[a], hpa);
-//         }
-//       cerr << endl;
-//     }
-  
-//   return 0;
-// }
