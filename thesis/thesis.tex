@@ -1,0 +1,168 @@
+%#BIBTEX upbibtex thesis
+\documentclass[12pt]{article}
+\bibliographystyle{unsrt}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage[dvipdfmx,svgnames]{xcolor}%before tikz
+\usepackage{tikz}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{chemarrow}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{tabu}
+\usepackage{float}
+\usepackage{txfonts}
+\usepackage{url}
+\usepackage{siunitx}
+\usepackage{subfigure}
+\usepackage{enumerate}
+\usepackage{caption}
+\usepackage{wrapfig}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{picture}
+\usepackage{multicol}
+\usepackage{etoolbox}
+\usepackage{fancyhdr}
+% \usepackage{listings,jlisting}
+% \lstset{basicstyle=\ttfamily,
+%   showstringspaces=false,
+%   commentstyle=\color{red},
+%   keywordstyle=\color{blue}
+% }
+%\usepackage{makeidx}
+
+\newcommand{\napier}{\mathrm{e}}
+\newcommand{\unitone}[2]{${#1}\,\mathrm{#2}$}
+\newcommand{\unittwo}[3]{${#1}\,\mathrm{#2}/\mathrm{#3}$}
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\bibun}[2]{\frac{\dif {#1}}{\dif {#2}}}
+\newcommand{\henbibun}[2]{\frac{\partial {#1}}{\partial {#2}}}
+\newcommand{\figref}[1]{図\ref{#1}}
+\newcommand{\tabref}[1]{表\ref{#1}}
+\renewcommand{\thesubfigure}{(\thefigure.\arabic{subfigure})}
+\geometry{left=30mm, right=30mm, top=20mm, bottom=20mm}
+%\makeindex
+
+\begin{document}
+\title{{\large Department of Computational Biology and Medical Sciences\\Graduate School of Frontier Sciences\\The University of Tokyo}\vspace{4cm}\\2016\\Master's Thesis\vspace{1cm}\\Inferring tumor clonal evolution utilizing population genetics\\（集団遺伝学を利用したがんのクローン進化過程の推定）\vspace{3cm}\\{\large Submitted January 27, 2017\\Adviser: Associate Professor Hisanori Kiryu}\vspace{3cm}}
+\author{{\Large Yutaro Konta}}
+\date{}
+\maketitle
+\thispagestyle{empty}
+\newpage
+
+%\tableofcontents
+%\listoftables
+%\listoffigures
+\pagenumbering{arabic}
+
+\section{Introduction}
+Cancer arises as a result of the somatic mutation accumulation. Every cell within a tumor has derived from a single founder cell, whose subsequent accumulation of advantageous mutations causes clonal expansions (Figure 1). In the course of clonal expansion, a driver mutation gives rise to another type of clone, which is called a subtype. As a result, a tumor is a mixture of various subtypes. In the latest cancer treatment, it is important to identify what subtypes the tumor consists of and to identify the growth rates of these subtypes. For example, breast cancer subtypes have been studied well, and the clinical practice guidelines depending on each subtype have been established. Although well studied subtypes such as luminal A, luminal B, and HRE2+ could be identified biochemically, however, there is little as yet known about the growth rates of them. Furthermore, patient specific subtypes and unrevealed subtypes of other cancers cannot be identified with such chemical tests.
+
+The emergence of the next-generation sequencers (NGSs) has enabled us to analyse whole cancer genomes at a single nucleotide resolution. Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor. To solve this problem, several methods such as PyClone~\cite{roth2014pyclone} and AncesTree~\cite{el2015reconstruction} have been proposed in previous works. However, we cannot estimate how rapidly each subtype proliferates and when these subtypes arose using these methods. Here we provide a Bayesian statistical model to estimate birth time and growth rate of each subtype.
+
+\section{Methods}
+Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
+
+In this section, I describe a model for the clonal evolution of cancer cell populations and the generation of NGS data from cancer.
+I assume that each cancer cells within a tumor has derived from a single founder cell, and I only modeled somatic single nucleotide variants (SNVs) which are not influenced by copy number aberrations or rearrangements. I assume, as in previous studies, that each SNVs follow infinites sites assumption; i.e. no genomic position, or locus, mutates more than once in the course of clonal evolution. Thus, all SNVs are heterozygous, and there are only two genotypes, $AA$ and $AB$ at every locus, where $A$ and $B$ each denotes the normal and variant allele.
+
+Each SNVs are divided into two types of mutations, driver mutations and passenger mutations. The former are the mutations which are subject to the natural selection and the latter are the ones which obeys neutral evolution. I modeled that a driver mutation which occurred within each subtype give rise to another subtype, thus there are ancestral relationships among subtypes. The anestral relationships could be described using a phylogenetic tree where each nodes represent different cancer subtypes and edges represent the parent-child relationships between subtypes.
+
+On the other hand, numerous passenger mutations occur within each subtypes. The variant allele frequencies (VAF) of each passenger mutations within each subtypes diffuse according to genetic drift because the cells with that passenger mutation and the cells without it divides randomly. Each passenger mutations occurred within each subtypes could be inherited by its child subtypes if and only if the driver mutation which triggers the child subtype occurs in the cells which carries that passenger mutation.
+
+I assumed that each cancer cell populations grow exponentially, and the growth rate differs from subtype to subtype but remains unchanged in the course of clonal evolution. Under these conditions, there is no clonal interference between subtypes.
+
+I denote the fraction of subtype $i$'s cells among all cells at observation time as $n_i$, the birth time of subtype $i$ as $t_i$, and the growth rate of subtype $i$ as $\alpha_i$.
+Time is defined so that observation time is $t=0$ and the time when all the cells within a tumor coalesce into a single normal cell is $t=1$.
+Then, the fraction of subtype $i$'s cells among all cells at time $t$ can be calculated as follows.
+\begin{equation}
+ n_i(t) = \frac{1}{N}\napier^{\alpha_i (t_i - t)},
+\end{equation}
+where $N$ is the number of cells at the observation time ($t=1$).
+
+To derive the mean and the variance of the allele frequency drift from generation $g$ to generation $g+1$, I denote the number of alleles which doubles during generation $g$ to $g+1$ as $B_g$, the number of alleles which remains unchanged as $L_g$, and the number of alleles which dissapears as $D_g$. Putting that there are $a_{B_g}$ variant alleles within $B_g$ doubling alleles, $a_{L_g}$ variant alleles within $L_g$ alleles, $a_{D_g}$ variant alleles within $D_g$ dissapearing alleles, the probability that we choose $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ among $B_g$, $L_g$, and $D_g$ obeys the following hypergeometric distribution.
+\begin{equation}
+ p(a_{B_g}, a_{L_g}, a_{D_g} | A_g, B_g, L_g, D_g) = \frac{{B_g \choose a_{B_g}}{L_g \choose a_{L_g}}{D_g \choose a_{D_g}}}{{N_g \choose A_g}},
+\end{equation}
+where $N_g$ is the number of total alleles at generation $g$ ($N_g = B_g + L_g + D_g$) and $A_g$ is the number of total variant alleles at generation $g$ ($A_g = a_{B_g} + a_{L_g} + a_{D_g}$).
+$N_g$ is equivalent to the number of subtype $i$'s cells at generation $g$.
+
+Then, the mean and the variance of $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ are derived as follows.
+\begin{align}
+ E[a_{B_g}] &= \frac{B_g}{N_g} A_g,\; E[a_{L_g}] = \frac{L_g}{N_g} A_g,\; E[a_{D_g}] = \frac{D_g}{N_g} A_g\\
+ V[a_{B_g}] &= \frac{B_g}{N_g} \left(1 - \frac{B_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
+ V[a_{L_g}] &= \frac{L_g}{N_g} \left(1 - \frac{L_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
+ V[a_{D_g}] &= \frac{D_g}{N_g} \left(1 - \frac{D_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}.
+\end{align}
+
+And the covariance between $a_{B_g}$ and $a_{D_g}$ is calculated as follows.
+\begin{equation}
+ Cov[a_{B_g}, a_{D_g}] = - \frac{B_g}{N_g} \frac{D_g}{N_g} A_g \frac{N_g - A_g}{N_g - 1}.
+\end{equation}
+
+Noting that $A_{g+1} = 2a_{B_g} + a_{L_g}$, $A_{g+1} - A_g = a_{B_g} - a_{D_g}$, $A_{g+1} - A_g$ has the following variance.
+\begin{align}
+ V[A_{g+1} - A_g] &= V[a_{B_g} - a_{D_g}]\nonumber\\
+ &= V[a_{B_g}] + V[a_{D_g}] - 2Cov[a_{B_g}, a_{D_g}]\nonumber\\
+ &= \left[ \left( \frac{B_g}{N_g} + \frac{D_g}{N_g} \right) - \left( \frac{B_g}{N_g} - \frac{D_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1}
+\end{align}
+
+When I denote the variant allele frequency (VAF) at generation $g$ as $X_g$, the difference of the VAF from generation $g$ to $g+1$ is,
+\begin{align}
+ X_{g+1} - X_g &= \frac{A_{g+1}}{N_{g+1}} - \frac{A_g}{N_g} \nonumber\\
+ & = \frac{A_g + a_{B_g} - a_{D_g}}{N_g + B_g - D_g} - \frac{A_g}{N_g} \nonumber \\
+ & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} + \frac{a_{B_g} - a_{D_g}}{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1}.
+\end{align}
+
+Thus, the mean difference of the VAF from generation $g$ to $g+1$ is calculated as follows,
+\begin{align}
+ E[X_{g+1} - X_{g}] & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} + \frac{ E\left[ a_{B_g} - a_{D_g} \right] }{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1} \nonumber\\
+ & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} +  \frac{B_g - D_g}{N_g} \frac{A_g}{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1} \nonumber\\
+ & = 0
+\end{align}
+
+On the other hand, the variance of the difference of the VAF from generation $g$ to $g+1$ is calculated as follows,
+\begin{align}
+ V[X_{g+1} - X_{g}] & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} V[a_{B_g} - a_{D_g}]\\
+ & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} \left[ \left( \frac{B_g}{N_g} + \frac{D_g}{N_g} \right) - \left( \frac{B_g}{N_g} - \frac{D_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1}\\
+ & = \frac{1}{N_{g+1}^2} \left[ \frac{2B_g + N_g - N_{g+1}}{N_g} - \left( \frac{N_{g+1} - N_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1}\\
+ & = \frac{1}{N_{g+1}} \left(1 - \frac{1}{N_g}\right)^{-1} \left( \frac{2B_g}{N_{g+1}} - \frac{N_{g+1} - N_g}{N_g} \right) \frac{A_g}{N_g} \left(1 - \frac{A_g}{N_g} \right)\\
+ & = \frac{N_g}{N_{g+1}} \frac{1}{N_g - 1} \left( \frac{2B_g}{N_{g+1}} - \frac{N_{g+1}}{N_g} + 1 \right) X_g \left(1 - X_g \right).
+\end{align}
+
+If we assume that there are $N$ generations in total, and choose unit time $\varDelta t$ (i.e. the time between generation $g$ to $g+1$) to be $1/N$, 
+\begin{align}
+ N_g & = Nn_i ((N - g) \varDelta t)\\
+ & = Nn_i \left(1 - \frac{g}{N}\right)\\
+ & = \exp \left[\alpha_i \left\{ t_i - \left( 1 - \frac{g}{N} \right)\right\}\right].
+\end{align}
+
+Thus,
+\begin{equation}
+ \frac{N_{g+1}}{N_g} = \napier^{\alpha_i / N} \sim 1 \; \left(\because N >> 1\right).
+\end{equation}
+
+Therefore, if we denote $2B_g/N_{g+1}$ as $\beta$, which characterize the strength of the genetic drift,
+\begin{align}
+ V[X_{g+1} - X_{g}] & \sim \frac{\beta}{N_g} X_g \left(1 - X_g \right).
+\end{align}
+
+\begin{align}
+ \frac{1}{\varDelta t}V[X_{g+1} - X_{g}] & \sim \frac{\beta}{N_g/N} X_g \left(1 - X_g \right)\\
+ & = \frac{\beta}{n_i(t)} x(t) \left(1 - x(t) \right),
+\end{align}
+where $t = (N - g) \varDelta t$.
+
+\section{Results}
+For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
+
+\section{Discussion}
+For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
+
+\bibliography{master_thesis}
+%\printindex
+\end{document}

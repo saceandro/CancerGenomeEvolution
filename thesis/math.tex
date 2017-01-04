@@ -1,0 +1,138 @@
+\documentclass[10pt]{jsarticle}
+\bibliographystyle{junsrt}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage[dvipdfmx,svgnames]{xcolor}%before tikz
+\usepackage{tikz}
+\usepackage{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{chemarrow}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{tabu}
+\usepackage{float}
+\usepackage{txfonts}
+\usepackage{url}
+\usepackage{siunitx}
+\usepackage{subfigure}
+\usepackage{enumerate}
+\usepackage{caption}
+\usepackage{wrapfig}
+\usepackage{array}
+\usepackage{titlesec}
+\usepackage{picture}
+\usepackage{multicol}
+\usepackage{etoolbox}
+\usepackage{fancyhdr}
+% \usepackage{listings,jlisting}
+% \lstset{basicstyle=\ttfamily,
+%   showstringspaces=false,
+%   commentstyle=\color{red},
+%   keywordstyle=\color{blue}
+% }
+%\usepackage{makeidx}
+
+\newcommand{\napier}{\mathrm{e}}
+\newcommand{\unitone}[2]{${#1}\,\mathrm{#2}$}
+\newcommand{\unittwo}[3]{${#1}\,\mathrm{#2}/\mathrm{#3}$}
+\newcommand{\dif}{\mathrm{d}}
+\newcommand{\bibun}[2]{\frac{\dif {#1}}{\dif {#2}}}
+\newcommand{\henbibun}[2]{\frac{\partial {#1}}{\partial {#2}}}
+\newcommand{\figref}[1]{図\ref{#1}}
+\newcommand{\tabref}[1]{表\ref{#1}}
+\renewcommand{\thesubfigure}{(\thefigure.\arabic{subfigure})}
+\geometry{left=30mm, right=30mm, top=20mm, bottom=20mm}
+%\makeindex
+
+\begin{document}
+% \title{}
+% \author{Yutaro Konta\\Kiryu Laboratory\\Department of Computational Biology and Medical Sciences, Graduate School of Frontier Sciences, The University of Tokyo}
+% %\date{}
+% \maketitle
+% \thispagestyle{empty}
+% \newpage
+
+%\tableofcontents
+%\listoftables
+%\listoffigures
+\pagenumbering{arabic}
+
+\begin{equation}
+ p(D , n, t) = \prod_{k=1}^{K} \sum_{i_k} p(i_k) \sum_{h_k} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})
+  \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}} n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}} n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right)
+\end{equation}
+
+\begin{equation}
+ Z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}
+\end{equation}
+
+\begin{equation}
+ (t, n) = \argmax_{t, n} \ln p(D | n, t)
+\end{equation}
+
+\begin{align}
+ p(D_k, z^{(k)} | n, t) &= \prod_{i_k} \prod_{h_k} \prod_{x_{i_k}} \prod_{q_{k 0:(M_k - 1)}} \Bigl\{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})\\
+&\times \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Bigr\}^{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}}
+\end{align}
+
+\begin{align}
+ \gamma(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}) &= E_{z^{(k)} | D_k, n^{\mathrm{old}}, t^{\mathrm{old}}} \left[z^{(k)}\right]\\
+ &= \frac{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right)}{\sum_{i_k} p(i_k) \sum_{h_k} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})
+  \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}} n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}} n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right)}
+\end{align}
+
+\begin{align}
+ Q(n,t; n^{\mathrm{old}},t^{\mathrm{old}}) &= \sum_{k=1}^{K} E_{z^{(k)} | D_k, n^{\mathrm{old}}, t^{\mathrm{old}}} \left[ \ln p(D_k ,z_k | n, t)\right]\\
+ & = \sum_{k}\sum_{i_k}\sum_{h_k}\sum_{x_{i_k}} \sum_{q_{k0:(M_k-1)}} \gamma(z^{(k)})\Bigl[\ln p(i_k) + \ln p(h_k | i_k) + \ln p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})\\
+ & + \sum_{l=0}^{M_k - 1} \ln n_{q_{kl}} + \sum_{l=0}^{m_k - 1} \ln \left(\frac{x_{i_{kl}}}{2}\right) + \sum_{l=m_k}^{M_k -1} \ln \left(1 - \frac{x_{i_{kl}}}{2}\right) \Bigr]
+\end{align}
+
+\begin{align}
+ p(i_k) = \frac{\frac{t_{i_k}n_{i_k}}{\ln \left(N n_{i_k} \right)}}{\sum_{i=1}^{I}\frac{t_{i}n_{i}}{\ln \left(N n_{i} \right)}}
+\end{align}
+
+\begin{align}
+ p(h_k | i_k) =
+ \begin{cases}
+  \frac{S_{i_k} - 1}{S_{i_k} + H_{i_k} - 2 - \sum_{h=1}^{H_{i_k} - 1} \frac{t_{\mathrm{eldestchild}(i_k, h)}}{t_{i_k}}} & (h_k = 0)\\
+  \frac{1 - \frac{t_{\mathrm{eldestchild}(i_k, h_k)}}{t_{i_k}}}{S_{i_k} + H_{i_k} - 2 - \sum_{h=1}^{H_{i_k} - 1} \frac{t_{\mathrm{eldestchild}(i_k, h)}}{t_{i_k}}} & (h_k \neq 0)
+ \end{cases}
+\end{align}
+
+\begin{align}
+ \int_{0}^{t_{i_k}} \left(Nn_{i_k}(t) - 1\right) dt = t_{i_k} \left(\frac{Nn_{i_k} - 1}{\ln \left( Nn_{i_k} \right)} - 1\right)
+\end{align}
+
+\begin{align}
+ \int_{t_{\mathrm{eldestchild}(i_k, h)}}^{t_{i_k}} 1 dt = t_{i_k} - t_{\mathrm{eldestchild}(i_k, h)}
+\end{align}
+
+\begin{align}
+ p(h_k | i_k) =
+ \begin{cases}
+  \frac{\int_{0}^{t_{i_k}} \left(Nn_{i_k}(t) - 1\right) dt}{\int_{0}^{t_{i_k}} \left(Nn_{i_k}(t) - 1\right) dt + \sum_{h=1}^{H_{i_k} - 1}\int_{t_{\mathrm{eldestchild}(i_k, h)}}^{t_{i_k}} 1 dt} =  \frac{S_{i_k} - 1}{S_{i_k} + H_{i_k} - 2 - \sum_{h=1}^{H_{i_k} - 1} \frac{t_{\mathrm{eldestchild}(i_k, h)}}{t_{i_k}}} & h_k=0\\
+  \frac{\int_{t_{\mathrm{eldestchild}(i_k, h_k)}}^{t_{i_k}} 1 dt}{\int_{0}^{t_{i_k}} \left(Nn_{i_k}(t) - 1\right) dt + \sum_{h=1}^{H_{i_k} - 1}\int_{t_{\mathrm{eldestchild}(i_k, h)}}^{t_{i_k}} 1 dt} = \frac{1 - \frac{t_{\mathrm{eldestchild}(i_k, h_k)}}{t_{i_k}}}{S_{i_k} + H_{i_k} - 2 - \sum_{h=1}^{H_{i_k} - 1} \frac{t_{\mathrm{eldestchild}(i_k, h)}}{t_{i_k}}} & h_k \neq 0
+ \end{cases}
+\end{align}
+
+\begin{align}
+ S_i = \frac{Nn_i - 1}{\ln \left( Nn_i \right)}
+\end{align}
+
+\begin{align}
+ p(i_k) = \frac{\int_{0}^{t_{i_k}} \left(Nn_{i_k}(t) \right) dt}{\sum_{i=1}^{I} \int_{0}^{t_i} \left(Nn_{i}(t) \right) dt} = \frac{\frac{t_{i_k}n_{i_k}}{\ln \left(N n_{i_k} \right)}}{\sum_{i=1}^{I}\frac{t_{i}n_{i}}{\ln \left(N n_{i} \right)}}
+\end{align}
+%\tableofcontents
+%\listoftables
+%\listoffigures
+\pagenumbering{arabic}
+
+%\printindex
+\end{document}
+
+
+% \bibliography{}
+%\printindex
+\end{document}
+
