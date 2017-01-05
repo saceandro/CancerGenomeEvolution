@@ -40,8 +40,9 @@
 \newcommand{\dif}{\mathrm{d}}
 \newcommand{\bibun}[2]{\frac{\dif {#1}}{\dif {#2}}}
 \newcommand{\henbibun}[2]{\frac{\partial {#1}}{\partial {#2}}}
-\newcommand{\figref}[1]{図\ref{#1}}
-\newcommand{\tabref}[1]{表\ref{#1}}
+\newcommand{\figref}[1]{Figure \ref{#1}}
+\newcommand{\tabref}[1]{Table \ref{#1}}
+\newcommand{\equationref}[1]{equation \eqref{#1}}
 \renewcommand{\thesubfigure}{(\thefigure.\arabic{subfigure})}
 \geometry{left=30mm, right=30mm, top=20mm, bottom=20mm}
 %\makeindex
@@ -88,56 +89,60 @@ To derive the mean and the variance of the allele frequency drift from generatio
 \begin{equation}
  p(a_{B_g}, a_{L_g}, a_{D_g} | A_g, B_g, L_g, D_g) = \frac{{B_g \choose a_{B_g}}{L_g \choose a_{L_g}}{D_g \choose a_{D_g}}}{{N_g \choose A_g}},
 \end{equation}
-where $N_g$ is the number of total alleles at generation $g$ ($N_g = B_g + L_g + D_g$) and $A_g$ is the number of total variant alleles at generation $g$ ($A_g = a_{B_g} + a_{L_g} + a_{D_g}$).
-$N_g$ is equivalent to the number of subtype $i$'s cells at generation $g$.
+where $N_g$ is the number of total alleles in generation $g$ ($N_g = B_g + L_g + D_g$) and $A_g$ is the number of total variant alleles in generation $g$ ($A_g = a_{B_g} + a_{L_g} + a_{D_g}$).
+$N_g$ is equivalent to the number of subtype $i$'s cells in generation $g$.
 
 Then, the mean and the variance of $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ are derived as follows.
+\begin{equation}
+ E[a_{B_g} | A_g, B_g, L_g, D_g] = \frac{B_g}{N_g} A_g,\; E[a_{L_g} | A_g, B_g, L_g, D_g] = \frac{L_g}{N_g} A_g,\; E[a_{D_g} | A_g, B_g, L_g, D_g] = \frac{D_g}{N_g} A_g
+\end{equation}
 \begin{align}
- E[a_{B_g}] &= \frac{B_g}{N_g} A_g,\; E[a_{L_g}] = \frac{L_g}{N_g} A_g,\; E[a_{D_g}] = \frac{D_g}{N_g} A_g\\
- V[a_{B_g}] &= \frac{B_g}{N_g} \left(1 - \frac{B_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
- V[a_{L_g}] &= \frac{L_g}{N_g} \left(1 - \frac{L_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
- V[a_{D_g}] &= \frac{D_g}{N_g} \left(1 - \frac{D_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}.
+ V[a_{B_g} | A_g, B_g, L_g, D_g] &= \frac{B_g}{N_g} \left(1 - \frac{B_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
+ V[a_{L_g} | A_g, B_g, L_g, D_g] &= \frac{L_g}{N_g} \left(1 - \frac{L_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
+ V[a_{D_g} | A_g, B_g, L_g, D_g] &= \frac{D_g}{N_g} \left(1 - \frac{D_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}.
 \end{align}
 
 And the covariance between $a_{B_g}$ and $a_{D_g}$ is calculated as follows.
 \begin{equation}
- Cov[a_{B_g}, a_{D_g}] = - \frac{B_g}{N_g} \frac{D_g}{N_g} A_g \frac{N_g - A_g}{N_g - 1}.
+ Cov[a_{B_g}, a_{D_g} | A_g, B_g, L_g, D_g] = - \frac{B_g}{N_g} \frac{D_g}{N_g} A_g \frac{N_g - A_g}{N_g - 1}.
 \end{equation}
+
+I assume that there is no overlapping generation and that each allele in generation $g+1$ is drawn independently from the alleles in generation $g$. These assumptions are the same as those of the Wright-Fisher process, however, the constant population Wright-Fisher process does not apply to this clonal evolution problem because the tumor cell population grows exponentially. Thus, I must derive the mean and the variance of this variant allele frequency drift.
 
 Noting that $A_{g+1} = 2a_{B_g} + a_{L_g}$, $A_{g+1} - A_g = a_{B_g} - a_{D_g}$, $A_{g+1} - A_g$ has the following variance.
 \begin{align}
- V[A_{g+1} - A_g] &= V[a_{B_g} - a_{D_g}]\nonumber\\
- &= V[a_{B_g}] + V[a_{D_g}] - 2Cov[a_{B_g}, a_{D_g}]\nonumber\\
+ V[A_{g+1} - A_g | A_g, B_g, L_g, D_g] &= V[a_{B_g} - a_{D_g} | A_g, B_g, L_g, D_g]\nonumber\\
+ &= V[a_{B_g} | A_g, B_g, L_g, D_g] + V[a_{D_g} | A_g, B_g, L_g, D_g] - 2Cov[a_{B_g}, a_{D_g} | A_g, B_g, L_g, D_g]\nonumber\\
  &= \left[ \left( \frac{B_g}{N_g} + \frac{D_g}{N_g} \right) - \left( \frac{B_g}{N_g} - \frac{D_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1}
 \end{align}
 
-When I denote the variant allele frequency (VAF) at generation $g$ as $X_g$, the difference of the VAF from generation $g$ to $g+1$ is,
+When I denote the variant allele frequency (VAF) in generation $g$ as $X_g$, the difference of the VAF from generation $g$ to $g+1$ is,
 \begin{align}
  X_{g+1} - X_g &= \frac{A_{g+1}}{N_{g+1}} - \frac{A_g}{N_g} \nonumber\\
  & = \frac{A_g + a_{B_g} - a_{D_g}}{N_g + B_g - D_g} - \frac{A_g}{N_g} \nonumber \\
  & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} + \frac{a_{B_g} - a_{D_g}}{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1}.
 \end{align}
 
-Thus, the mean difference of the VAF from generation $g$ to $g+1$ is calculated as follows,
+Thus, noting that $X_g$ is given because $A_g$ and $N_g = B_g + L_g + D_g$ are given, the mean difference of the VAF from generation $g$ to $g+1$ is calculated as follows,
 \begin{align}
- E[X_{g+1} - X_{g}] & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} + \frac{ E\left[ a_{B_g} - a_{D_g} \right] }{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1} \nonumber\\
+ E[X_{g+1} - x | X_{g}=x] & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} + \frac{ E\left[ a_{B_g} - a_{D_g} \right] }{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1} \nonumber\label{VAF_diff_mean}\\
  & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} +  \frac{B_g - D_g}{N_g} \frac{A_g}{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1} \nonumber\\
  & = 0
 \end{align}
 
 On the other hand, the variance of the difference of the VAF from generation $g$ to $g+1$ is calculated as follows,
 \begin{align}
- V[X_{g+1} - X_{g}] & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} V[a_{B_g} - a_{D_g}]\\
- & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} \left[ \left( \frac{B_g}{N_g} + \frac{D_g}{N_g} \right) - \left( \frac{B_g}{N_g} - \frac{D_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1}\\
- & = \frac{1}{N_{g+1}^2} \left[ \frac{2B_g + N_g - N_{g+1}}{N_g} - \left( \frac{N_{g+1} - N_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1}\\
- & = \frac{1}{N_{g+1}} \left(1 - \frac{1}{N_g}\right)^{-1} \left( \frac{2B_g}{N_{g+1}} - \frac{N_{g+1} - N_g}{N_g} \right) \frac{A_g}{N_g} \left(1 - \frac{A_g}{N_g} \right)\\
+ V[X_{g+1} - x | X_{g}=x] & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} V[a_{B_g} - a_{D_g}] \nonumber\\
+ & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} \left[ \left( \frac{B_g}{N_g} + \frac{D_g}{N_g} \right) - \left( \frac{B_g}{N_g} - \frac{D_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1} \nonumber\\
+ & = \frac{1}{N_{g+1}^2} \left[ \frac{2B_g + N_g - N_{g+1}}{N_g} - \left( \frac{N_{g+1} - N_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1} \nonumber\\
+ & = \frac{1}{N_{g+1}} \left(1 - \frac{1}{N_g}\right)^{-1} \left( \frac{2B_g}{N_{g+1}} - \frac{N_{g+1} - N_g}{N_g} \right) \frac{A_g}{N_g} \left(1 - \frac{A_g}{N_g} \right) \nonumber\\
  & = \frac{N_g}{N_{g+1}} \frac{1}{N_g - 1} \left( \frac{2B_g}{N_{g+1}} - \frac{N_{g+1}}{N_g} + 1 \right) X_g \left(1 - X_g \right).
 \end{align}
 
 If we assume that there are $N$ generations in total, and choose unit time $\varDelta t$ (i.e. the time between generation $g$ to $g+1$) to be $1/N$, 
 \begin{align}
- N_g & = Nn_i ((N - g) \varDelta t)\\
- & = Nn_i \left(1 - \frac{g}{N}\right)\\
+ N_g & = Nn_i ((N - g) \varDelta t)\nonumber \\
+ & = Nn_i \left(1 - \frac{g}{N}\right)\nonumber \\
  & = \exp \left[\alpha_i \left\{ t_i - \left( 1 - \frac{g}{N} \right)\right\}\right].
 \end{align}
 
@@ -146,16 +151,74 @@ Thus,
  \frac{N_{g+1}}{N_g} = \napier^{\alpha_i / N} \sim 1 \; \left(\because N >> 1\right).
 \end{equation}
 
-Therefore, if we denote $2B_g/N_{g+1}$ as $\beta$, which characterize the strength of the genetic drift,
+Therefore, if we assume that $2B_g/N_{g+1}$ is constant and denote it as $\beta$, which characterize the strength of the genetic drift,
 \begin{align}
- V[X_{g+1} - X_{g}] & \sim \frac{\beta}{N_g} X_g \left(1 - X_g \right).
-\end{align}
-
-\begin{align}
- \frac{1}{\varDelta t}V[X_{g+1} - X_{g}] & \sim \frac{\beta}{N_g/N} X_g \left(1 - X_g \right)\\
- & = \frac{\beta}{n_i(t)} x(t) \left(1 - x(t) \right),
+ V[X_{g+1} - x | X_g=x] & \sim \frac{\beta}{N_g} X_g \left(1 - X_g \right),\nonumber\\
+ \frac{1}{\varDelta t}V[X_{g+1} - x | X_{g}=x] & \sim \frac{\beta}{N_g/N} X_g \left(1 - X_g \right)\nonumber \\
+ & = \frac{\beta}{n_i(t)} x(t) \left(1 - x(t) \right),\label{VAF_diff_variance_inf}
 \end{align}
 where $t = (N - g) \varDelta t$.
+
+In the case of the mean difference of the VAF from generation $g$ to $g+1$, 
+\begin{equation}
+ \frac{1}{\varDelta t} E[X_{g+1} - x | X_{g}=x] = 0.\label{VAF_diff_mean_inf}
+\end{equation}
+where I used the \equationref{VAF_diff_mean}.
+
+This process of the variant allele frequency drift is a continuous Markov process because the variant allele frequency in generation $g+1$ is only dependent on that of generation $g$.
+If I denote the transition probability density that the random variable changes from $y$ to $x$ during time $t$ as $f(x|y,t)$, the diffusion equation of the continuous time Markov process is expressed as the following Kolmogorov forward equation~\cite{kolmogoroff1931analytischen},
+\begin{equation}
+ \henbibun{}{t} f(x|y,t) = - \henbibun{}{x} \left( \mu(x) f(x|y,t) \right) + \frac{1}{2} \frac{\partial^2}{\partial x^2} \left( V(x) f(x|y,t) \right),\label{kolmogorov_forward_eq}
+\end{equation}
+where $\mu(x)$ and $V(x)$ represents the first and the second moment of $\varDelta x$ in the infinitesimal time interval $(t,t + \varDelta t)$.
+
+In this case, $f(x|y,t)$ represents the probability density that the variant allele frequency changes from $y$ to $x$ during time $t$.
+And from \equationref{VAF_diff_mean_inf} and \equationref{VAF_diff_variance_inf}, $\mu(x) = 0$ and $V(x) = \frac{\beta}{n(t)} x(t) \left(1 - x(t) \right)$.
+Substituting them into the \equationref{kolmogorov_forward_eq} yields the following diffusion equation,
+\begin{equation}
+ \henbibun{}{t} f(x|y,t) = \frac{1}{2} \frac{\beta}{n(t)} \frac{\partial^2}{\partial x^2} \left( x(1-x) f(x|y,t) \right).\label{WF_dissusion}
+\end{equation}
+
+Changing the variable from $t$ to $\tau$ using the following equation,
+\begin{equation}
+ \tau(t) = \int_{0}^{t} \frac{\beta}{n(t')} \: dt',
+\end{equation}
+\eqref{WF_dissusion} becomes the simpler form,
+\begin{equation}
+ \henbibun{}{\tau} f(x|y,\tau) = \frac{1}{2} \frac{\partial^2}{\partial x^2} \left( x(1-x) f(x|y,\tau) \right).\label{FW_diffusion_tau}
+\end{equation}
+
+If I assume that the solution can be written in the separated form $f(x|y,\tau) = T(\tau;y) X(x;y)$,
+substituting it into \eqref{FW_diffusion_tau} and dividing both sides with $T(\tau;y) X(x;y)$ yields the following equation,
+\begin{equation}
+ \frac{1}{T}\henbibun{T}{\tau} = \frac{1}{2}\frac{1}{X}\henbibun{}{x^2} \left( x(1-x) X \right) = -\lambda,\label{hensu_bunri}
+\end{equation}
+where I put the both sides as a constant, $\lambda$, because the left and the right hand side have the same value though they are only dependent on $\tau$ or $x$ respectively.
+
+From the left hand side of \equationref{hensu_bunri},
+\begin{equation}
+ T \propto \napier^{-\lambda \tau}.
+\end{equation}
+
+On the other hand, the right hand side can be written in the following form,
+\begin{equation}
+ x(1-x)\frac{d^2 X}{d x^2} + 2(1-2x) \bibun{X}{x} - 2(1 - \lambda) X = 0.\label{hypgeo_case}
+\end{equation}
+
+This is a special case of the hypergeometric equation,
+\begin{equation}
+ x(1-x)\frac{d^2 X}{d x^2} + \left[ c - (a+b+1)x \right] \bibun{X}{x} - ab X = 0.\label{hypgeo_concrete}
+\end{equation}
+
+Comparing \equationref{hypgeo_case} with \equationref{hypgeo_concrete},
+\begin{equation}
+ c = 2, \; a+b = 3, \; ab = 2(1-\lambda).\label{hyp_kainokoshiki}
+\end{equation}
+
+Solving the simultaneous equation \eqref{hyp_kainokoshiki},
+\begin{equation}
+ a = \frac{3 + \sqrt{1 + 8\lambda}}{2}, \; b = \frac{3 - \sqrt{1 + 8\lambda}}{2}.
+\end{equation}
 
 \section{Results}
 For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
