@@ -38,7 +38,7 @@
 \newcommand{\unitone}[2]{${#1}\,\mathrm{#2}$}
 \newcommand{\unittwo}[3]{${#1}\,\mathrm{#2}/\mathrm{#3}$}
 \newcommand{\dif}{\mathrm{d}}
-\newcommand{\bibun}[2]{\frac{\dif {#1}}{\dif {#2}}}
+\newcommand{\bibun}[2]{\frac{d {#1}}{d {#2}}}
 \newcommand{\henbibun}[2]{\frac{\partial {#1}}{\partial {#2}}}
 \newcommand{\figref}[1]{Figure \ref{#1}}
 \newcommand{\tabref}[1]{Table \ref{#1}}
@@ -209,6 +209,7 @@ This is a special case of the hypergeometric equation,
 \begin{equation}
  x(1-x)\frac{d^2 X}{d x^2} + \left[ c - (a+b+1)x \right] \bibun{X}{x} - ab X = 0.\label{hypgeo_concrete}
 \end{equation}
+And I denote the solution of this hypergeometric equation as $F(a, b, c; x)$, which is called a hypergeometric function.
 
 Comparing \equationref{hypgeo_case} with \equationref{hypgeo_concrete},
 \begin{equation}
@@ -217,7 +218,60 @@ Comparing \equationref{hypgeo_case} with \equationref{hypgeo_concrete},
 
 Solving the simultaneous equation \eqref{hyp_kainokoshiki},
 \begin{equation}
- a = \frac{3 + \sqrt{1 + 8\lambda}}{2}, \; b = \frac{3 - \sqrt{1 + 8\lambda}}{2}.
+ a = \frac{3 + \sqrt{1 + 8\lambda}}{2}, \; b = \frac{3 - \sqrt{1 + 8\lambda}}{2}.\label{a_b_solution}
+\end{equation}
+
+The hypergeometric function has the following relationship,
+\begin{equation}
+ F(a,b,2 ; x) = \frac{\Gamma(2) \Gamma(2-a-b)}{\Gamma(2-a) \Gamma(2-b)} F(a,b,-1+a+b, 1-x)
+  + \frac{\Gamma(2) \Gamma(a+b-2)}{\Gamma(a) \Gamma(b)} F(2-a,2-b,3-a-b, 1-x).
+\end{equation}
+
+And
+\begin{equation}
+ 2-a \leq 0 \; \text{and}\; b \leq 0 \; (a, b \in \bold{Z}),
+\end{equation}
+where $\bold{Z}$ represents the integer set, is required for $F(a,b,2,x)$ to have the finite value.
+
+Then,
+\begin{align}
+ a &= 1 + i \; (i=1,2,\cdots)\\
+ b &= 1 - j \; (j=1,2,\cdots)
+\end{align}
+
+Using \eqref{a_b_solution},
+\begin{align}
+ \lambda = \frac{(i-1)i}{2} = \frac{j(j+1)}{2}
+\end{align}
+
+Finally, noting that $j$ gives the tighter condition, $a$, $b$, and $\lambda$ are expressed as follows,
+\begin{align}
+ a = 2 + j \;, b = 1 - j \; (j=1,2,\cdots).
+\end{align}
+
+Thus,
+\begin{equation}
+ X(x;y) \propto F(2+i, 1-i, 2; x).
+\end{equation}
+
+Using the following relationship between the hypergeometric fuction and Gegenbauer polynomial $C^{(3/2)}_{i-1} (z)$,
+\begin{equation}
+ C^{(3/2)}_{i-1} (z) = \frac{i(i+1)}{2} F \left(i+2, 1-i, 2;\frac{1-z}{2}\right),
+\end{equation}
+
+\begin{equation}
+ X(x;y) \propto C^{(3/2)}_{i-1} (z)
+\end{equation}
+where $z = 1-2x$.
+
+Therefore, the overall solution can be written as follows putting the coefficient $a_i$,
+\begin{equation}
+ f(x|y,t) = \sum_{j=1}^{\infty} a_j C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}
+\end{equation}
+
+Under the initial condition $f(x|y,0) = \delta(x - y)$,
+\begin{equation}
+ \delta(x-y) = \sum_{j=1}^{\infty} a_j C^{(3/2)}_{j-1} (z)
 \end{equation}
 
 \section{Results}
