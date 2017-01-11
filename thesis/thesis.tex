@@ -85,6 +85,8 @@ Then, the fraction of subtype $i$'s cells among all cells at time $t$ can be cal
 \end{equation}
 where $N$ is the number of cells at the observation time ($t=1$).
 
+And I denote the fraction of subtype $i$'s cells among all cells at the observation time as $n_i \coloneqq n_i(0) = \frac{1}{N}\napier^{\alpha_i t_i}$.
+
 To derive the mean and the variance of the allele frequency drift from generation $g$ to generation $g+1$, I denote the number of alleles which doubles during generation $g$ to $g+1$ as $B_g$, the number of alleles which remains unchanged as $L_g$, and the number of alleles which dissapears as $D_g$. Putting that there are $a_{B_g}$ variant alleles within $B_g$ doubling alleles, $a_{L_g}$ variant alleles within $L_g$ alleles, $a_{D_g}$ variant alleles within $D_g$ dissapearing alleles, the probability that we choose $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ among $B_g$, $L_g$, and $D_g$ obeys the following hypergeometric distribution.
 \begin{equation}
  p(a_{B_g}, a_{L_g}, a_{D_g} | A_g, B_g, L_g, D_g) = \frac{{B_g \choose a_{B_g}}{L_g \choose a_{L_g}}{D_g \choose a_{D_g}}}{{N_g \choose A_g}},
@@ -223,7 +225,7 @@ Solving the simultaneous equation \eqref{hyp_kainokoshiki},
 
 The hypergeometric function has the following relationship,
 \begin{equation}
- F(a,b,2 ; x) = \frac{\Gamma(2) \Gamma(2-a-b)}{\Gamma(2-a) \Gamma(2-b)} F(a,b,-1+a+b, 1-x)
+ F(a,b;2 ; x) = \frac{\Gamma(2) \Gamma(2-a-b)}{\Gamma(2-a) \Gamma(2-b)} F(a,b,-1+a+b, 1-x)
   + \frac{\Gamma(2) \Gamma(a+b-2)}{\Gamma(a) \Gamma(b)} F(2-a,2-b,3-a-b, 1-x).
 \end{equation}
 
@@ -269,9 +271,263 @@ Therefore, the overall solution can be written as follows putting the coefficien
  f(x|y,t) = \sum_{j=1}^{\infty} a_j C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}
 \end{equation}
 
-Under the initial condition $f(x|y,0) = \delta(x - y)$,
+Under the initial condition $f(x|y,0) = \delta(x - y) = 2\delta(z-w)$, where $w=1-2y$,
 \begin{equation}
- \delta(x-y) = \sum_{j=1}^{\infty} a_j C^{(3/2)}_{j-1} (z)
+ 2\delta(z-w) = \sum_{j=1}^{\infty} a_j C^{(3/2)}_{j-1} (z).
+\end{equation}
+
+When I multiply both sides with $(1-z^2) C^{(3/2)}_{k-1} (z)$, and take the integral with respect to $z$,
+\begin{equation}
+ 2\int_{-1}^{1}\delta(z-w) (1-z^2) C^{(3/2)}_{k-1} (z) dz= \sum_{j=1}^{\infty} a_j \int_{-1}^{1} (1-z^2) C^{(3/2)}_{j-1} (z) C^{(3/2)}_{k-1} (z) dz.
+\end{equation}
+
+Using the orthogonality of Gegenbauer polynomial, $\int_{-1}^{1} (1-z^2) C^{(3/2)}_{j-1} (z) C^{(3/2)}_{k-1} (z) dz = \frac{2k(k+1)}{2k+1} \delta_{jk}$,
+\begin{equation}
+ a_k = (1-w^2) \frac{2k+1}{k(k+1)} C^{(3/2)}_{k-1} (w).
+\end{equation}
+
+Therefore, the solution of the diffusion equation \eqref{FW_diffusion_tau} is,
+\begin{align}
+ f(x|y,\tau) & = (1-w^2) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = 4y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) C^{(3/2)}_{j-1} (1-2x) \napier^{-\frac{j(j+1)}{2}\tau},
+\end{align}
+where $z=1-2x$, $w=1-2y$, and $\tau(t) = \int_{0}^{t} \frac{\beta}{n(t')} \: dt'$.
+
+However, allelic frequency of a variant allele might be fixed to 1 (fixation) or 0 (loss) during the diffusion process because if all the cells in generation $g$ have that variant allele, all the cells in generation $g+1$ must have that variant allele. Thus, $f(1|y,\tau)$ and $f(0|y,\tau)$ are probabilities, though $f(x|y,\tau) \; (0<x<1)$ is a probability density.
+
+From the definition of probability, the following relationship holds,
+\begin{equation}
+ \int_{0}^{1} f(x|y,\tau) dx + f(1|y,\tau) + f(0|y,\tau) = 1.
+\end{equation}
+
+If I put $P(x|y,\tau) = - \frac{1}{2} \henbibun{}{x}\left( x(1-x)f(x|y,\tau) \right)$, from \eqref{FW_diffusion_tau},
+\begin{equation}
+ \henbibun{f(x|y,\tau)}{\tau} = - \henbibun{P(x|y, \tau)}{x}.
+\end{equation}
+
+This is the continuity equation with regard to the variant allele frequency distribution.
+$\henbibun{f(x|y,\tau)}{\tau}$ is the rate of net flow of the probability density, and $P(x|y,\tau)$ corresponds to the flux of the variant allele frequency.
+Because probability flows into $x=0$ and $x=1$ at the rate $-P(0|y,\tau)$ and $P(1|y,\tau)$ respectively, and there is no outflow,
+\begin{align}
+ \henbibun{f(0|y,\tau)}{\tau} & = -P(0|y, \tau),\label{fixation_flow}\\
+ \henbibun{f(1|y,\tau)}{\tau} & = P(1|y, \tau).\label{loss_flow}
+\end{align}
+
+Integrating the differential equation \eqref{fixation_flow} and \eqref{loss_flow}, we can calculate the fixation probability $f(1|y,\tau)$ and loss probability $f(0|y,\tau)$.
+Noting that $z = 1-2x$,
+\begin{align}
+ P(x|y, \tau) & = \frac{1}{4} \henbibun{}{z} \left( (1-z^2) f(x|y,\tau)\right)\\
+ & = \frac{1-w^2}{4} \henbibun{}{z} \sum_{j=1}^{\infty} C^{(3/2)}_{j-1} (w) \frac{2j+1}{j(j+1)} (1-z^2) C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} C^{(3/2)}_{j-1} (w) \henbibun{}{z} \left( P_{j+1}(z) - P_{j-1}(z) \right) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} C^{(3/2)}_{j-1} (w) (2j+1)P_{j}(z) \napier^{-\frac{j(j+1)}{2}\tau}
+\end{align}
+
+Thus, using equation \eqref{legendre1}, \eqref{legendre-1}, and $z=1-2x$,
+\begin{align}
+ P(0|y, \tau) & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau},\\
+ P(1|y, \tau) & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} (-1)^j (2j+1) C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}.
+\end{align}
+
+Integrating equation \eqref{fixation_flow},
+\begin{align}
+ f(0|y,\tau) & = \frac{1-w^2}{2} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \left(1 - \napier^{-\frac{j(j+1)}{2}\tau} \right)\\
+ & = \frac{1+w}{2} - \frac{1-w^2}{2} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = (1-y) - 2y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},
+\end{align}
+where we used
+\begin{equation}
+ \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} \left( P_{j-1}(w) - P_{j+1}(w) \right) = P_{0}(w) + P_{1}(w) = 1+w.
+\end{equation}
+
+On the other hand, integrating equation \eqref{loss_flow},
+\begin{align}
+ f(1|y,\tau) & = - \frac{1-w^2}{2} \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \left(1 - \napier^{-\frac{j(j+1)}{2}\tau} \right)\\
+ & = \frac{1-w}{2} + \frac{1-w^2}{2} \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = y + 2y(1-y) \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},
+\end{align}
+where we used
+\begin{equation}
+ \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} (-1)^j \left( P_{j-1}(w) - P_{j+1}(w) \right) = -P_{0}(w) + P_{1}(w) = -1+w.
+\end{equation}
+
+In the case of subtype $i$,
+\begin{equation}
+ \tau(t) = \int_{0}^{t} \frac{\beta}{n_i(t')} \: dt' = \frac{\beta}{\alpha_i n_i}\left(\napier^{\alpha_i t} - 1\right).
+\end{equation}
+
+Every single nucleotide mutation which occurs within one of subtype $i$'s cell at time $t$ have the allelic frequency $\frac{1}{Nn_i(t)}$.
+The probability density that the allelic frequency grows from $\frac{1}{Nn_i(t)}$ to $x_i$ during time $t$ is expressed as $f(x_i| \frac{1}{Nn_i(t)}, \tau(t'))$.
+
+The probability that the variant allele frequency $x_i$ is observed at time 0 can be calculated integrating $f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t)\right)$ weighed by the number of the cell at $t$ from the birth time of subtype $i$ to the observation time,
+\begin{equation}
+ \int_{0}^{t_i} f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t')\right) (Nn_i(t')-1)  dt'.\label{vaf_dist_unnorm}
+\end{equation}
+
+\begin{align}
+ & f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t)\right) (Nn_i(t)-1)\\
+ & = 4\frac{1}{Nn_i(t)}\left(1-\frac{1}{Nn_i(t)}\right) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} \left(1-2\frac{1}{Nn_i(t)}\right) C^{(3/2)}_{j-1} (1-2x_i) \napier^{-\frac{j(j+1)}{2}\tau} \left(Nn_i(t) - 1 \right)\\
+ & \sim 2\frac{1}{Nn_i(t)} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \exp \left( -\frac{j(j+1)}{2} \frac{\beta}{\alpha_i n_i}\left(\napier^{\alpha_i t} - 1\right) \right) \left(Nn_i(t) - 1 \right)\\
+ & = 2(1-\napier^{\alpha_i(t - t_i)}) \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \exp \left(-\gamma_j \left(\napier^{\alpha_i t} - 1\right)\right),
+\end{align}
+where I used $1 - \frac{1}{Nn_i(t)} \sim 1$ and $C^{(3/2)}_{j-1} \left(1-2\frac{1}{Nn_i(t)}\right) \sim C^{(3/2)}_{j-1} (1) = \frac{j(j+1)}{2}$ and denoted $\frac{j(j+1)}{2} \frac{\beta}{\alpha_i n_i} = \frac{j(j+1)}{2} \frac{\beta}{n_i} \frac{t_i}{\ln (Nn_i)}$ as $\gamma_j$.
+
+Using
+\begin{align}
+ \int_{0}^{t_i} \exp(-\gamma_j \napier^{\alpha_i t'}) dt' & = \frac{1}{\alpha_i} \int_{\gamma_j}^{\gamma_j \napier^{\alpha_i t_i}} \frac{\napier^{-\zeta}}{\zeta} d\zeta = \frac{1}{\alpha_i} \left[ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right]\\
+ \int_{0}^{t_i} \napier^{\alpha_i t'} \exp(-\gamma_j \napier^{\alpha_i t'}) dt' & = \frac{1}{\alpha_i \gamma_j} \int_{\gamma_j}^{\gamma_j \napier^{\alpha_i t_i}} \napier^{-\zeta} d\zeta = \frac{1}{\alpha_i \gamma_j} \left[ \napier^{-\gamma_j} - \napier^{\gamma_j Nn_i} \right],
+\end{align}
+\eqref{vaf_dist_unnorm} can be calculated as follows,
+\begin{align}
+ & \int_{0}^{t_i} f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t')\right) (Nn_i(t')-1)  dt'\\
+ & = 2 \sum_{j=1}^{\infty} (2j + 1) C^{(3/2)}_{j-1} (1-2x_i) \napier^{\gamma_j} \left[ \frac{1}{\alpha_i} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} - \frac{\napier^{-\alpha_i t_i}}{\alpha_i \gamma_j} \left( \napier^{-\gamma_j} - \napier^{\gamma_j Nn_i} \right) \right]\\
+ & = - \frac{2\napier^{-\alpha_i t_i}}{\alpha_i} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \frac{1}{\gamma_j}\nonumber\\
+ & + \frac{2}{\alpha_i} \sum_{j=1}^{\infty} (2j + 1) \frac{1}{\gamma_j} C^{(3/2)}_{j-1} (1-2x_i) \left[ \gamma_j \napier^{\gamma_j} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} \right]\label{vaf_dist_unnorm_term}
+\end{align}
+
+The first term of \eqref{vaf_dist_unnorm_term} is,
+\begin{align}
+ - \frac{2\napier^{-\alpha_i t_i}}{\alpha_i} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \frac{1}{\gamma_j} & = - \frac{4}{N\beta} \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (z_i)\\
+ & = - \frac{4}{N\beta} \sum_{j=1}^{\infty} \frac{1}{1-z_i^2} \left(P_{j-1}(z_i) - P_{j+1}(z_i)\right)\\
+ & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left( P_{0}(z_i) + P_{1}(z_i) \right)\\
+ & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left(1 + z_i \right)\\
+ & = - \frac{2}{N\beta} \frac{1}{x_i}
+\end{align}
+
+\section{Supplementaly notes}
+\subsection{Hypergeometric series}
+Hypergeometric series $F(a,b;c;z)$ is defined as follows,
+\begin{equation}
+ F(a,b;c;z) = \sum_{n=0}^{\infty} \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+\end{equation}
+where
+\begin{equation}
+ (a)_n = \begin{cases}
+          1 & (n=0)\\
+          a (a+1) \cdots (a+n-1)& (n>0).
+         \end{cases}
+\end{equation}
+
+Also, $X = F(a,b;c;z)$ is the solution of the following differential equation,
+\begin{equation}
+ z(1-z)\frac{d^2 X}{d z^2} + \left[ c - (a+b+1)z \right] \bibun{X}{z} - ab X = 0.\label{hypgeo_concrete}
+\end{equation}
+
+\subsection{Jacobi polynomials}
+Jacobi polynomials $P^{(\alpha,\beta)}_{n} (z)$ is defined using the following generating function $g(t,z)$,
+\begin{equation}
+ g(t,z) = 2^{\alpha+\beta} R^{-1} (1-t+R)^{-\alpha} (1+t+R)^{-\beta} = \sum_{n=0}^{\infty} P^{(\alpha,\beta)}_{n} (z) t^n,
+\end{equation}
+where $R = R(t,z) = \left(1 - 2zt + t^2\right)^{1/2}$.
+
+The general form of the Jacobi Polynomials can be expressed as follows,
+\begin{equation}
+ P^{(\alpha, \beta)}_n (z) = \frac{(-1)^n}{2^n n!} (1-z)^{-\alpha} (1+z)^{-\beta} \frac{d^n}{dz^n}\left[(1-z)^{\alpha+n} (1+z)^{\beta+n}\right].
+\end{equation}
+
+Also, Jacobi polynomials are expressed using Hypergeometric series,
+\begin{equation}
+ P^{(\alpha,\beta)}_{n} (z) = \frac{(\alpha+1)_n}{n!} F \left(-n, 1+\alpha+\beta+n; \alpha+1; \frac{1-z}{2}\right).
+\end{equation}
+
+\subsection{Gegenbauer polynomials}
+Gegenbauer polynomials $C^{(\alpha)}_{n} (z)$ is defined using the following generating function $g(t,z)$,
+\begin{equation}
+ g(t,z) = \frac{1}{\left(1 - 2zt + t^2\right)^\alpha} = \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n.
+\end{equation}
+
+Gegenbauer polynomials are expressed using Hypergeometric series or Jacobi polynomials,
+\begin{equation}
+ C^{(\alpha)}_{n} (z) = \frac{(2\alpha)_n}{n!} F \left(-n, 2\alpha + n; \alpha+\frac{1}{2}; \frac{1-z}{2}\right) = \frac{(2\alpha)_n}{\left(\alpha + \frac{1}{2}\right)_n} P^{(\alpha - 1/2,\alpha - 1/2)}_{n} (z)
+\end{equation}
+
+When $\alpha=3/2$,
+\begin{equation}
+ C^{(3/2)}_{n} (z) = \frac{n+2}{2} P^{(1,1)}_{n} (z).
+\end{equation}
+
+Equating $\henbibun{g}{t} = \frac{2\alpha (z-t)}{1 - 2zt + t^2} g = \frac{2\alpha (z-t)}{1 - 2zt + t^2} \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n$ and
+$\henbibun{g}{t} = \sum_{n=1}^{\infty} nC^{(\alpha)}_{n} (z) t^{n-1}$ as an identical equation with respect to $t$,
+\begin{equation}
+ 2(n+\alpha)z C^{(\alpha)}_{n} (z) = (n+1) C^{(\alpha)}_{n+1}(z) + (n+2\alpha - 1) C^{(\alpha)}_{n-1}(z).
+\end{equation}
+
+Differentiating both sides with respect to z yields the following equation,
+\begin{equation}
+ 2(n+\alpha) \left( C^{(\alpha)}_{n} (z) +  z \bibun{C^{(\alpha)}_{n} (z)}{z} \right) = (n+1) \bibun{C^{(\alpha)}_{n+1}(z)}{z} + (n+2\alpha - 1) \bibun{C^{(\alpha)}_{n-1}(z)}{z}.\label{gegen_dg_dt}
+\end{equation}
+
+On the other hand, equating $\henbibun{g}{z} = \frac{2\alpha t}{1-2zt+t^2} g = \frac{2\alpha t}{1-2zt+t^2} \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n$ and
+$\henbibun{g}{z} = \sum_{n=1}^{\infty} \bibun{C^{(\alpha)}_{n} (z)}{z} t^{n}$ with respect to $t$ as an identical equation with respect to $t$,
+\begin{equation}
+ 2\alpha C^{(\alpha)}_{n} (z) = \bibun{C^{(\alpha)}_{n+1} (z)}{z} - 2z \bibun{C^{(\alpha)}_{n} (z)}{z} + \bibun{C^{(\alpha)}_{n-1} (z)}{z}.\label{gegen_dg_dz}
+\end{equation}
+
+Cancelling the term $\bibun{C^{(\alpha)}_{n} (z)}{z}$ using equation \eqref{gegen_dg_dt} and \eqref{gegen_dg_dz} yields the following relationship,
+\begin{equation}
+ 2(n+\alpha) C^{(\alpha)}_{n} = \bibun{}{z} \left( C^{(\alpha)}_{n+1} (z) - C^{(\alpha)}_{n-1} (z) \right).\label{gegen_diff}
+\end{equation}
+
+$C^{(\alpha)}_n (1)$ and $C^{(\alpha)}_n (-1)$ can be calculated as follows.
+Noting that $g(t,1) = (1-t)^{-2\alpha}$ and $\frac{d^n g(t,1)}{dt^n} = (2\alpha)_n (1-t)^{-2\alpha - n}$,
+\begin{equation}
+ g(t,1) = \sum_{n=0}^{\infty} \frac{1}{n!} \frac{d^n g(0,1)}{dt^n} t^n = \sum_{n=0}^{\infty} \frac{(2\alpha)_n}{n!} t^n = \sum_{n=0}^{\infty} C^{(\alpha)}_n (1) t^n.
+\end{equation}
+Thus, $C^{(\alpha)}_n (1) = \frac{(2\alpha)_n}{n!}$. In the same way, $C^{(\alpha)}_n (-1) = \frac{(-1)^{n} (2\alpha)_n}{n!}$.
+Especially, when $\alpha=3/2$,
+$C^{(3/2)}_n (1) = \frac{(n+1)(n+2)}{2}$ and $C^{(3/2)}_n (-1) = \frac{(-1)^n (n+1)(n+2)}{2}$.
+
+\subsection{Legendre polynomials}
+Legendre polynomials $P_n(z)$ is defined using the following generating function $g(t,z)$,
+\begin{equation}
+ g(t,z) = \frac{1}{\sqrt{1 - 2zt + t^2}} = \sum_{n=0}^{\infty} P_n(z) t^n.
+\end{equation}
+
+The general form of the Legendre Polynomials can be expressed as follows,
+\begin{equation}
+ P_n (z) = \frac{1}{2^n n!} \frac{d^n}{dz^n}\left[ (z^2 - 1)^n \right].
+\end{equation}
+And the first and second term are calculated as follows,
+\begin{equation}
+ P_0(z) = 1, \; P_1(z) = z.
+\end{equation}
+
+Also, Legendre polynomials are expressed using Hypergeometric series or Jacobi polynomials, or Gegenbauer polynomials,
+\begin{equation}
+ P_n(z) = C^{(1/2)}_n(z) = P^{(0, 0)}_n (z) = F\left(-n, 1+n; 1; \frac{1-z}{2}\right).
+\end{equation}
+
+$P_n(1)$ and $P_n(-1)$ can be calculated as follows,
+\begin{align}
+ P_n(1) &= C^{(1/2)}_n(1) = \frac{1_n}{n!} = 1,\label{legendre1}\\
+ P_n(-1) &= C^{(1/2)}_n(-1) = \frac{(-1)^n 1_n}{n!} = (-1)^n.\label{legendre-1}
+\end{align}
+
+% Thus, $X = P_n(z)$ is the solution of the following differential equation,
+% \begin{equation}
+%  (1-z^2) \frac{d^2 P_n(z)}{dz^2} + 4z\bibun{P_n(z)}{z} + n(n+1)P_n(z) = 0
+% \end{equation}
+
+Using the following relationship,
+\begin{equation}
+ \frac{d^2}{dz^2}\left[ (z^2 - 1)^{n+2} \right] = 2(n+2)\left[ (2n+3) (z^2 - 1)^{n+1} + 2(n+1) (z^2 - 1)^n \right],
+\end{equation}
+There is a relationship,
+\begin{align}
+ P_{n+2}(z) - P_n(z) & = \frac{2n+3}{2(n+1)} \frac{1}{2^n n!} \frac{d^n}{dz^n}\left[ (z^2 - 1)^{n+1} \right]\\
+ & = -\frac{2n+3}{2(n+1)} (1-z^2) P^{(1,1)}_n(z)\\
+ & = -\frac{2n+3}{(n+1)(n+2)} (1-z^2) C^{(1/2)}_n(z),
+\end{align}
+between the Legendre polynomials and Gegenbauer polynomials.
+
+Also, using equation \eqref{gegen_diff},
+\begin{equation}
+ (2n+1)P_n(z) = \bibun{}{z} \left( P_{n+1} (z) - P_{n-1} (z) \right).\label{legendre_diff}
+\end{equation}
+
+\subsection{Exponential integral}
+The first order exponential integral in defined as follows,
+\begin{equation}
+ E_1(z) = \int_{z}^{\infty} \frac{\napier^{-z}}{z} dz \sim \frac{\napier^{-z}}{z} \left( 1 - \frac{1!}{z} + \frac{2!}{z^2} - \cdots \right) \; (\text{if } z \gg 1 ).
 \end{equation}
 
 \section{Results}
