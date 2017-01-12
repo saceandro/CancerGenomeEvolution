@@ -43,6 +43,8 @@
 \newcommand{\figref}[1]{Figure \ref{#1}}
 \newcommand{\tabref}[1]{Table \ref{#1}}
 \newcommand{\equationref}[1]{equation \eqref{#1}}
+\newcommand{\argmax}{\mathop{\rm arg~max}\limits}
+\newcommand{\argmin}{\mathop{\rm arg~min}\limits}
 \renewcommand{\thesubfigure}{(\thefigure.\arabic{subfigure})}
 \geometry{left=30mm, right=30mm, top=20mm, bottom=20mm}
 %\makeindex
@@ -87,6 +89,7 @@ where $N$ is the number of cells at the observation time ($t=1$).
 
 And I denote the fraction of subtype $i$'s cells among all cells at the observation time as $n_i \coloneqq n_i(0) = \frac{1}{N}\napier^{\alpha_i t_i}$.
 
+\subsection{Variant allele frequency distribution under neutral evolution}
 To derive the mean and the variance of the allele frequency drift from generation $g$ to generation $g+1$, I denote the number of alleles which doubles during generation $g$ to $g+1$ as $B_g$, the number of alleles which remains unchanged as $L_g$, and the number of alleles which dissapears as $D_g$. Putting that there are $a_{B_g}$ variant alleles within $B_g$ doubling alleles, $a_{L_g}$ variant alleles within $L_g$ alleles, $a_{D_g}$ variant alleles within $D_g$ dissapearing alleles, the probability that we choose $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ among $B_g$, $L_g$, and $D_g$ obeys the following hypergeometric distribution.
 \begin{equation}
  p(a_{B_g}, a_{L_g}, a_{D_g} | A_g, B_g, L_g, D_g) = \frac{{B_g \choose a_{B_g}}{L_g \choose a_{L_g}}{D_g \choose a_{D_g}}}{{N_g \choose A_g}},
@@ -480,7 +483,7 @@ And the loss probability is,
 
 Normalization factor is calculated using equation \eqref{vaf_dist_unnorm_inherited_x}, \eqref{vaf_dist_unnorm_inherited_fixation}, and \eqref{vaf_dist_unnorm_inherited_loss},
 \begin{align}
-& \int_{0}^{1} dx_i \int_{t_{\mathrm{child}(i)}}^{t_i} dt f_{WF}\left(x_i\Big|\frac{1}{Nn_i(t)}, t\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt p_{WF}\left(1\Big|\frac{1}{Nn_i(t)}, t\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt p_{WF}\left(0\Big|\frac{1}{Nn_i(t)}, t\right)\nonumber\\
+& \int_{0}^{1} dx_i \int_{t_{\mathrm{child}(i)}}^{t_i} dt' f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right)\nonumber\\
   &= t_i - t_{\mathrm{child}(i)}\label{vaf_dist_unnorm_inherited_partition}
 \end{align}
 
@@ -491,6 +494,26 @@ Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{chil
                       \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 1\right)\\
                       \int_{0}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 0\right).
                      \end{cases}
+\end{align}
+
+\subsection{Birth time and abundance ratio estimation using NGS reads}
+In this section, I define the problem of inferring the abundance ratio $n_i$ and the birth time $t_i$ of each subtype from NGS reads of the bulk tumor sample.
+When the number of total reads $M_k$ and the number of variant reads $m_k$ at the each SNV locus $k$, $(m, M) = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$ is given,
+the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be estimated via the maximum likelihood problem.
+
+Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that we get the read count $(m,M)$ as a result of NGS sequencing and the variant calling is,
+\begin{align}
+ p(m|M, n, t) & = \prod_{k=1}^{K} \sum_{i_k} p(i_k) \sum_{h_k} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x)
+\end{align}
+where $p (m_k | M_k, n, x)$ represents the probability that $m_k$ variant reads are observed among $M_k$ total reads, which is expressed as the following binomial distribution.
+\begin{align}
+ p (m_k | M_k, n, x) = Bi(m_k | M_k, \mu_k) = { m_k \choose M_k } \mu_k^{m_k} \left( 1 - \mu_k \right)^{M_k - m_k}.
+\end{align}
+$\mu_k = \sum_{i_k = 1}^{I} n_i x_i / 2$ represents the ratio of variant copies among all the copies exist in the tumor sample, assuming that all the tumor subtype is diploid and all the variants are heterozygous.
+
+Then, the maximum likelihood extimation of the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be expressed as follows,
+\begin{align}
+ (t, n) = \argmax_{t, n} \ln p(m | M, n, t) \nonumber
 \end{align}
 
 \section{Supplementaly notes}
