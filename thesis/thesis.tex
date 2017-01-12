@@ -289,7 +289,7 @@ Using the orthogonality of Gegenbauer polynomial, $\int_{-1}^{1} (1-z^2) C^{(3/2
 Therefore, the solution of the diffusion equation \eqref{FW_diffusion_tau} is,
 \begin{align}
  f(x|y,\tau) & = (1-w^2) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}\\
- & = 4y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) C^{(3/2)}_{j-1} (1-2x) \napier^{-\frac{j(j+1)}{2}\tau},
+ & = 4y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) C^{(3/2)}_{j-1} (1-2x) \napier^{-\frac{j(j+1)}{2}\tau},\label{wf_solution_x}
 \end{align}
 where $z=1-2x$, $w=1-2y$, and $\tau(t) = \int_{0}^{t} \frac{\beta}{n(t')} \: dt'$.
 
@@ -334,21 +334,21 @@ Integrating equation \eqref{fixation_flow},
  & = \frac{1+w}{2} - \frac{1-w^2}{2} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}\\
  & = (1-y) - 2y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},
 \end{align}
-where we used
-\begin{equation}
- \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} \left( P_{j-1}(w) - P_{j+1}(w) \right) = P_{0}(w) + P_{1}(w) = 1+w.
-\end{equation}
+where we used equation \eqref{frac_1_1-z}.
+% \begin{equation}
+%  \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} \left( P_{j-1}(w) - P_{j+1}(w) \right) = P_{0}(w) + P_{1}(w) = 1+w.
+% \end{equation}
 
 On the other hand, integrating equation \eqref{loss_flow},
 \begin{align}
  f(1|y,\tau) & = - \frac{1-w^2}{2} \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \left(1 - \napier^{-\frac{j(j+1)}{2}\tau} \right)\\
  & = \frac{1-w}{2} + \frac{1-w^2}{2} \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}\\
- & = y + 2y(1-y) \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},
+ & = y + 2y(1-y) \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},\label{loss}
 \end{align}
-where we used
-\begin{equation}
- \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} (-1)^j \left( P_{j-1}(w) - P_{j+1}(w) \right) = -P_{0}(w) + P_{1}(w) = -1+w.
-\end{equation}
+where we used equation \eqref{-frac_1_1+z}.
+% \begin{equation}
+%  \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} (-1)^j \left( P_{j-1}(w) - P_{j+1}(w) \right) = -P_{0}(w) + P_{1}(w) = -1+w.
+% \end{equation}
 
 In the case of subtype $i$,
 \begin{equation}
@@ -386,11 +386,111 @@ Using
 
 The first term of \eqref{vaf_dist_unnorm_term} is,
 \begin{align}
- - \frac{2\napier^{-\alpha_i t_i}}{\alpha_i} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \frac{1}{\gamma_j} & = - \frac{4}{N\beta} \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (z_i)\\
- & = - \frac{4}{N\beta} \sum_{j=1}^{\infty} \frac{1}{1-z_i^2} \left(P_{j-1}(z_i) - P_{j+1}(z_i)\right)\\
- & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left( P_{0}(z_i) + P_{1}(z_i) \right)\\
- & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left(1 + z_i \right)\\
- & = - \frac{2}{N\beta} \frac{1}{x_i}
+ - \frac{2\napier^{-\alpha_i t_i}}{\alpha_i} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \frac{1}{\gamma_j} & = - \frac{4}{N\beta} \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (z_i)
+ % & = - \frac{4}{N\beta} \sum_{j=1}^{\infty} \frac{1}{1-z_i^2} \left(P_{j-1}(z_i) - P_{j+1}(z_i)\right)\\
+ % & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left( P_{0}(z_i) + P_{1}(z_i) \right)\\
+ % & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left(1 + z_i \right)\\
+ = - \frac{4}{N\beta} \frac{1}{1-z_i}
+ = - \frac{2}{N\beta} \frac{1}{x_i}\label{first_term}
+\end{align}
+
+On the other hand, the second term of \eqref{vaf_dist_unnorm_term} is,
+\begin{align}
+ \frac{4n_i}{\beta} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2x_i) \left[ \gamma_j \napier^{\gamma_j} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} \right].
+\end{align}
+
+However, the element of this series does not converge to $0$ in the limit $j \to \infty$
+because $C^{(3/2)}_{j-1} (1 - 2x_i)\to \frac{j(j+1)}{2}$ in the limit $x_i \to 0$ and
+\begin{align}
+ \gamma_j \napier^{\gamma_j} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} = 1 - \frac{1}{\gamma_j} + O(\gamma_j^{-2})
+ = 1 - \frac{2}{j(j+1)} \frac{n_i}{\beta} \frac{\ln (Nn_i)}{t_i} + O(j^{-4}).\label{expint_asymptotic}
+\end{align}
+
+Thus, I must evaluate the sum of the series with regard to the first and second term of \eqref{expint_asymptotic} using \eqref{frac_1_1-z} and \eqref{gegen_int} respectively.
+As a result, the second term of \eqref{vaf_dist_unnorm_term} can be expressed as follows,
+\begin{align}
+& \frac{2n_i}{\beta} \Biggl[ \frac{1}{x_i} + \frac{4n_i}{\beta}\frac{\ln(Nn_i)}{t_i} \int_{0}^{1} \frac{(1 - s) \log s}{ \left(1 -2zs + s^2 \right)^{3/2}} ds\nonumber\\
+ & + 2 \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2x_i) \left\{ \gamma_j \napier^{\gamma_j} \left( E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right) -1 + \frac{1}{\gamma_j} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} \right\} \Biggr].\label{second_term}
+\end{align}
+
+Finally, \eqref{vaf_dist_unnorm_term} can be expressed as the sum of \eqref{first_term} and \eqref{second_term},
+\begin{align}
+   & \int_{0}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt'\\
+   & = 2\frac{n_i}{\beta} \Biggl[(1 - \frac{1}{Nn_i})\frac{1}{x_i} + 4\frac{n_i}{\beta}\frac{\ln(Nn_i)}{t_i} \int_{0}^{1} \: ds \frac{(1-s) \log s}{(1 - 2zs + s^2)^{3/2}}\\
+   & + 2 \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} C^{(3/2)}(1-2x_i)  \biggl\{ \gamma_j \mathrm{e}^{\gamma_j} \left(E_1(\gamma_j) - E_1(\gamma_j Nn_i)\right) - 1 + \frac{1}{\gamma_j} + \frac{1}{Nn_i}  \mathrm{e}^{-\gamma_j (Nn_i - 1)}
+   \Biggr\}
+   \Biggr].\label{vaf_dist_unnorm_x}
+\end{align}
+
+In the same way, the fixation probability can be calculated as follows using \eqref{loss},
+\begin{align}
+  & \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt'\\
+ & = t_i \left(1 - \frac{1}{\ln(Nn_i)}\left(1 - \frac{1}{Nn_i}\right)\right)\\
+  & + 2\frac{n_i}{\beta} \Bigg[-(1 - \frac{1}{Nn_i}) + \sum_{j=1}^{\infty}\frac{(-1)^{j}(2j+1)}{j(j+1)} \left\{ \gamma_j \mathrm{e}^{\gamma_j} \left(E_1(\gamma_j) - E_1(\gamma_1 Nn_i)\right) - 1 + \frac{1}{Nn_i}  \mathrm{e}^{-\gamma_j (Nn_i - 1)}
+ \right\}
+ \Bigg].\label{vaf_dist_unnorm_fixation}
+\end{align}
+
+Noting that all the observed variant NGS reads are derived from SNVs whose allele frequency $x_i > \frac{1}{Nn_i}$, I should normalize \eqref{vaf_dist_unnorm_x} and \eqref{vaf_dist_unnorm_fixation} with $\mathrm{Pr}\left\{x_i > \frac{1}{Nn_i}\right\}$, which is calcuated as follows,
+\begin{align}
+ & \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\}\nonumber\\
+ & =  \int_{\frac{1}{Nn_i}}^{1} dx_i \int_{0}^{t_i} dt' f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) + \int_{0}^{t_i} dt' f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1)\nonumber\\
+ & = t_i \left(1 - \frac{1}{\ln(Nn_i)}\left(1 - \frac{1}{Nn_i}\right)\right)\nonumber\\
+ & + 2\frac{n_i}{\beta} \Bigg[(\ln(Nn_i) -1)(1 - \frac{1}{Nn_i}) + \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} \bigl\{ \gamma_j \mathrm{e}^{\gamma_j} \left(E_1(\gamma_j) - E_1(\gamma_1 Nn_i)\right) - 1 + \frac{1}{Nn_i}  \mathrm{e}^{-\gamma_j (Nn_i - 1)}
+ \bigr\}
+ \Bigg],\label{vaf_dist_unnorm_partition}
+\end{align}
+where $C^{(3/2)}(1-2x_i)$ is integrated using equation \eqref{ledgendre_diff_to_gegen}.
+
+Finally, the variant allele frequency distribution $p(x_i | t_i, n_i)$ is calculated as follows using \eqref{vaf_dist_unnorm_x}, \eqref{vaf_dist_unnorm_fixation}, and \eqref{vaf_dist_unnorm_partition},
+\begin{align}
+ p(x_i | t_i, n_i) = \begin{cases}
+                      \int_{0}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt' \bigg/ \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\} & \left(\frac{1}{Nn_i} < x_i < 1\right)\\
+                      \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt' \bigg/ \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\} & \left(x_i = 1\right).
+                     \end{cases}
+\end{align}
+
+Above equation holds if the mutation is an isolated mutation of subtype $i$, i.e. the mutation is not inherited by descendant subtypes.
+However, in reality, the mutation is inherited to the descendant subtypes if the mutation occured in the lineage of the child subtype's founder cell.
+In this case, the variant allele frequency $x_i$ can be zero even if the variant NGS reads are observed because $x_{\mathrm{child}(i)} = 1$.
+
+Since the mutation must occur in a single lineage before the child subtype is born ($t = t_{\mathrm{child}(i)}$),
+The probability that the variant allele frequency $x_i$ is observed at time 0 can be calculated integrating $f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t)\right)$ from the birth time of subtype $i$ to the birth time of the $i$'s child subtype,
+\begin{align}
+ & \int_{t_{\mathrm{child}(i)}}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt'\nonumber\\
+ & = \frac{4}{N\beta} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}(1-2x_i)
+ \mathrm{e}^{\gamma_j} \left\{ \exp\left(-\gamma_j\left(Nn_i\right)^{\frac{t_{\mathrm{child}(i)}}{t_i}}\right) - \exp(-\gamma_j Nn_i)\right\}.\label{vaf_dist_unnorm_inherited_x}
+\end{align}
+
+The fixation probability is,
+\begin{align}
+ & \int_{t_{\mathrm{child}(i)}}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt'\nonumber\\
+ & = \frac{t_i}{\ln(Nn_i)}\left(1 - (Nn_i)^{\frac{t_{\mathrm{child}(i)}}{t_i} - 1}\right)
+ + \frac{2}{N\beta} \sum_{j=1}^{\infty} \frac{(-1)^{-j}(2j+1)}{j(j+1)}
+ \mathrm{e}^{\gamma_j} \left\{ \exp\left(-\gamma_j\left(Nn_i\right)^{\frac{t_{\mathrm{child}(i)}}{t_i}}\right) - \exp(-\gamma_j Nn_i)\right\}.\label{vaf_dist_unnorm_inherited_fixation}
+\end{align}
+
+And the loss probability is,
+\begin{align}
+ & \int_{t_{\mathrm{child}(i)}}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt'\nonumber\\
+ & = t_i - t_{\mathrm{child}(i)} - \frac{t_i}{\ln(Nn_i)}\left(1 - (Nn_i)^{\frac{t_{\mathrm{child}(i)}}{t_i} - 1}\right)
+ - \frac{2}{N\beta} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)}
+ \mathrm{e}^{\gamma_j} \left\{ \exp\left(-\gamma_j\left(Nn_i\right)^{\frac{t_{\mathrm{child}(i)}}{t_i}}\right) - \exp(-\gamma_j Nn_i)\right\}.\label{vaf_dist_unnorm_inherited_loss}
+\end{align}
+
+Normalization factor is calculated using equation \eqref{vaf_dist_unnorm_inherited_x}, \eqref{vaf_dist_unnorm_inherited_fixation}, and \eqref{vaf_dist_unnorm_inherited_loss},
+\begin{align}
+& \int_{0}^{1} dx_i \int_{t_{\mathrm{child}(i)}}^{t_i} dt f_{WF}\left(x_i\Big|\frac{1}{Nn_i(t)}, t\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt p_{WF}\left(1\Big|\frac{1}{Nn_i(t)}, t\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt p_{WF}\left(0\Big|\frac{1}{Nn_i(t)}, t\right)\nonumber\\
+  &= t_i - t_{\mathrm{child}(i)}\label{vaf_dist_unnorm_inherited_partition}
+\end{align}
+
+Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{child}(i)}, n_i)$ is calculated as follows using \eqref{vaf_dist_unnorm_inherited_x}, \eqref{vaf_dist_unnorm_inherited_fixation}, \eqref{vaf_dist_unnorm_inherited_loss}, and \eqref{vaf_dist_unnorm_inherited_partition},
+\begin{align}
+ p(x_i | t_i, t_{\mathrm{child}(i)}, n_i) = \begin{cases}
+                      \int_{0}^{t_i} \frac{1}{}f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left( 0 < x_i < 1\right)\\
+                      \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 1\right)\\
+                      \int_{0}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 0\right).
+                     \end{cases}
 \end{align}
 
 \section{Supplementaly notes}
@@ -432,7 +532,7 @@ Also, Jacobi polynomials are expressed using Hypergeometric series,
 \subsection{Gegenbauer polynomials}
 Gegenbauer polynomials $C^{(\alpha)}_{n} (z)$ is defined using the following generating function $g(t,z)$,
 \begin{equation}
- g(t,z) = \frac{1}{\left(1 - 2zt + t^2\right)^\alpha} = \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n.
+ g(t,z) = \frac{1}{\left(1 - 2zt + t^2\right)^\alpha} = \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n.\label{gegen_def}
 \end{equation}
 
 Gegenbauer polynomials are expressed using Hypergeometric series or Jacobi polynomials,
@@ -476,6 +576,16 @@ Thus, $C^{(\alpha)}_n (1) = \frac{(2\alpha)_n}{n!}$. In the same way, $C^{(\alph
 Especially, when $\alpha=3/2$,
 $C^{(3/2)}_n (1) = \frac{(n+1)(n+2)}{2}$ and $C^{(3/2)}_n (-1) = \frac{(-1)^n (n+1)(n+2)}{2}$.
 
+And the following series can be calculated as follows,
+\begin{align}
+ \sum_{n=1}^{\infty}\frac{2n+1}{n^2(n+1)^2} C^{(\alpha)}_{n-1} (z) & = \sum_{n=1}^{\infty} \left( \frac{1}{n^2} - \frac{1}{(n+1)^2} \right) C^{(\alpha)}_{n-1} (z)\\
+ & = \sum_{n=1}^{\infty} \left( \int_{0}^{\infty} x \napier^{-nx} dx - \int_{0}^{\infty} x \napier^{-(n+1)x} dx \right) C^{(\alpha)}_{n-1} (z)\\
+ & = \int_{0}^{\infty} x \napier^{-x} \left( 1 - \napier^{-x} \right) \sum_{n=1}^{\infty} C^{(\alpha)}_{n-1} (z) \left( \napier^{-x} \right)^{n-1} dx\\
+ & = \int_{0}^{\infty} \frac{x \napier^{-x} \left( 1 - \napier^{-x} \right)}{ \left(1 -2z\napier^{-x} + \napier^{-2x}\right)^{\alpha}} dx\\
+ & = - \int_{0}^{1} \frac{(1 - s) \log s}{ \left(1 -2zs + s^2 \right)^{\alpha}} ds,\label{gegen_int}
+\end{align}
+where I used $\int_{0}^{\infty} x \napier^{-nx} dx = 1/n^2$ and equation \eqref{gegen_def}.
+
 \subsection{Legendre polynomials}
 Legendre polynomials $P_n(z)$ is defined using the following generating function $g(t,z)$,
 \begin{equation}
@@ -513,16 +623,33 @@ Using the following relationship,
 \end{equation}
 There is a relationship,
 \begin{align}
- P_{n+2}(z) - P_n(z) & = \frac{2n+3}{2(n+1)} \frac{1}{2^n n!} \frac{d^n}{dz^n}\left[ (z^2 - 1)^{n+1} \right]\\
- & = -\frac{2n+3}{2(n+1)} (1-z^2) P^{(1,1)}_n(z)\\
- & = -\frac{2n+3}{(n+1)(n+2)} (1-z^2) C^{(1/2)}_n(z),
+ P_{n+2}(z) - P_n(z) & = \frac{2n+3}{2(n+1)} \frac{1}{2^n n!} \frac{d^n}{dz^n}\left[ (z^2 - 1)^{n+1} \right]\nonumber\\
+ & = -\frac{2n+3}{2(n+1)} (1-z^2) P^{(1,1)}_n(z)\nonumber\\
+ & = -\frac{2n+3}{(n+1)(n+2)} (1-z^2) C^{(3/2)}_n(z),\label{gegen_legendre_relation}
 \end{align}
 between the Legendre polynomials and Gegenbauer polynomials.
+
+The following series can be calculated using equation \eqref{gegen_legendre_relation}.
+\begin{gather}
+ \sum_{n=1}^{\infty}\frac{2n+1}{n(n+1)} C^{(3/2)}_{n-1} (z) = \sum_{n=1}^{\infty} \frac{P_{n-1}(z) - P_{n+1}(z)}{1-z^2} = \frac{P_{0}(z) + P_{1}(z)}{1-z^2} = \frac{1}{1-z}.\label{frac_1_1-z}\\
+ \sum_{n=1}^{\infty}  \frac{(-1)^n(2n+1)}{n(n+1)} C^{(3/2)}_{n-1} (z) = \sum_{n=1}^{\infty} \frac{(-1)^n (P_{n-1}(z) - P_{n+1}(z))}{1-z^2} = \frac{-P_{0}(z) + P_{1}(z)}{1-z^2} = -\frac{1}{1+z}\label{-frac_1_1+z}.
+\end{gather}
 
 Also, using equation \eqref{gegen_diff},
 \begin{equation}
  (2n+1)P_n(z) = \bibun{}{z} \left( P_{n+1} (z) - P_{n-1} (z) \right).\label{legendre_diff}
 \end{equation}
+
+Using equation \eqref{hypgeo_concrete}, $X = P_n(z)$ is the solution of the following differential equation,
+\begin{equation}
+ \bibun{}{z} \left[ (1-z^2) \bibun{}{z} P_n(z) \right] = - n(n+1)P_n(z).\label{legendre_concrete}
+\end{equation}
+
+Integrating both sides of \eqref{legendre_concrete} and dividing by $1-z^2$,
+\begin{align}
+ \bibun{}{z} P_n(z) = -\frac{n(n+1)}{(1 - z^2)} \int P_n(z) dz = -\frac{n(n+1)}{(1-z^2) (2n+1)} \left(P_{n+1} (z) - P_{n-1}(z)\right) = C^{(3/2)}_{n-1} (z),\label{ledgendre_diff_to_gegen}
+\end{align}
+where I used equation \eqref{legendre_diff} and \eqref{gegen_legendre_relation}.
 
 \subsection{Exponential integral}
 The first order exponential integral in defined as follows,
