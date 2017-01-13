@@ -26,6 +26,8 @@
 \usepackage{multicol}
 \usepackage{etoolbox}
 \usepackage{fancyhdr}
+\usepackage[]{algorithm2e}
+\usepackage{algorithmic}
 % \usepackage{listings,jlisting}
 % \lstset{basicstyle=\ttfamily,
 %   showstringspaces=false,
@@ -449,7 +451,7 @@ Finally, the variant allele frequency distribution $p(x_i | t_i, n_i)$ is calcul
 \begin{align}
  p(x_i | t_i, n_i) = \begin{cases}
                       \int_{0}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt' \bigg/ \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\} & \left(\frac{1}{Nn_i} < x_i < 1\right)\\
-                      \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt' \bigg/ \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\} & \left(x_i = 1\right).
+                      \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt' \bigg/ \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\} & \left(x_i = 1\right).\label{vaf_dist_norm}
                      \end{cases}
 \end{align}
 
@@ -492,7 +494,7 @@ Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{chil
  p(x_i | t_i, t_{\mathrm{child}(i)}, n_i) = \begin{cases}
                       \int_{0}^{t_i} \frac{1}{}f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left( 0 < x_i < 1\right)\\
                       \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 1\right)\\
-                      \int_{0}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 0\right).
+                      \int_{0}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 0\right).\label{vaf_dist_norm_inherited}
                      \end{cases}
 \end{align}
 
@@ -501,9 +503,10 @@ In this section, I define the problem of inferring the abundance ratio $n_i$ and
 When the number of total reads $M_k$ and the number of variant reads $m_k$ at the each SNV locus $k$, $(m, M) = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$ is given,
 the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be estimated via the maximum likelihood problem.
 
+\subsubsection{Estimation modeling using binomial distribution}
 Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that we get the read count $(m,M)$ as a result of NGS sequencing and the variant calling is,
 \begin{align}
- p(m|M, n, t) & = \prod_{k=1}^{K} \sum_{i_k} p(i_k) \sum_{h_k} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x)
+ p(m|M, n, t) & = \prod_{k=1}^{K} \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k-1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x)
 \end{align}
 where $p (m_k | M_k, n, x)$ represents the probability that $m_k$ variant reads are observed among $M_k$ total reads, which is expressed as the following binomial distribution.
 \begin{align}
@@ -511,10 +514,94 @@ where $p (m_k | M_k, n, x)$ represents the probability that $m_k$ variant reads 
 \end{align}
 $\mu_k = \sum_{i_k = 1}^{I} n_i x_i / 2$ represents the ratio of variant copies among all the copies exist in the tumor sample, assuming that all the tumor subtype is diploid and all the variants are heterozygous.
 
+And $p(i_k)$ represents the probability that the SNV $k$ originated in subtype $i_k$.
+$p(h_k | i_k)$ represents the probability that SNV $k$ is inherited to the child subtypes in the pattern $h_k$.(Figure)
+$p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})$ represents the probability that the variant allele frequency of subtype $i_k$ is $x_{i_k}$,
+which corresponds to \eqref{vaf_dist_norm} or \eqref{vaf_dist_norm_inherited} depending on whether SNV $k$ is an isolated mutation (i.e. $h_k = 0$) or not (i.e. $h_k \neq 0$).
+
 Then, the maximum likelihood extimation of the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be expressed as follows,
 \begin{align}
- (t, n) = \argmax_{t, n} \ln p(m | M, n, t) \nonumber
+ (t, n) = \argmax_{t, n} \ln p(m | M, n, t).\nonumber
 \end{align}
+
+\subsubsection{Estimation modeling using NGS read emission probability}
+Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that $m_k$ normal reads and $M_k - m_k$ variant reads are observed as a result of NGS sequencing is,
+\begin{align}
+ p(D | t, n) & = \prod_{k=1}^{K} \Biggl[ \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) \nonumber\\
+ & \times \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Biggr]
+\end{align}
+where the $l$ th read at the SNV locus $k$ is derived from the subtype $q_{kl}$'s copy and $D = \{D_1, \cdots D_K\} = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$.
+
+The Expectation-Maximization (EM) algorithm to derive the maximum likelihood estimate of $t$ and $n$ can be formulated as follows.
+
+For each SVN locus $k$, $i_k$, $h_k$, $x_{i_k}$, and $q_{k 0:(M_k - 1)} = ( q_{k 0}, \cdots, q_{k (M_k-1)} )$ are assumed to be hidden state because they cannot be observed.
+Then the hidden indicator variable $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ can be defined as,
+\begin{equation}
+ z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \in \{0, 1\} \text{, } \sum_{i_k=1}^{I} \sum_{h_k=0}^{H_k - 1} \sum_{x_{i_k}} \sum_{q_{k0}=1}^{I} \cdots \sum_{q_{k (M_k - 1)}=1}^{I} z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} = 1.
+\end{equation}
+
+Thus the joint probability distribution of observables $(m_k,M_k)$ and hidden variables $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ is,
+\begin{align}
+ p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| t, n\right) &= \prod_{i_k=1}^{I} \prod_{h_k=0}^{H_k - 1} \prod_{x_{i_k}} \prod_{q_{k 0:(M_k - 1)}} \Biggl\{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})\nonumber\\
+&\times \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Biggr\}^{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}}.
+\end{align}
+
+And the posterior distribution of the hidden variables $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ given observables $(m_k,M_k)$ can be calculated using Bayes theorem,
+\begin{align}
+ p\left(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| D_k, t, n\right) = \frac{p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| n, t\right)}{ \sum_{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}} p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| n, t\right) }.
+\end{align}
+
+The responsibility that the hidden state $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ takes for explaining the observation $(m_k, M_k)$ is,
+\begin{align}
+& \gamma\left(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right)\\
+ & = E_{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| D_k, t^{\mathrm{old}}, n^{\mathrm{old}}} \left[z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right]\\
+ & = \frac{\prod_{i_k=1}^{I} \prod_{h_k=0}^{H_k - 1} \prod_{x_{i_k}} \prod_{q_{k 0:(M_k - 1)}} \Bigl\{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}^{\mathrm{old}}, t_{i_k}^{\mathrm{old}}, t_{\mathrm{child}(i_k)}^{\mathrm{old}}) \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Bigr\}}
+ {\sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}^{\mathrm{old}}, t_{i_k}^{\mathrm{old}}, t_{\mathrm{child}(i_k)}^{\mathrm{old}}) \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}}^{\mathrm{old}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}}^{\mathrm{old}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right)}.
+\end{align}
+
+And the $Q$-function is defined as follows,
+\begin{align}
+ & Q(t,n;t^{\mathrm{old}},n^{\mathrm{old}})\nonumber\\
+ & = \sum_{k=1}^{K} E_{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| D_k, t^{\mathrm{old}}, n^{\mathrm{old}}}
+ \left[ \ln p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| t,n\right) \right]\nonumber\\
+ & = \sum_{k=1}^{K}\sum_{i_k=1}^{I}\sum_{h_k=0}^{H_k - 1}\sum_{x_{i_k}} \sum_{q_{k0:(M_k-1)}} \gamma(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}})\Biggl[\ln p(i_k) + \ln p(h_k | i_k) + \ln p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})\nonumber\\
+ & + \sum_{l=0}^{M_k - 1} \ln n_{q_{kl}} + \sum_{l=0}^{m_k - 1} \ln \left(\frac{x_{i_{kl}}}{2}\right) + \sum_{l=m_k}^{M_k -1} \ln \left(1 - \frac{x_{i_{kl}}}{2}\right) \Biggr]
+\end{align}
+
+The procedure of EM algorithm for estimating the birth time $t$ and abundance ratio $n$ is described as Algorithm \ref{EM_algorithm}.
+ \begin{algorithm}
+ \caption{EM algorithm for estimating the birth time $t$ and abundance ratio $n$}
+  \label{EM_algorithm}
+ 1. Select initial parameters $(t^{(0)}, n^{(0)})$ % and set $(t^{\mathrm{old}}, n^{\mathrm{old}}) \leftarrow (t^{(0)}, n^{(0)})$.
+ 
+ 2. \For{$iter = 1, 2, \cdots$}{
+   E step: Calcuate responsibility $\gamma\left(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right)$ based on $(t^{(iter-1)},n^{(iter-1)})$
+
+   M step: $(t^{(iter)},n^{(iter)}) = \argmin_{(t,n)} Q(t,n; t^{(iter-1)},n^{(iter-1)})$
+ 
+   \If{$(t^{(iter)}, n^{(iter)})$ {\rm converge}}{
+     break
+   }
+ }
+ \end{algorithm}
+
+Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the gradient descent algorithm.
+ 
+% Minimizing $Q(t,n;t^{\mathrm{old}},n^{\mathrm{old}})$ with respect to $t, n$
+
+% \begin{align}
+%  z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} = \begin{cases}
+%                                                    1 & \left(\text{if SNV $k$ is originated in subtype $i_k$, innherited to child subtypes in the pattern of $h_k$,  }\right)\\
+%                                                    0
+%                                                   \end{cases}
+% \end{align}
+
+
+\section{Results}
+For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
+
+\section{Discussion}
+For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
 
 \section{Supplementaly notes}
 \subsection{Hypergeometric series}
@@ -679,12 +766,6 @@ The first order exponential integral in defined as follows,
 \begin{equation}
  E_1(z) = \int_{z}^{\infty} \frac{\napier^{-z}}{z} dz \sim \frac{\napier^{-z}}{z} \left( 1 - \frac{1!}{z} + \frac{2!}{z^2} - \cdots \right) \; (\text{if } z \gg 1 ).
 \end{equation}
-
-\section{Results}
-For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
-
-\section{Discussion}
-For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
 
 \bibliography{master_thesis}
 %\printindex
