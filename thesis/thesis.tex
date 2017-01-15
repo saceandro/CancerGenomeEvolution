@@ -84,8 +84,17 @@ The emergence of the next-generation sequencers (NGSs) has enabled us to analyse
 Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor~\cite{navin2011tumour}. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor.
 
 However, the subtype reconstruction using bulk sequencing reads has many difficulties because the observed variant allele frequency (VAF) does not directly refrect those of each subtypes.
-The observed VAF is interwined with the normal cell contamination, copy number variations (CNVs), and the abundance ratio of each subtypes.
+The observed VAF is interwined with the normal cell contamination, copy number alterations (CNAs), and the abundance ratio of each subtypes.
 
+One of the first computational method which attack the first problem mentioned above is ABSOLUTE~\cite{carter2012absolute}, which enabled the estimation of the tumor purity and the ploidy avaraged over all the subtypes.
+However, it does not attempt subtype decomposition.
+ % which distinguish clonal mutations (i.e. mutations that all the subtypes have in common) and subclonal mutations (i.e. mutations harbored by not all but some of the subtypes)
+Then THetA~\cite{williams2016identification} and TITAN~\cite{ha2014titan} were desined to attack the second and third problem mentioned above.
+However, they can infer the copy number and the abundance ratio of each subtype only if the CNAs distinguish the subtypes% , because they only use the number of mapped reads in the segmented interval of the DNA
+.
+Subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone and PyClone.
+They utilize Bayesian mixture modeling to cluster mutations which have similar VAF to infer the abundance ratio of each subtypes.
+However, neither of them infers the phylogenetic relationship between subtypes.
 
 
 \section{Methods}
