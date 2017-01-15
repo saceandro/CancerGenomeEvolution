@@ -47,6 +47,7 @@
 \newcommand{\equationref}[1]{equation \eqref{#1}}
 \newcommand{\argmax}{\mathop{\rm arg~max}\limits}
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
+\newcommand{\numberthis}{\addtocounter{equation}{1}\tag{\theequation}}
 \renewcommand{\thesubfigure}{(\thefigure.\arabic{subfigure})}
 \geometry{left=30mm, right=30mm, top=20mm, bottom=20mm}
 %\makeindex
@@ -59,15 +60,31 @@
 \thispagestyle{empty}
 \newpage
 
-%\tableofcontents
-%\listoftables
-%\listoffigures
 \pagenumbering{arabic}
-
-\section{Introduction}
+\section*{Abstract}
 Cancer arises as a result of the somatic mutation accumulation. Every cell within a tumor has derived from a single founder cell, whose subsequent accumulation of advantageous mutations causes clonal expansions (Figure 1). In the course of clonal expansion, a driver mutation gives rise to another type of clone, which is called a subtype. As a result, a tumor is a mixture of various subtypes. In the latest cancer treatment, it is important to identify what subtypes the tumor consists of and to identify the growth rates of these subtypes. For example, breast cancer subtypes have been studied well, and the clinical practice guidelines depending on each subtype have been established. Although well studied subtypes such as luminal A, luminal B, and HRE2+ could be identified biochemically, however, there is little as yet known about the growth rates of them. Furthermore, patient specific subtypes and unrevealed subtypes of other cancers cannot be identified with such chemical tests.
 
 The emergence of the next-generation sequencers (NGSs) has enabled us to analyse whole cancer genomes at a single nucleotide resolution. Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor. To solve this problem, several methods such as PyClone~\cite{roth2014pyclone} and AncesTree~\cite{el2015reconstruction} have been proposed in previous works. However, we cannot estimate how rapidly each subtype proliferates and when these subtypes arose using these methods. Here we provide a Bayesian statistical model to estimate birth time and growth rate of each subtype.
+
+\newpage
+\tableofcontents
+\listoftables
+\listoffigures
+\newpage
+
+\section{Introduction}
+Cancer arises as a result of the somatic mutation accumulation. Every cell within a tumor has derived from a single founder cell, whose subsequent accumulation of advantageous mutations causes clonal expansion. In the course of clonal expansion, a driver mutation gives rise to another type of clone, which is called a subtype. As a result, a tumor is a mixture of various subtypes. Such a mechanism of cancer progression is called clonal evolution~\cite{nowell1976clonal}.
+
+In the latest cancer treatment, it is important to identify what subtypes the tumor consists of and to identify the growth rates of these subtypes. For example, breast cancer subtypes have been studied well, and the clinical practice guidelines depending on each subtype have been established. Although well studied subtypes such as luminal A, luminal B, and HRE2+ could be identified biochemically and immunohistochemically~\cite{cancer2012comprehensive}, however, there is little as yet known about the growth rates of them. Furthermore, patient specific subtypes and unrevealed subtypes of other cancers cannot be identified with such chemical tests.
+
+The emergence of the next-generation sequencers (NGSs) has enabled us to analyse whole cancer genomes at a single nucleotide resolution. For example, two different clonal evolution patterns were revealed in the relapsed acute myeloid leukemia by whole-genome sequencing~\cite{ding2012clonal}, and highly individual evolutional trajectories were identified in the high-grade serous ovarian cancer using exome sequencing~\cite{bashashati2013distinct}. % However, these works were conducted manually, and computational approaces were awaited.
+
+Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor~\cite{navin2011tumour}. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor.
+
+However, the subtype reconstruction using bulk sequencing reads has many difficulties because the observed variant allele frequency (VAF) does not directly refrect those of each subtypes.
+The observed VAF is interwined with the normal cell contamination, copy number variations (CNVs), and the abundance ratio of each subtypes.
+
+
 
 \section{Methods}
 Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
@@ -103,11 +120,11 @@ Then, the mean and the variance of $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ are deriv
 \begin{equation}
  E[a_{B_g} | A_g, B_g, L_g, D_g] = \frac{B_g}{N_g} A_g,\; E[a_{L_g} | A_g, B_g, L_g, D_g] = \frac{L_g}{N_g} A_g,\; E[a_{D_g} | A_g, B_g, L_g, D_g] = \frac{D_g}{N_g} A_g
 \end{equation}
-\begin{align}
+\begin{align*}
  V[a_{B_g} | A_g, B_g, L_g, D_g] &= \frac{B_g}{N_g} \left(1 - \frac{B_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
  V[a_{L_g} | A_g, B_g, L_g, D_g] &= \frac{L_g}{N_g} \left(1 - \frac{L_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
  V[a_{D_g} | A_g, B_g, L_g, D_g] &= \frac{D_g}{N_g} \left(1 - \frac{D_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}.
-\end{align}
+\end{align*}
 
 And the covariance between $a_{B_g}$ and $a_{D_g}$ is calculated as follows.
 \begin{equation}
@@ -586,7 +603,6 @@ The procedure of EM algorithm for estimating the birth time $t$ and abundance ra
  \end{algorithm}
 
 Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the gradient descent algorithm.
- 
 % Minimizing $Q(t,n;t^{\mathrm{old}},n^{\mathrm{old}})$ with respect to $t, n$
 
 % \begin{align}
@@ -596,9 +612,44 @@ Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the gradi
 %                                                   \end{cases}
 % \end{align}
 
-
 \section{Results}
 For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
+
+First, I conducted the double check of the neutral tumor evolution which is identified in the previous work~\cite{williams2016identification}.
+In their study, if neutral evolution theory applies to passenger mutation, the number of passenger mutations per allelic frequency $M(f)$ follows $1/f$ power law,
+\begin{equation}
+ M(f) = \mu_e \left( \frac{1}{f} - \frac{1}{f_{max}}\right),
+\end{equation}
+where $\mu_e$ denotes the mutation rate per effective cell division.
+If we consider that we cannot estimate the mutation rate and the birth time of a subtype at the same time as long as only a single time point data is available
+because there is a trade-off between the mutation rate and the birth time, the inverse of $\mu_e$ has a information about the birth time of the subtype.
+Thus we can estimate the birth time and growth rate using linear regression, which is conducted as \figref{TB_linear_regression}.
+
+\begin{figure}[H]
+ \begin{minipage}[c]{0.47\hsize}
+ \begin{center}
+  \includegraphics[bb=3 4 479 489, width=0.9\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.keep.tumor_f.sorted.bold.pdf}
+ \end{center}
+    \caption{
+  Variant allelic frequency distribution of the sample TB~\cite{williams2016identification}.
+  Mutations with higher frequency ($>0.4$) and lower frequency ($<0.4$) correspond to driver mutations and passenger mutations respectively.
+  }\label{TB_vaf}
+\end{minipage}
+ \hspace{1truecm}
+\begin{minipage}[c]{0.47\hsize}
+ \begin{center}
+ \includegraphics[bb=3 28 460 471, width=0.9\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.keep.tumor_f.sorted.filtered.reverse.bold.pdf}
+ \end{center}
+   \caption{
+  The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$
+  using the sample TB~\cite{williams2016identification}.
+  The red line represents the result of the linear regression. From the $R^2$ value, this tumor almost obeys the neutral evolution.
+  }
+ \label{TB_linear_regression}
+\end{minipage}
+\end{figure}
+
+However, 
 
 \section{Discussion}
 For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
@@ -766,6 +817,8 @@ The first order exponential integral in defined as follows,
 \begin{equation}
  E_1(z) = \int_{z}^{\infty} \frac{\napier^{-z}}{z} dz \sim \frac{\napier^{-z}}{z} \left( 1 - \frac{1!}{z} + \frac{2!}{z^2} - \cdots \right) \; (\text{if } z \gg 1 ).
 \end{equation}
+
+\section*{Acknowledgements}
 
 \bibliography{master_thesis}
 %\printindex
