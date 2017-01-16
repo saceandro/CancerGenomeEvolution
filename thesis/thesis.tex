@@ -86,16 +86,29 @@ Furthermore, using the latest single-cell sequencing technology, we can investig
 However, the subtype reconstruction using bulk sequencing reads has many difficulties because the observed variant allele frequency (VAF) does not directly refrect those of each subtypes.
 The observed VAF is interwined with the normal cell contamination, copy number alterations (CNAs), and the abundance ratio of each subtypes.
 
-One of the first computational method which attack the first problem mentioned above is ABSOLUTE~\cite{carter2012absolute}, which enabled the estimation of the tumor purity and the ploidy avaraged over all the subtypes.
+One of the first computational method which tackle the first problem mentioned above is ABSOLUTE~\cite{carter2012absolute}, which enabled the estimation of the tumor purity and the ploidy avaraged over all the subtypes.
 However, it does not attempt subtype decomposition.
  % which distinguish clonal mutations (i.e. mutations that all the subtypes have in common) and subclonal mutations (i.e. mutations harbored by not all but some of the subtypes)
-Then THetA~\cite{williams2016identification} and TITAN~\cite{ha2014titan} were desined to attack the second and third problem mentioned above.
+Then THetA~\cite{williams2016identification} and TITAN~\cite{ha2014titan} were desined to tackle the second and third problem mentioned above.
 However, they can infer the copy number and the abundance ratio of each subtype only if the CNAs distinguish the subtypes% , because they only use the number of mapped reads in the segmented interval of the DNA
 .
-Subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone and PyClone.
+Subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone~\cite{miller2014sciclone} and PyClone~\cite{roth2014pyclone}.
 They utilize Bayesian mixture modeling to cluster mutations which have similar VAF to infer the abundance ratio of each subtypes.
 However, neither of them infers the phylogenetic relationship between subtypes.
+After that, LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} enabled to reconstruct phylogenetic relationship as an acyclic directed graph using multiple samples from the same tumor.
+Infinite-sites assumption, which assumes that no genomic position, or locus, mutates more than once in the course of clonal evolution, can be used to resolve the ambiguity of the phylogenetic relationship, because the mutations harbored by smaller number of cancer cells cannot be ancestral to the mutations harbored by larger number of cancer cells.
+They reconstruct the subtype phylogeny using variant allele frequency observed in each samples along with infinite-sites assumption.
+While LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} are deterministic algorithms, PhyloSub~\cite{jiao2014inferring} and BitPhylogeny~\cite{yuan2015bitphylogeny} are the Bayesian approaches to detect major phylogeny by sampling trees using tree-structured stick-breaking process.
 
+The subtype reconstruction from bulk sequencing reads has been progressed in this way, however, none of these methods is able to infer the birth time and growth rate of each subtype, which are the important subtype characteristics in the latest cancer treatment.
+This is because they discard passenger mutations, which do not affect the fitness of the subtype and obey neutral evolution.
+Although driver mutations, which are advantageous mutations harbored by all the cells within a subtype and have higher VAF compared to passenger mutations, contains the useful information to reconstruct the subtype abundance ratio and phylogeny, however, they do not inform the birth time of each subtype because they are fixed in the subtype soon after the emergence.
+On the other hand, the duration of the neutral genetic drift of the passenger mutation affects its VAF.
+Conversely, the VAF distribution of the passenger mutations refrects the birth time of each subtype.
+
+If there exists a single subtype within a tumor, we can infer the birth time using linear regression~\cite{williams2016identification}.
+However, if there were multiple subtypes, we cannot infer it by the linear regression.
+Here I provide a Bayesian mixture modeling to estimate the birth time of each subtype to estimate birth time and growth rate of each subtype. Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype.
 
 \section{Methods}
 Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
