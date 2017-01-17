@@ -50,7 +50,7 @@
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
 \newcommand{\numberthis}{\addtocounter{equation}{1}\tag{\theequation}}
 \renewcommand{\thesubfigure}{(\thefigure.\arabic{subfigure})}
-\geometry{left=30mm, right=30mm, top=20mm, bottom=20mm}
+\geometry{left=30mm, right=30mm, top=20mm, bottom=30mm}
 \mathtoolsset{showonlyrefs}
 %\makeindex
 
@@ -83,32 +83,44 @@ The emergence of the next-generation sequencers (NGSs) has enabled us to analyse
 
 Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor~\cite{navin2011tumour}. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor.
 
-However, the subtype reconstruction using bulk sequencing reads has many difficulties because the observed variant allele frequency (VAF) does not directly refrect those of each subtypes.
-The observed VAF is interwined with the normal cell contamination, copy number alterations (CNAs), and the abundance ratio of each subtypes.
+However, the subtype reconstruction using bulk sequencing reads has many difficulties because the observed variant allele frequencies (VAFs) does not directly refrect those of each subtypes.
+The observed VAFs are interwined with the normal cell contamination, copy number alterations (CNAs), and the abundance ratio of each subtypes.
 
-One of the first computational method which tackle the first problem mentioned above is ABSOLUTE~\cite{carter2012absolute}, which enabled the estimation of the tumor purity and the ploidy avaraged over all the subtypes.
-However, it does not attempt subtype decomposition.
+One of the first computational methods which tackled the first problem mentioned above is ABSOLUTE~\cite{carter2012absolute}, which enabled the estimation of the tumor purity and the ploidy avaraged over all the subtypes.
+However, they did not attempt to decompose these subtypes.
  % which distinguish clonal mutations (i.e. mutations that all the subtypes have in common) and subclonal mutations (i.e. mutations harbored by not all but some of the subtypes)
 Then THetA~\cite{williams2016identification} and TITAN~\cite{ha2014titan} were desined to tackle the second and third problem mentioned above.
-However, they can infer the copy number and the abundance ratio of each subtype only if the CNAs distinguish the subtypes% , because they only use the number of mapped reads in the segmented interval of the DNA
-.
-Subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone~\cite{miller2014sciclone} and PyClone~\cite{roth2014pyclone}.
-They utilize Bayesian mixture modeling to cluster mutations which have similar VAF to infer the abundance ratio of each subtypes.
+However, they can infer the copy number and the abundance ratio of each subtype only if the CNAs distinguish the subtypes.% , because they only use the number of mapped reads in the segmented interval of the DNA
+This is because they only use the number of reads mapped to each genomic interval in the case of tumor and normal sample as inputs.
+On the other hand, subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone~\cite{miller2014sciclone} and PyClone~\cite{roth2014pyclone}.
+They utilize Bayesian mixture modeling to cluster mutations which have similar VAF to infer the abundance ratio of each subtype.
 However, neither of them infers the phylogenetic relationship between subtypes.
-After that, LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} enabled to reconstruct phylogenetic relationship as an acyclic directed graph using multiple samples from the same tumor.
-Infinite-sites assumption, which assumes that no genomic position, or locus, mutates more than once in the course of clonal evolution, can be used to resolve the ambiguity of the phylogenetic relationship, because the mutations harbored by smaller number of cancer cells cannot be ancestral to the mutations harbored by larger number of cancer cells.
-They reconstruct the subtype phylogeny using variant allele frequency observed in each samples along with infinite-sites assumption.
+After that, LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} enabled us to reconstruct phylogenetic relationship as an acyclic directed graph using multiple spacially distinct samples from the same tumor.
+They made use of the infinite-sites assumption, which assumes that no genomic position, or locus, mutates more than once in the course of clonal evolution.
+This assumption resolves the ambiguity of the phylogenetic relationship, because the mutations harbored by smaller number of cancer cells cannot be ancestral to the mutations harbored by larger number of cancer cells in all the tumor samples.
+%They reconstruct the subtype phylogeny using variant allele frequency observed in each samples along with infinite-sites assumption.
 While LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} are deterministic algorithms, PhyloSub~\cite{jiao2014inferring} and BitPhylogeny~\cite{yuan2015bitphylogeny} are the Bayesian approaches to detect major phylogeny by sampling trees using tree-structured stick-breaking process.
 
-The subtype reconstruction from bulk sequencing reads has been progressed in this way, however, none of these methods is able to infer the birth time and growth rate of each subtype, which are the important subtype characteristics in the latest cancer treatment.
-This is because they discard passenger mutations, which do not affect the fitness of the subtype and obey neutral evolution.
-Although driver mutations, which are advantageous mutations harbored by all the cells within a subtype and have higher VAF compared to passenger mutations, contains the useful information to reconstruct the subtype abundance ratio and phylogeny, however, they do not inform the birth time of each subtype because they are fixed in the subtype soon after the emergence.
-On the other hand, the duration of the neutral genetic drift of the passenger mutation affects its VAF.
-Conversely, the VAF distribution of the passenger mutations refrects the birth time of each subtype.
+The subtype reconstruction from bulk sequencing reads has been progressed in this way, however, none of these methods can infer the birth time and growth rate of each subtype, which are the important subtype characteristics in the latest cancer treatment.
+This is fundamentally because they only make use of driver mutations and neglect passenger mutations.
+While the formar are the advantageous mutations which cause the phenotype of each cancer subtype, the latter have no effect in the cancer phenotype and obeys neutral evolution.
+Although driver mutations have higher VAFs compared to passenger mutations because they become fixed in each subtype as soon as they occur as a result of natural selection,
+passenger mutations account for the overwhelming majority of somatic mutation events.
+This means that we can make use of the statistical analysis of passenger mutations to reveal the more detailed characteristics of each cancer subtype.
+More particularly, the VAF distribution of the passenger mutations changes depending on the duration of their genetic drift process.
+Using this relationship conversely, we can infer the birth time of each subtype from the VAF distribution of the passenger mutations.
 
-If there exists a single subtype within a tumor, we can infer the birth time using linear regression~\cite{williams2016identification}.
-However, if there were multiple subtypes, we cannot infer it by the linear regression.
-Here I provide a Bayesian mixture modeling to estimate the birth time of each subtype to estimate birth time and growth rate of each subtype. Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype.
+%  which do not affect the fitness of the subtype and obey neutral evolution.
+% Although driver mutations, which are advantageous mutations harbored by all the cells within a subtype and have higher VAF compared to passenger mutations, contains the useful information to reconstruct the subtype abundance ratio and phylogeny, however, they do not inform the birth time of each subtype because they are fixed in the subtype soon after the emergence.
+% On the other hand, the duration of the neutral genetic drift of the passenger mutation affects its VAF.
+% Conversely, the VAF distribution of the passenger mutations refrects the birth time of each subtype.
+
+In a previous study, if there exists a single subtype within a tumor, we can infer the birth time using linear regression using this relationship~\cite{williams2016identification}.
+However, if there exists multiple subtypes, linear regression does not work because the VAF distribution has multiple peaks.
+More over, the VAF distribution modeling in the previous study is not acculate because it neglects the effect of loss and fixation of the VAF because they dose not consider the stochastic nature of the genetic drift.
+
+Here I provide a Bayesian mixture modeling to estimate the birth time of each subtype to estimate birth time and growth rate of each subtype.
+Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process~\cite{wright1931evolution}, enabling the inference of the birth time and growth rate of each subtype.
 
 \section{Methods}
 Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
@@ -214,7 +226,7 @@ In the case of the mean difference of the VAF from generation $g$ to $g+1$,
 where I used the \equationref{VAF_diff_mean}.
 
 This process of the variant allele frequency drift is a continuous Markov process because the variant allele frequency in generation $g+1$ is only dependent on that of generation $g$.
-If I denote the transition probability density that the random variable changes from $y$ to $x$ during time $t$ as $f(x|y,t)$, the diffusion equation of the continuous time Markov process is expressed as the following Kolmogorov forward equation~\cite{kolmogoroff1931analytischen},
+If I denote the transition probability density that the random variable changes from $y$ to $x$ during time $t$ as $f(x|y,t)$, the diffusion equation of the continuous time Markov process is expressed as the following Kolmogorov forward equation~\cite{kolmogoroff1931analytischen,kimura1964diffusion},
 \begin{equation}
  \henbibun{}{t} f(x|y,t) = - \henbibun{}{x} \left( \mu(x) f(x|y,t) \right) + \frac{1}{2} \frac{\partial^2}{\partial x^2} \left( V(x) f(x|y,t) \right),\label{kolmogorov_forward_eq}
 \end{equation}
