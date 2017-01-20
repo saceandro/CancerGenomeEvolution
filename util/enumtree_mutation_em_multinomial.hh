@@ -24,11 +24,13 @@ public:
   int variant_cn;
   int brother_index;
   int inherited;
+  Log u;
   Log t;
   Log nu;
   Log n;
   Log xi;
   VLog omega;
+  VVLog vf;
   VLog zeta;
   Log x;
   Log growth;
@@ -37,7 +39,7 @@ public:
   std::vector<subtype*> children;
 
   subtype () {}
-  subtype (int _index, int _total_cn, int _variant_cn, int _brother_index, int _inherited, Log _t, Log _nu, Log _n, Log _xi, VLog _omega, VLog _zeta, Log _x, Log _growth, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), brother_index(_brother_index), inherited(_inherited), t(_t), nu(_nu), n(_n), xi(_xi), zeta(_zeta), omega(_omega), x(_x), growth(_growth), parent(_parent), above(_above), children(_children) {}
+  subtype (int _index, int _total_cn, int _variant_cn, int _brother_index, int _inherited, Log _u, Log _t, Log _nu, Log _n, Log _xi, VLog _omega, VVLog _vf, VLog _zeta, Log _x, Log _growth, subtype* _parent, subtype* _above, std::vector<subtype*> _children) : index(_index), total_cn(_total_cn), variant_cn(_variant_cn), brother_index(_brother_index), inherited(_inherited), u(_u), t(_t), nu(_nu), n(_n), xi(_xi), zeta(_zeta), omega(_omega), vf(_vf), x(_x), growth(_growth), parent(_parent), above(_above), children(_children) {}
 };
 
 typedef std::vector<subtype> subtypes;
@@ -51,13 +53,15 @@ void copy(subtypes& x, const subtypes& y)
       x[i].variant_cn = y[i].variant_cn;
       x[i].brother_index = y[i].brother_index;
       x[i].inherited = y[i].inherited;
+      x[i].u = y[i].u;
       x[i].t = y[i].t;
       x[i].nu = y[i].nu;
       x[i].n = y[i].n;
       x[i].xi = y[i].xi;
       x[i].omega = y[i].omega;
+      x[i].vf = y[i].vf;
       x[i].zeta = y[i].zeta;
-      x[i].x = y[i].x; // bug fix
+      x[i].x = y[i].x;
       x[i].growth = y[i].growth;
       
       if (y[i].parent == NULL)
@@ -97,6 +101,8 @@ public:
 class param
 {
 public:
+  double x;
+  double y;
   Log u;
   Log r;
   Log n;
@@ -104,7 +110,7 @@ public:
   VLog pi;
   VVLog kappa;
 
-  param (Log _u, Log _r, Log _n, Log _xi, VLog _pi, VVLog _kappa) : u(_u), r(_r), n(_n), xi(_xi), pi(_pi), kappa(_kappa) {}
+  param (double _x, double _y, Log _u, Log _r, Log _n, Log _xi, VLog _pi, VVLog _kappa) : x(_x), y(_y), u(_u), r(_r), n(_n), xi(_xi), pi(_pi), kappa(_kappa) {}
 };
 
 class params
@@ -116,10 +122,24 @@ public:
   ~params ();
 };
 
+void copy_params(params& to, params& from)
+{
+  // except pi and kappa
+  for (int i=0; i<(int)to.pa.size(); ++i)
+    {
+      to.pa[i]->x = from.pa[i]->x;
+      to.pa[i]->y = from.pa[i]->y;
+      to.pa[i]->u = from.pa[i]->u;
+      to.pa[i]->r = from.pa[i]->r;
+      to.pa[i]->n = from.pa[i]->n;
+      to.pa[i]->xi = from.pa[i]->xi;
+    }
+}
+
 params::params(hyperparams& hpa)
 {
   for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
-    pa.push_back(new param (Log(0), Log((1e-6) / 6.0), Log(0), Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0))))); // set mutation rate to be (1e-6) / 6.0 for all subtype
+    pa.push_back(new param (0, 0, Log(0), Log((1e-6) / 6.0), Log(0), Log(0), VLog (hpa.TOTAL_CN + 1, Log(0)), VVLog (hpa.TOTAL_CN + 1, VLog (hpa.TOTAL_CN + 1, Log(0))))); // set mutation rate to be (1e-6) / 6.0 for all subtype
 }
 
 params::~params()
@@ -157,18 +177,6 @@ public:
 
 typedef std::vector<state*> states;
 typedef std::vector<states*> statess;
-
-// class state2
-// {
-// public:
-//   int q;
-//   int h;
-//   int xq;
-//   Vint i;
-//   Log resp;
-
-//   state2 (int _q, int _h, int _xq, Vint _i, Log _resp) : q(_q), h(_h), xq(_xq), i(_i), resp(_resp) {}
-// };
 
 void write_Vint(std::ofstream& f, Vint& v)
 {
@@ -285,8 +293,7 @@ void trees_cons(trees& trs, int max_subtype)
   
   // child_matrix(a, acc);
   // write_bool_matrix(a);
-  
-  trs.assign(acc.size(), subtypes (max_subtype + 1, subtype (0, 0, 0, 0, 0, Log(0), Log(0), Log(0), Log(0), VLog(0, 0), VLog(FRACTIONS + 1, 0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
+  trs.assign(acc.size(), subtypes (max_subtype + 1, subtype (0, 0, 0, 0, 0, Log(0), Log(0), Log(0), Log(0), Log(0), VLog(FRACTIONS + 1, 0), VVLog(0, VLog(FRACTIONS + 1, 0)), VLog(FRACTIONS + 1, 0), Log(0), Log(0), NULL, NULL, std::vector< subtype* > (0, NULL) )));
   trees_cons(trs, acc);
 }
 
