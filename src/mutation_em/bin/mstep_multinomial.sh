@@ -22,4 +22,4 @@ dx_dy=../dx_dy/$iteration
 # vf_dvf_test=`printf "../vf/%d" $(($iteration + 1))`
 # llik=`printf "../llik/llik"`
 
-./grad_desc_multinomial 2 0 $num_of_split $pa_old $pa_test $vf_dvf_test $llik $dx_dy 1e-7 # 1> ../log/m${iteration}_${SGE_TASK_ID}.log 2> ../log/m${iteration}_${SGE_TASK_ID}.err
+./grad_desc_multinomial 2 0 $num_of_split $pa_old $pa_test $vf_dvf_test $llik $dx_dy 1e-4 1e-7 # 1> ../log/m${iteration}_${SGE_TASK_ID}.log 2> ../log/m${iteration}_${SGE_TASK_ID}.err

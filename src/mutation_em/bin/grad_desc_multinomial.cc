@@ -177,14 +177,14 @@ Log d_n_s(params& pa, int i, int j) // corrected
   return -pa.pa[i]->n * pa.pa[j]->n/(Log(1) - pa.pa[0]->n);
 }
 
-void next_direction(params& pa_test, params& pa_old, VLog& du, VLog& dn, hyperparams& hpa, double eps)
+void next_direction(params& pa_test, params& pa_old, VLog& du, VLog& dn, hyperparams& hpa, double eps_u, double eps_n)
 {
   copy_params(pa_test, pa_old);
 
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       cerr << calc_dx_sigmoid(pa_old.pa[i]->x) * du[i].eval() << "\t";
-      pa_test.pa[i]->x += eps * calc_dx_sigmoid(pa_old.pa[i]->x) * du[i].eval();
+      pa_test.pa[i]->x += eps_u * calc_dx_sigmoid(pa_old.pa[i]->x) * du[i].eval();
     }
   cerr << endl;
 
@@ -197,21 +197,21 @@ void next_direction(params& pa_test, params& pa_old, VLog& du, VLog& dn, hyperpa
           gr += d_n_s(pa_old, index, i) * dn[i];
         }
       cerr << gr.eval() << "\t";
-      pa_test.pa[index]->y += eps * gr.eval();
+      pa_test.pa[index]->y += eps_n * gr.eval();
     }
   cerr << endl;
   
   calc_u_n(pa_test, hpa);
 }
 
-void next_direction_with_log(params& pa_test, params& pa_old, VLog& du, VLog& dn, hyperparams& hpa, double eps, ofstream& f)
+void next_direction_with_log(params& pa_test, params& pa_old, VLog& du, VLog& dn, hyperparams& hpa, double eps_u, double eps_n, ofstream& f)
 {
   copy_params(pa_test, pa_old);
 
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       f << calc_dx_sigmoid(pa_old.pa[i]->x) * du[i].eval() << "\t";
-      pa_test.pa[i]->x += eps * calc_dx_sigmoid(pa_old.pa[i]->x) * du[i].eval();
+      pa_test.pa[i]->x += eps_u * calc_dx_sigmoid(pa_old.pa[i]->x) * du[i].eval();
     }
   f << endl;
 
@@ -224,7 +224,7 @@ void next_direction_with_log(params& pa_test, params& pa_old, VLog& du, VLog& dn
           gr += d_n_s(pa_old, index, i) * dn[i];
         }
       f << gr.eval() << "\t";
-      pa_test.pa[index]->y += eps * gr.eval();
+      pa_test.pa[index]->y += eps_n * gr.eval();
     }
   f << endl;
   
@@ -288,13 +288,14 @@ int main(int argc, char** argv)
   _MM_SET_EXCEPTION_MASK(_MM_GET_EXCEPTION_MASK() & ~_MM_MASK_INVALID);
   gsl_set_error_handler_off ();
   
-  if (argc != 10)
+  if (argc != 11)
     {
-      cerr << "usage: ./grad_desc subtype topology num_of_split (u n old infile) (u n test outfile) (vf_test outfile) (llik outfile) eps" << endl;
+      cerr << "usage: ./grad_desc subtype topology num_of_split (u n old infile) (u n test outfile) (vf_test outfile) (llik outfile) eps_u eps_n" << endl;
       exit(EXIT_FAILURE);
     }
 
-  double eps = atof(argv[9]);
+  double eps_u = atof(argv[9]);
+  double eps_n = atof(argv[10]);
   int MAX_SUBTYPE, TOTAL_CN, MAX_TREE;
 
   MAX_SUBTYPE = atoi(argv[1]);
@@ -339,7 +340,7 @@ int main(int argc, char** argv)
   Log llik (0);
   
   calc_fdf(du, dn, llik, hpa, num_of_split);
-  next_direction_with_log(pa_test, pa_old, du, dn, hpa, eps, dx_dy_f);
+  next_direction_with_log(pa_test, pa_old, du, dn, hpa, eps_u, eps_n, dx_dy_f);
   write_params(pa_test_f, pa_test, hpa);
   calc_subtypes(pa_test, hpa, trs[topology]);
 

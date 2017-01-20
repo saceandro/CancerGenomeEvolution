@@ -198,10 +198,23 @@ Log responsibility_num(state& _state, subtypes& _subtypes, params& pa_old, hyper
 
   prod *= mult_var;
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    prod *= (_subtypes[i].n * _subtypes[i].x).take_pow(_state.m[i]);
+    {
+      Log a = _subtypes[i].n * _subtypes[i].x;
+      if (a < Log(0)) a = Log(0);
+      else if (a > Log(1)) a = Log(1);
+      
+      prod *= a.take_pow(_state.m[i]);
+    }
+  
   prod *= mult_nor;
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    prod *= (_subtypes[i].n * (Log(1) - _subtypes[i].x)).take_pow(_state.M[i]);
+    {
+      Log a = _subtypes[i].n * (Log(1) - _subtypes[i].x);
+      if (a < Log(0)) a = Log(0);
+      else if (a > Log(1)) a = Log(1);
+      
+      prod *= a.take_pow(_state.M[i]);
+    }
   
   return prod;
 }
@@ -234,6 +247,9 @@ Log responsibility_partition(subtypes& _subtypes, params& pa_old, hyperparams& h
               for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
                 mu += _subtypes[i].n * _subtypes[i].x;
 
+              if (mu < Log(0)) mu = Log(0);
+              else if (mu > Log(1)) mu = Log(1);
+              
               xq_sum += vf[q][eldest_ch_index][xq] * mu.take_pow(re.first) * (Log(1)-mu).take_pow(re.second - re.first);
             }
           clear_x(_subtypes, hpa);

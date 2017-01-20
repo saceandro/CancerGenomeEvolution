@@ -107,7 +107,7 @@ Log Log::take_log_Log()
 //     {
 //       temp.val = this->val * b;
 //       if (temp.val <= -DBL_MAX )
-//         temp = Log(0); // bug! e^{-DBL_MAX} = Log(1)
+//         temp = Log(0); // ok! e^{-DBL_MAX} = Log(0)
 //       else
 //         temp.sign = 1;
 //     }
@@ -135,7 +135,7 @@ Log Log::take_pow(double b)
     {
       temp.val = this->val * b;
       if (temp.val <= -DBL_MAX )
-        temp = Log(1);
+        temp = Log(0);
       else
         temp.sign = 1;
     }
