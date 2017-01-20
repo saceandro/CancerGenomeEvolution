@@ -69,8 +69,8 @@ double Log::take_log()
   if (this->sign != 1)
     {
       std::cout << "take_log(<=0)" << std::endl;
-      std::cout << val << "\t" << sign << std::endl << std::endl;
-      exit(EXIT_FAILURE);
+      std::cout << val << "\t" << (int) sign << std::endl << std::endl;
+      abort();
     }
   
   return val;
@@ -81,8 +81,8 @@ Log Log::take_log_Log()
   if (this->sign != 1)
     {
       std::cout << "take_log(<=0)" << std::endl;
-      std::cout << val << "\t" << sign << std::endl << std::endl;
-      exit(EXIT_FAILURE);
+      std::cout << val << "\t" << (int) sign << std::endl << std::endl;
+      abort();
     }
   
   Log temp = Log(val);
@@ -90,24 +90,52 @@ Log Log::take_log_Log()
   return temp;
 }
 
+// Log Log::take_pow(double b)
+// {
+//   if (this->sign == -1)
+//     {
+//       std::cout << "take_pow(<0)" << std::endl;
+//       abort();
+//     }
+    
+//   Log temp;
+//   if (this->iszero())
+//     {
+//       temp = Log(0); // bug! 0^0 = 1, thus temp = Log(1)
+//     }
+//   else
+//     {
+//       temp.val = this->val * b;
+//       if (temp.val <= -DBL_MAX )
+//         temp = Log(0); // bug! e^{-DBL_MAX} = Log(1)
+//       else
+//         temp.sign = 1;
+//     }
+  
+//   return temp;
+// }
+
 Log Log::take_pow(double b)
 {
   if (this->sign == -1)
     {
       std::cout << "take_pow(<0)" << std::endl;
-      exit(EXIT_FAILURE);
+      abort();
     }
     
   Log temp;
   if (this->iszero())
     {
-      temp = Log(0);
+      if (b == 0)
+        temp = Log(1);
+      else
+        temp = Log(0);
     }
   else
     {
       temp.val = this->val * b;
       if (temp.val <= -DBL_MAX )
-        temp = Log(0);
+        temp = Log(1);
       else
         temp.sign = 1;
     }
@@ -128,7 +156,7 @@ Log Log::take_exp()
   else if (temp.val >= DBL_MAX)
     {
       std::cout << "err: take_exp overflow!" << std::endl;
-      exit(EXIT_FAILURE);
+      abort();
     }
   else
     {
@@ -143,7 +171,7 @@ Log Log::inverse()
   if (this->sign == 0)
     {
       std::cout << "inverse(0)" << std::endl;
-      exit(EXIT_FAILURE);
+      abort();
     }
   
   Log temp;
@@ -348,7 +376,7 @@ Log Log::operator /(const Log& x)
   if (x.sign == 0)
     {
       std::cout << "division by zero!" << std::endl;
-      exit(EXIT_FAILURE);
+      abort();
     }
   else if (this->iszero())
     {
@@ -371,7 +399,7 @@ Log Log::operator /=(const Log& x)
   if (x.sign == 0)
     {
       std::cout << "division by zero!" << std::endl;
-      exit(EXIT_FAILURE);
+      abort();
     }
   else if (this->iszero())
     {

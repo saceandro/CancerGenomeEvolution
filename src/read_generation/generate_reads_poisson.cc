@@ -126,7 +126,7 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
     }
   
   Log t;
-  for (int h = t_fractions - 1; h > until; --h)
+  for (int h = t_fractions - 1; h >= until; --h)
     {
       t = h*dt;
 
@@ -134,12 +134,12 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
       
       for (int i=1; tr[i].t > t; ++i)
         {
-          cout << "subtype: " << i << endl;
+          // cout << "subtype: " << i << endl;
           Log Nni = Log(CELL_MAX) * tr[i].n;
           Log lNni = Nni.take_log_Log();
           Log Nni_t = ((Log(1) - t / tr[i].t) * lNni).take_exp();
           Log lambda = Nni_t * Log(bp) * pa.pa[i]->r * Log(dt);
-          cout << "lambda: " << lambda.eval() << endl;
+          // cout << "lambda: " << lambda.eval() << endl;
           unsigned int s = gsl_ran_poisson(rng, lambda.eval());
           
           VLog vf (FRACTIONS + 1, Log(0));
@@ -158,7 +158,7 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
               vf_cum[x] = vf_cum[x-1] + vf_cum[x];
             }
           
-          cout << "s: " << s << endl;
+          // cout << "s: " << s << endl;
           for (int k=0; k<s; ++k)
             {
               bool observed = true;
@@ -197,11 +197,11 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
               // cerr << endl;
 
               double mu = calc_mu(tr, hpa);
-              cout << mu << "\t";
-              for (int l=1; l<=hpa.MAX_SUBTYPE; ++l)
-                {
-                  cout << tr[l].x.eval() << "\t";
-                }
+              // cout << mu << "\t";
+              // for (int l=1; l<=hpa.MAX_SUBTYPE; ++l)
+              //   {
+              //     cout << tr[l].x.eval() << "\t";
+              //   }
               
               if (observed)
                 {
@@ -224,7 +224,7 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
                     }
                   else
                     {
-                      cout << m << "\t" << M;
+                      // cout << m << "\t" << M;
                       f << m << "\t" << M << "\t" << i << "\t";
                       for (int l=1; l<=hpa.MAX_SUBTYPE; ++l)
                         {
@@ -233,10 +233,10 @@ void generate_binom(ofstream& f, int M, int t_fractions, params& pa, hyperparams
                       f << endl;
                     }
                 }
-              cout << endl;
+              // cout << endl;
               clear_inherited(tr, hpa);
             }
-          cout << endl;
+          // cout << endl;
         }
       // cerr << endl << endl;
     }
