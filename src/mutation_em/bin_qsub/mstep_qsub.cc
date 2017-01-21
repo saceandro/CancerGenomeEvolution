@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
 #include <sstream>
@@ -214,14 +215,23 @@ Log d_n_s(params& pa, int i, int j) // corrected
 }
 
 struct ComputeFdf {
-  ComputeFdf(subtypes& _tr, hyperparams& _hpa, ofstream& _pa_test_f, ofstream& _vf_test_f, ofstream& _llik_f, VVLog& _gegen, VLog& _gegen_int, int _num_of_split) : iter(0), tr(_tr), hpa(_hpa), pa_test_f(_pa_test_f), vf_test_f(_vf_test_f), llik_f(_llik_f), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split) {}
-  int operator()(const Vdouble& x, double& fn, vector<double>& gr) {
-    fn = 0;
+  ComputeFdf(subtypes& _tr, hyperparams& _hpa, char* _pa_test_file, char* _vf_test_file, VVLog& _gegen, VLog& _gegen_int, int _num_of_split) : iter(0), tr(_tr), hpa(_hpa), pa_test_file(_pa_test_file), vf_test_file(_vf_test_file), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split) {}
+  
+  int operator()(const Vdouble& x, double& fn, vector<double>& gr)
+  {
+    // pa_test_f.seekp(0);
+    // vf_test_f.seekp(0);
+
+    ofstream pa_test_f(pa_test_file);
+    ofstream vf_test_f(vf_test_file);
+    pa_test_f << scientific << setprecision(10);
+    vf_test_f << scientific << setprecision(10);
 
     params pa_test (hpa);
     pa_test.pa[0]->n = Log(0);
     calc_params_from_x(x, pa_test, hpa);
     write_params(pa_test_f, pa_test, hpa);
+    write_params((ofstream&) cerr, pa_test, hpa);
     
     calc_subtypes(pa_test, hpa, tr);
 
@@ -244,14 +254,14 @@ struct ComputeFdf {
     VLog dn (hpa.MAX_SUBTYPE + 1, Log(0));
     Log llik (0);
     calc_fdf(du, dn, llik, hpa, num_of_split);
-    fn = llik.eval();
-    llik_f << iter << "\t" << fn << endl;
+    fn = -llik.eval(); // minimize!
+    cerr << iter << "\t" << -fn << endl;
     
     gr.assign(x.size(), 0);
 
     for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
       {
-        gr[i-1] = calc_dx_sigmoid(pa_test.pa[i]->x) * du[i].eval();
+        gr[i-1] = -calc_dx_sigmoid(pa_test.pa[i]->x) * du[i].eval(); // minimize!
       }
 
     for (int index=1; index<=hpa.MAX_SUBTYPE; ++index)
@@ -262,10 +272,8 @@ struct ComputeFdf {
           {
             grad += d_n_s(pa_test, index, i) * dn[i];
           }
-        gr[hpa.MAX_SUBTYPE + index-1] = grad.eval();
+        gr[hpa.MAX_SUBTYPE + index-1] = -grad.eval(); // minimize!
       }
-
-    system("mv ../params_qsub/new ../params_qsub/old");
     
     ++iter;
     
@@ -275,9 +283,8 @@ struct ComputeFdf {
   int    iter;
   subtypes& tr;
   hyperparams& hpa;
-  ofstream& pa_test_f;
-  ofstream& vf_test_f;
-  ofstream& llik_f;
+  char* pa_test_file;
+  char* vf_test_file;
   VVLog& gegen;
   VLog& gegen_int;
   int num_of_split;
@@ -319,13 +326,11 @@ int main(int argc, char* argv[]) {
   int num_of_split = atoi(argv[3]);
 
   ifstream init_param_f(argv[4]);
-  ofstream pa_test_f(argv[5]);
-  ofstream vf_test_f(argv[6]);
+  char* pa_test_file = argv[5];
+  char* vf_test_file = argv[6];
   ofstream llik_f(argv[7], ofstream::out | ofstream::app);
   ofstream pa_best_f(argv[8]);
 
-  pa_test_f << scientific << setprecision(10);
-  vf_test_f << scientific << setprecision(10);
   llik_f << scientific << setprecision(10);
   pa_best_f << scientific << setprecision(10);
   
@@ -342,15 +347,18 @@ int main(int argc, char* argv[]) {
 
   Lbfgsb minimizer;
   
-  minimizer.set_eps(1.0e-7);
+  minimizer.set_eps(1.0e-4);
   minimizer.set_maxit(1);
   
   Vdouble x0 (2 * hpa.MAX_SUBTYPE);
   read_x(init_param_f, x0, hpa);
-  
-  minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_f, vf_test_f, llik_f, gegen, gegen_int, num_of_split));
-  
-  cout << "iter:" << minimizer.iter() << ",best_fn:" << minimizer.best_fn() << ",best_x:";
+
+  for (int i=0; i<2; ++i)
+    {
+      minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split));
+      llik_f << i << "\t" << minimizer.best_fn();
+      rename("../params_qsub/new", "../params_qsub/old");
+    }
   
   const vector<double>& x = minimizer.best_x();
 
