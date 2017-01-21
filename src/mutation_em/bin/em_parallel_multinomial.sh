@@ -17,7 +17,8 @@ rm -f ../params/*
 # cp ../2_0_3_4.x_y_u_n ../params/1
 # cp ../init_param/2_0.x_y_u_n.test3 ../params/0
 # cp ../init_param/2_0.x_y_u_n.test3 ../params/1
-cp ../../read_generation/generated/subtype2_topology0/params/0.4_0.8_4.x_y_u_n ../params/0
+# cp ../../read_generation/generated/subtype2_topology0/params/0.4_0.8_4.x_y_u_n ../params/0
+cp ../params.0.4_0.8_4_to_0.1_0.3_3.1e-3.1e-7.iter200/72 ../params/0
 
 iteration=$1
 
