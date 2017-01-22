@@ -242,7 +242,7 @@ void calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int n
   
   for (int sp=0; sp<num_of_split; ++sp)
     {
-      int n = sprintf(str, "../du_dn_llik_qsub_snv/%d", sp); // need to change according to the estep grad files
+      int n = sprintf(str, "../du_dn_llik_qsub_coverage/%d", sp); // need to change according to the estep grad files
 
       ifstream f (str);
 
@@ -289,7 +289,7 @@ Log d_n_s(params& pa, int i, int j) // corrected
 }
 
 struct ComputeFdf {
-  ComputeFdf(subtypes& _tr, hyperparams& _hpa, char* _pa_test_file, char* _vf_test_file, VVLog& _gegen, VLog& _gegen_int, int _num_of_split, Log& _llik_final, string& _snvs) : iter(0), tr(_tr), hpa(_hpa), pa_test_file(_pa_test_file), vf_test_file(_vf_test_file), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split), llik_final(_llik_final), snvs(_snvs) {}
+  ComputeFdf(subtypes& _tr, hyperparams& _hpa, char* _pa_test_file, char* _vf_test_file, VVLog& _gegen, VLog& _gegen_int, int _num_of_split, Log& _llik_final, string& _coverages) : iter(0), tr(_tr), hpa(_hpa), pa_test_file(_pa_test_file), vf_test_file(_vf_test_file), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split), llik_final(_llik_final), coverages(_coverages) {}
   
   int operator()(const Vdouble& x, double& fn, vector<double>& gr)
   {
@@ -323,7 +323,7 @@ struct ComputeFdf {
 
     std::ostringstream filenum_str;
     filenum_str << num_of_split;
-    system(("qsub -N estep_snv -e ../log_qsub_snv/estep.err -o ../log_qsub_snv/estep.log -sync y -tc 100 -t 1-" + filenum_str.str() + ":1 estep_snv.sh " + snvs).c_str());
+    system(("qsub -N estep_coverage -e ../log_qsub_coverage/estep.err -o ../log_qsub_coverage/estep.log -sync y -tc 100 -t 1-" + filenum_str.str() + ":1 estep_coverage.sh " + coverages).c_str());
     
     VLog du (hpa.MAX_SUBTYPE + 1, Log(0));
     VLog dn (hpa.MAX_SUBTYPE + 1, Log(0));
@@ -380,7 +380,7 @@ struct ComputeFdf {
   VLog& gegen_int;
   int num_of_split;
   Log& llik_final;
-  string& snvs;
+  string& coverages;
 };
 
 int main(int argc, char* argv[]) {
@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
   
   if (argc != 15)
     {
-      cerr << "usage: ./mstep_qsub_snv subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile) (vf_old outfile) (params log fie) (true params) (rmsd file) (param difference) (#SNV)" << endl;
+      cerr << "usage: ./mstep_qsub_coverage subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile) (vf_old outfile) (params log fie) (true params) (rmsd file) (param difference) (#COVERAGE)" << endl;
       exit(EXIT_FAILURE);
     }
   
@@ -431,7 +431,7 @@ int main(int argc, char* argv[]) {
   ifstream pa_true_f(argv[11]);
   ofstream rmsd_f(argv[12]);
   ofstream params_diff_f(argv[13]);
-  string snvs (argv[14]);
+  string coverages (argv[14]);
 
   llik_f << scientific << setprecision(10);
   pa_best_f << scientific << setprecision(10);
@@ -461,7 +461,7 @@ int main(int argc, char* argv[]) {
       calc_params_from_x(x0, pa_prev, hpa);
       
       Log llik_final (0);
-      minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split, llik_final, snvs));
+      minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split, llik_final, coverages));
       const vector<double>& x = minimizer.best_x();
       
       params pa_old(hpa);
