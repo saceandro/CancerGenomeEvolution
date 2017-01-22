@@ -198,10 +198,23 @@ Log responsibility_num(state& _state, subtypes& _subtypes, params& pa_old, hyper
 
   prod *= mult_var;
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    prod *= (_subtypes[i].n * _subtypes[i].x).take_pow(_state.m[i]);
+    {
+      Log a = _subtypes[i].n * _subtypes[i].x;
+      if (a < Log(0)) a = Log(0);
+      else if (a > Log(1)) a = Log(1);
+      
+      prod *= a.take_pow(_state.m[i]);
+    }
+  
   prod *= mult_nor;
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
-    prod *= (_subtypes[i].n * (Log(1) - _subtypes[i].x)).take_pow(_state.M[i]);
+    {
+      Log a = _subtypes[i].n * (Log(1) - _subtypes[i].x);
+      if (a < Log(0)) a = Log(0);
+      else if (a > Log(1)) a = Log(1);
+      
+      prod *= a.take_pow(_state.M[i]);
+    }
   
   return prod;
 }
@@ -234,6 +247,9 @@ Log responsibility_partition(subtypes& _subtypes, params& pa_old, hyperparams& h
               for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
                 mu += _subtypes[i].n * _subtypes[i].x;
 
+              if (mu < Log(0)) mu = Log(0);
+              else if (mu > Log(1)) mu = Log(1);
+              
               xq_sum += vf[q][eldest_ch_index][xq] * mu.take_pow(re.first) * (Log(1)-mu).take_pow(re.second - re.first);
             }
           clear_x(_subtypes, hpa);
@@ -267,7 +283,7 @@ void responsibility_m(states& _states, state _state, subtypes& _subtypes, params
       state* st = new state(_state);
       st->resp = responsibility_num(_state, _subtypes, pa_old, hpa, re, vf, eldest_ch_index, eldest_ch_number) / denominator;
       
-      if (!st->resp.iszero())
+      if (Log(0) < st->resp)
         _states.push_back(st);
     }
 
@@ -457,14 +473,14 @@ int main(int argc, char** argv)
   read_vf(vf_test_f, vf_test, hpa);
 
   VVLog subtype_resp (n, VLog(hpa.MAX_SUBTYPE + 1, Log(0)));
-  double qfunc = q_func(res, pa_old, vf_old, pa_test, hpa, trs_old[topology], trs[topology], vf_test, subtype_resp);
+  // double qfunc = q_func(res, pa_old, vf_old, pa_test, hpa, trs_old[topology], trs[topology], vf_test, subtype_resp);
 
   Log lik = calc_lik(trs[topology], pa_test, hpa, res, vf_test);
   // g << lik.eval() << endl;
   g << lik.take_log() << endl;
 
   // cerr << "lik: " << lik.eval() << "\t" << qfunc << endl;
-  cerr << "lik: " << (int)lik.get_sign() << " x exp(" << lik.get_val() << ") = " << lik.eval() << "\tllik: " << lik.take_log() << "\tqfunc: " << qfunc << endl;
+  // cerr << "lik: " << (int)lik.get_sign() << " x exp(" << lik.get_val() << ") = " << lik.eval() << "\tllik: " << lik.take_log() << "\tqfunc: " << qfunc << endl;
 
   for (int k=0; k<n; ++k)
     {

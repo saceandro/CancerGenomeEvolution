@@ -261,6 +261,19 @@ Log responsibility_partition(subtypes& _subtypes, params& pa_old, hyperparams& h
   return sum;
 }
 
+Log calc_lik(subtypes& _subtypes, params& pa, hyperparams& hpa, READS& res, VVVLog& vf)
+{
+  Log lik (1);
+  
+  for (int k=0; k<res.size(); ++k)
+    {
+      Log lik_k = responsibility_partition(_subtypes, pa, hpa, *(res[k]), vf);
+      lik *= lik_k;
+    }
+  
+  return lik;
+}
+
 void responsibility_m(states& _states, state _state, subtypes& _subtypes, params& pa_old, hyperparams& hpa, READ& re, int current_m, int current_M, int i, Log& denominator, VVVLog& vf, int eldest_ch_index, int eldest_ch_number)
 {
   if (i >= hpa.MAX_SUBTYPE)
@@ -270,7 +283,8 @@ void responsibility_m(states& _states, state _state, subtypes& _subtypes, params
       state* st = new state(_state);
       st->resp = responsibility_num(_state, _subtypes, pa_old, hpa, re, vf, eldest_ch_index, eldest_ch_number) / denominator;
       
-      if (!st->resp.iszero())
+      // if (!st->resp.iszero()) // might be negative due to the accumulation of numerical error
+      if (Log(0) < st->resp)
         _states.push_back(st);
     }
 
@@ -509,9 +523,11 @@ int main(int argc, char** argv)
   read_vf(vf_test_f, dnvf_test, hpa);
 
   params grad (hpa);
-  double llik = d_llik(res, pa_old, vf_old, pa_test, grad, hpa, trs_old[topology], trs[topology], vf_test, dtvf_test, dthvf_test, dnvf_test);
+  double qfunc = d_llik(res, pa_old, vf_old, pa_test, grad, hpa, trs_old[topology], trs[topology], vf_test, dtvf_test, dthvf_test, dnvf_test);
+  Log lik = calc_lik(trs[topology], pa_test, hpa, res, vf_test);
   write_params(g, grad, hpa);
-  g << llik << endl;
+  g << qfunc << endl;
+  g << lik.take_log() << endl;
   
   for (int i=0; i<n; ++i)
     {

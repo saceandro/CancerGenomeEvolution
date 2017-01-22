@@ -232,6 +232,7 @@ struct ComputeFdf {
     calc_params_from_x(x, pa_test, hpa);
     write_params(pa_test_f, pa_test, hpa);
     write_params((ofstream&) cerr, pa_test, hpa);
+    pa_test_f.close();
     
     calc_subtypes(pa_test, hpa, tr);
 
@@ -245,6 +246,7 @@ struct ComputeFdf {
     write_vf(vf_test_f, dtvf_test, hpa);
     write_vf(vf_test_f, dthvf_test, hpa);
     write_vf(vf_test_f, dnvf_test, hpa);
+    vf_test_f.close();
 
     std::ostringstream filenum_str;
     filenum_str << num_of_split;
@@ -297,9 +299,9 @@ int main(int argc, char* argv[]) {
   // feenableexcept(FE_INVALID);
   gsl_set_error_handler_off ();
   
-  if (argc != 9)
+  if (argc != 11)
     {
-      cerr << "usage: ./mstep_qsub subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile)" << endl;
+      cerr << "usage: ./mstep_qsub subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile) (vf_old outfile) (params log fie)" << endl;
       exit(EXIT_FAILURE);
     }
   
@@ -325,14 +327,17 @@ int main(int argc, char* argv[]) {
   int topology = atoi(argv[2]);
   int num_of_split = atoi(argv[3]);
 
-  ifstream init_param_f(argv[4]);
+  char* pa_old_file = argv[4];
   char* pa_test_file = argv[5];
   char* vf_test_file = argv[6];
   ofstream llik_f(argv[7], ofstream::out | ofstream::app);
   ofstream pa_best_f(argv[8]);
+  char* vf_old_file = argv[9];
+  ofstream pa_log_f(argv[10]);
 
   llik_f << scientific << setprecision(10);
   pa_best_f << scientific << setprecision(10);
+  pa_log_f << scientific << setprecision(10);
   
   const gsl_rng_type * T;
 
@@ -348,24 +353,51 @@ int main(int argc, char* argv[]) {
   Lbfgsb minimizer;
   
   minimizer.set_eps(1.0e-4);
-  minimizer.set_maxit(1);
+  minimizer.set_maxit(10);
   
   Vdouble x0 (2 * hpa.MAX_SUBTYPE);
-  read_x(init_param_f, x0, hpa);
 
-  for (int i=0; i<2; ++i)
+  for (int i=0; i<100; ++i)
     {
+      ifstream pa_old_f_in(pa_old_file);
+      read_x(pa_old_f_in, x0, hpa);
+      pa_old_f_in.close();
+
       minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split));
-      llik_f << i << "\t" << minimizer.best_fn();
-      rename("../params_qsub/new", "../params_qsub/old");
+      const vector<double>& x = minimizer.best_x();
+      params pa_old(hpa);
+      calc_params_from_x(x, pa_old, hpa);
+      ofstream pa_old_f(pa_old_file);
+      pa_old_f << scientific << setprecision(10);
+      write_params(pa_old_f, pa_old, hpa);
+      pa_old_f.close();
+      write_params(pa_log_f, pa_old, hpa);
+      
+      llik_f << i << "\t" << minimizer.best_fn() << endl;
+
+      VVVLog vf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+      VVVLog dtvf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+      VVVLog dthvf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+      VVVLog dnvf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
+
+      calc_vf_dvf(vf_old, dtvf_old, dthvf_old, dnvf_old, pa_old, hpa, trs[topology], gegen, gegen_int);
+      ofstream vf_old_f(vf_old_file);
+      vf_old_f << scientific << setprecision(10);
+      write_vf(vf_old_f, vf_old, hpa);
+      write_vf(vf_old_f, dtvf_old, hpa);
+      write_vf(vf_old_f, dthvf_old, hpa);
+      write_vf(vf_old_f, dnvf_old, hpa);
+      vf_old_f.close();
     }
   
-  const vector<double>& x = minimizer.best_x();
-
+  const vector<double>& y = minimizer.best_x();
   params pa_best(hpa);
-  calc_params_from_x(x, pa_best, hpa);
-
+  calc_params_from_x(y, pa_best, hpa);
   write_params(pa_best_f, pa_best, hpa);
+
+  llik_f.close();
+  pa_best_f.close();
+  pa_log_f.close();
   
   return 0;
 }

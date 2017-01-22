@@ -3,7 +3,7 @@
 #$ -cwd
 #$ -e ../log_qsub/log
 #$ -o ../log_qsub/log
-#$ -l s_vmem=16G,mem_req=16G
+#$ -l s_vmem=8G,mem_req=8G
 
 source ~/.zshrc
 
