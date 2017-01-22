@@ -262,6 +262,17 @@ struct ComputeFdf {
     calc_fdf(du, dn, qfunc, llik_final, hpa, num_of_split);
     fn = -qfunc.eval(); // minimize!
     cerr << iter << "\t" << -fn << endl;
+    cerr << "du_dn_total:" <<endl;
+    for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+      {
+        cerr << du[i].eval() << "\t";
+      }
+    cerr << endl;
+    for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+      {
+        cerr << dn[i].eval() << "\t";
+      }
+    cerr << endl << endl;
     
     gr.assign(x.size(), 0);
 
