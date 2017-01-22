@@ -7,15 +7,6 @@
 
 source ~/.zshrc
 rm -f ../log_qsub_coverage/*
-rm -f ../llik_qsub_coverage/llik*
-rm -f ../vf_qsub_coverage/*
-rm -f ../du_dn_llik_qsub_coverage/*
-rm -f ../params_qsub_coverage/old*
-rm -f ../params_qsub_coverage/new*
-rm -f ../params_qsub_coverage/best*
-rm -f ../rmsd_qsub_coverage/rmsd*
-rm -f ../padiff_qsub_coverage/padiff*
-rm -f ../data_coverage/* # remove data files
 
 mkdir -p ../log_qsub_coverage
 mkdir -p ../llik_qsub_coverage
@@ -26,6 +17,16 @@ mkdir -p ../rmsd_qsub_coverage
 mkdir -p ../padiff_qsub_coverage
 
 for ((coverage=10; coverage<=100; coverage+=10)); do
+    rm -f ../vf_qsub_coverage/*
+    rm -f ../du_dn_llik_qsub_coverage/*
+    rm -f ../params_qsub_coverage/old${coverage}
+    rm -f ../params_qsub_coverage/new${coverage}
+    rm -f ../params_qsub_coverage/best${coverage}
+    rm -f ../data_coverage/* # remove data files
+    rm -f ../llik_qsub_coverage/llik${coverage}
+    rm -f ../rmsd_qsub_coverage/rmsd${coverage}
+    rm -f ../padiff_qsub_coverage/padiff${coverage}
+    
     param0=../params_qsub_coverage/old${coverage}
     cp ../../read_generation/generated/subtype2_topology0_snv/params/0.4_0.8_4.x_y_u_n $param0
     

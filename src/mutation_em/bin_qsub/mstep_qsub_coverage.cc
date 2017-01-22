@@ -433,6 +433,8 @@ int main(int argc, char* argv[]) {
   ofstream params_diff_f(argv[13]);
   string coverages (argv[14]);
 
+  cerr << "coverage: " << coverages << endl;
+  
   llik_f << scientific << setprecision(10);
   pa_best_f << scientific << setprecision(10);
   pa_log_f << scientific << setprecision(10);

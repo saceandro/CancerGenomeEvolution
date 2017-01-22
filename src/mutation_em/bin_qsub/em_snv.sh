@@ -7,15 +7,6 @@
 
 source ~/.zshrc
 rm -f ../log_qsub_snv/*
-rm -f ../llik_qsub_snv/llik*
-rm -f ../vf_qsub_snv/*
-rm -f ../du_dn_llik_qsub_snv/*
-rm -f ../params_qsub_snv/old*
-rm -f ../params_qsub_snv/new*
-rm -f ../params_qsub_snv/best*
-rm -f ../rmsd_qsub_snv/rmsd*
-rm -f ../padiff_qsub_snv/padiff*
-rm -f ../data/* # remove data files
 
 mkdir -p ../log_qsub_snv
 mkdir -p ../llik_qsub_snv
@@ -26,6 +17,16 @@ mkdir -p ../rmsd_qsub_snv
 mkdir -p ../padiff_qsub_snv
 
 for ((snvs=10; snvs<=10000; snvs*=10)); do
+    rm -f ../vf_qsub_snv/*
+    rm -f ../du_dn_llik_qsub_snv/*
+    rm -f ../params_qsub_snv/old${snvs}
+    rm -f ../params_qsub_snv/new${snvs}
+    rm -f ../params_qsub_snv/best${snvs}
+    rm -f ../data/* # remove data files
+    rm -f ../llik_qsub_snv/llik${snvs}
+    rm -f ../rmsd_qsub_snv/rmsd${snvs}
+    rm -f ../padiff_qsub_snv/padiff${snvs}
+    
     param0=../params_qsub_snv/old${snvs}
     cp ../../read_generation/generated/subtype2_topology0_snv/params/0.4_0.8_4.x_y_u_n $param0
     
