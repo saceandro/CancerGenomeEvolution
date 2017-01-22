@@ -164,7 +164,7 @@ void write_vf(std::ofstream& f, VVVLog& vf, hyperparams& hpa)
   f << endl << endl << endl;
 }
 
-void calc_fdf(VLog& du, VLog& dn, Log& llik, hyperparams& hpa, int num_of_split)
+void calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int num_of_split)
 {
   char str[1024];
   double a;
@@ -188,6 +188,9 @@ void calc_fdf(VLog& du, VLog& dn, Log& llik, hyperparams& hpa, int num_of_split)
         }
       
       f >> a;
+      qfunc += Log(a);
+
+      f >> a;
       llik += Log(a);
 
       f.close();
@@ -203,7 +206,7 @@ void calc_fdf(VLog& du, VLog& dn, Log& llik, hyperparams& hpa, int num_of_split)
   //     cerr << dn[i].eval() << "\t";
   //   }
   // cerr << endl;
-  // cerr << llik.eval() << endl;
+  // cerr << qfunc.eval() << endl;
 }
 
 Log d_n_s(params& pa, int i, int j) // corrected
@@ -215,7 +218,7 @@ Log d_n_s(params& pa, int i, int j) // corrected
 }
 
 struct ComputeFdf {
-  ComputeFdf(subtypes& _tr, hyperparams& _hpa, char* _pa_test_file, char* _vf_test_file, VVLog& _gegen, VLog& _gegen_int, int _num_of_split) : iter(0), tr(_tr), hpa(_hpa), pa_test_file(_pa_test_file), vf_test_file(_vf_test_file), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split) {}
+  ComputeFdf(subtypes& _tr, hyperparams& _hpa, char* _pa_test_file, char* _vf_test_file, VVLog& _gegen, VLog& _gegen_int, int _num_of_split, Log& _llik_final) : iter(0), tr(_tr), hpa(_hpa), pa_test_file(_pa_test_file), vf_test_file(_vf_test_file), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split), llik_final(_llik_final) {}
   
   int operator()(const Vdouble& x, double& fn, vector<double>& gr)
   {
@@ -254,9 +257,10 @@ struct ComputeFdf {
     
     VLog du (hpa.MAX_SUBTYPE + 1, Log(0));
     VLog dn (hpa.MAX_SUBTYPE + 1, Log(0));
-    Log llik (0);
-    calc_fdf(du, dn, llik, hpa, num_of_split);
-    fn = -llik.eval(); // minimize!
+    Log qfunc (0);
+    llik_final = Log(0);
+    calc_fdf(du, dn, qfunc, llik_final, hpa, num_of_split);
+    fn = -qfunc.eval(); // minimize!
     cerr << iter << "\t" << -fn << endl;
     
     gr.assign(x.size(), 0);
@@ -290,6 +294,7 @@ struct ComputeFdf {
   VVLog& gegen;
   VLog& gegen_int;
   int num_of_split;
+  Log& llik_final;
 };
 
 int main(int argc, char* argv[]) {
@@ -353,17 +358,18 @@ int main(int argc, char* argv[]) {
   Lbfgsb minimizer;
   
   minimizer.set_eps(1.0e-4);
-  minimizer.set_maxit(10);
+  minimizer.set_maxit(1);
   
   Vdouble x0 (2 * hpa.MAX_SUBTYPE);
 
-  for (int i=0; i<100; ++i)
+  for (int i=0; i<1; ++i)
     {
       ifstream pa_old_f_in(pa_old_file);
       read_x(pa_old_f_in, x0, hpa);
       pa_old_f_in.close();
 
-      minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split));
+      Log llik_final (0);
+      minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split, llik_final));
       const vector<double>& x = minimizer.best_x();
       params pa_old(hpa);
       calc_params_from_x(x, pa_old, hpa);
@@ -373,7 +379,7 @@ int main(int argc, char* argv[]) {
       pa_old_f.close();
       write_params(pa_log_f, pa_old, hpa);
       
-      llik_f << i << "\t" << minimizer.best_fn() << endl;
+      llik_f << i << "\t" << llik_final.eval() << "\t" << minimizer.best_fn() << endl;
 
       VVVLog vf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
       VVVLog dtvf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
