@@ -85,7 +85,7 @@ estep_mem: estep_mem.cc ../variant_fraction.cc ../setting.hh ../../../util/logli
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ estep_mem.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
 estep_mem_multinomial: estep_mem_multinomial.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_multinomial.hh
-	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ estep_mem_multinomial.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
+	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ estep_mem_multinomial.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
 estep_mem_llik: estep_mem_llik.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_vf.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ estep_mem_llik.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm

@@ -37,6 +37,47 @@ double calc_dx_sigmoid(double x)
   return (1.0 - y*y) / 4.0;
 }
 
+void params_rmsd(double& rmsd_u, double& rmsd_n, params& pa1, params& pa2, hyperparams& hpa)
+{
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      double diff = (pa1.pa[i]->u - pa2.pa[i]->u).eval();
+      rmsd_u += diff * diff;
+    }
+  rmsd_u = sqrt(rmsd_u / hpa.MAX_SUBTYPE);
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      double diff = (pa1.pa[i]->n - pa2.pa[i]->n).eval();
+      rmsd_n += diff * diff;
+    }
+  rmsd_n = sqrt(rmsd_n / hpa.MAX_SUBTYPE);
+}
+
+void calc_rmsd(double& rmsd_u, double& rmsd_t, double& rmsd_n, params& pa1, params& pa2, subtypes& tr1, subtypes& tr2, hyperparams& hpa)
+{
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      double diff = (pa1.pa[i]->u - pa2.pa[i]->u).eval();
+      rmsd_u += diff * diff;
+    }
+  rmsd_u = sqrt(rmsd_u / hpa.MAX_SUBTYPE);
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      double diff = (tr1[i].t - tr2[i].t).eval();
+      rmsd_t += diff * diff;
+    }
+  rmsd_t = sqrt(rmsd_t / hpa.MAX_SUBTYPE);
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      double diff = (pa1.pa[i]->n - pa2.pa[i]->n).eval();
+      rmsd_n += diff * diff;
+    }
+  rmsd_n = sqrt(rmsd_n / hpa.MAX_SUBTYPE);
+}
+
 void copy_x_y(const Vdouble& x, params& pa, hyperparams& hpa)
 {
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
@@ -70,7 +111,8 @@ void calc_params_from_x_y(params& pa, hyperparams& hpa)
     }
 
   Log sum = Log(0);
-  
+
+  pa.pa[0]->n = Log(0);
   for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
     {
       pa.pa[i]->n = Log(pa.pa[i]->y).take_exp();
@@ -87,6 +129,35 @@ void calc_params_from_x(const Vdouble& x, params& pa, hyperparams& hpa)
 {
   copy_x_y(x, pa, hpa);
   calc_params_from_x_y(pa, hpa);
+}
+
+void read_params(std::ifstream& f, params& pa, hyperparams& hpa)
+{
+  double a;
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->x = a;
+    }
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->y = a;
+    }
+
+  for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->u = Log(a);
+    }
+
+  for (int i=0; i<=hpa.MAX_SUBTYPE; ++i)
+    {
+      f >> a;
+      pa.pa[i]->n = Log(a);
+    }
 }
 
 void write_params(std::ofstream& f, params& pa, hyperparams& hpa)
@@ -231,7 +302,6 @@ struct ComputeFdf {
     vf_test_f << scientific << setprecision(10);
 
     params pa_test (hpa);
-    pa_test.pa[0]->n = Log(0);
     calc_params_from_x(x, pa_test, hpa);
     write_params(pa_test_f, pa_test, hpa);
     write_params((ofstream&) cerr, pa_test, hpa);
@@ -315,9 +385,9 @@ int main(int argc, char* argv[]) {
   // feenableexcept(FE_INVALID);
   gsl_set_error_handler_off ();
   
-  if (argc != 11)
+  if (argc != 14)
     {
-      cerr << "usage: ./mstep_qsub subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile) (vf_old outfile) (params log fie)" << endl;
+      cerr << "usage: ./mstep_qsub subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile) (vf_old outfile) (params log fie) (true params) (rmsd file) (param difference)" << endl;
       exit(EXIT_FAILURE);
     }
   
@@ -330,6 +400,9 @@ int main(int argc, char* argv[]) {
   trees_cons(trs, MAX_SUBTYPE);
   MAX_TREE = trs.size();
 
+  trees trs_true;
+  trees_cons(trs_true, MAX_SUBTYPE);
+  
   hyperparams hpa (MAX_SUBTYPE, TOTAL_CN, MAX_TREE);
 
   VVLog gegen;
@@ -350,38 +423,41 @@ int main(int argc, char* argv[]) {
   ofstream pa_best_f(argv[8]);
   char* vf_old_file = argv[9];
   ofstream pa_log_f(argv[10]);
+  ifstream pa_true_f(argv[11]);
+  ofstream rmsd_f(argv[12]);
+  ofstream params_diff_f(argv[13]);
 
   llik_f << scientific << setprecision(10);
   pa_best_f << scientific << setprecision(10);
   pa_log_f << scientific << setprecision(10);
+  rmsd_f << scientific << setprecision(10);
+  params_diff_f << scientific << setprecision(10);
   
-  const gsl_rng_type * T;
-
-  gsl_rng * r;
-
-  gsl_rng_env_setup();
-
-  // T = gsl_rng_default; // default is mt19937
-  T = gsl_rng_mt19937;
-  r = gsl_rng_alloc(T);
-  gsl_rng_set(r, 1);
-
+  params pa_true(hpa);
+  read_params(pa_true_f, pa_true, hpa);
+  calc_subtypes(pa_true, hpa, trs_true[topology]);
+  pa_true_f.close();
+  
   Lbfgsb minimizer;
   
-  minimizer.set_eps(1.0e-4);
-  minimizer.set_maxit(1);
+  minimizer.set_eps(1.0e-5);
+  minimizer.set_maxit(10);
   
   Vdouble x0 (2 * hpa.MAX_SUBTYPE);
 
-  for (int i=0; i<1; ++i)
+  for (int i=0; i<100; ++i)
     {
       ifstream pa_old_f_in(pa_old_file);
       read_x(pa_old_f_in, x0, hpa);
       pa_old_f_in.close();
 
+      params pa_prev(hpa);
+      calc_params_from_x(x0, pa_prev, hpa);
+      
       Log llik_final (0);
       minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split, llik_final));
       const vector<double>& x = minimizer.best_x();
+      
       params pa_old(hpa);
       calc_params_from_x(x, pa_old, hpa);
       ofstream pa_old_f(pa_old_file);
@@ -392,6 +468,19 @@ int main(int argc, char* argv[]) {
       
       llik_f << i << "\t" << llik_final.eval() << "\t" << minimizer.best_fn() << endl;
 
+      calc_subtypes(pa_old, hpa, trs[topology]);
+
+      double rmsd_u = 0;
+      double rmsd_t = 0;
+      double rmsd_n = 0;
+      calc_rmsd(rmsd_u, rmsd_t, rmsd_n, pa_old, pa_true, trs[topology], trs_true[topology], hpa);
+      rmsd_f << i << "\t" << rmsd_u << "\t" << rmsd_t << "\t" << rmsd_n << endl;
+
+      double u_diff = 0;
+      double n_diff = 0;
+      params_rmsd(u_diff, n_diff, pa_old, pa_prev, hpa);
+      params_diff_f << i << "\t" << u_diff << "\t" << n_diff << endl;
+        
       VVVLog vf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
       VVVLog dtvf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
       VVVLog dthvf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
@@ -415,6 +504,8 @@ int main(int argc, char* argv[]) {
   llik_f.close();
   pa_best_f.close();
   pa_log_f.close();
+  rmsd_f.close();
+  params_diff_f.close();
   
   return 0;
 }
