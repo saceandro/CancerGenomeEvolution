@@ -235,7 +235,7 @@ void write_vf(std::ofstream& f, VVVLog& vf, hyperparams& hpa)
   f << endl << endl << endl;
 }
 
-void calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int num_of_split)
+int calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int num_of_split)
 {
   char str[1024];
   double a;
@@ -257,8 +257,10 @@ void calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int n
           f >> a;
           dn[i] += Log(a);
         }
-      
+
       f >> a;
+      if (a > 0) return 1;
+      
       qfunc += Log(a);
 
       f >> a;
@@ -266,6 +268,7 @@ void calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int n
 
       f.close();
     }
+  return 0;
   // for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
   //   {
   //     cerr << du[i].eval() << "\t";
@@ -313,11 +316,7 @@ struct ComputeFdf {
       {
         if (!((Log(CELL_MAX) * tr[i].n) > Log(1))) // if #CELL_i <= 1
           {
-            for (int i=0; i<2*hpa.MAX_SUBTYPE; ++i)
-              {
-                gr[i] = 0;
-              }
-            return 0;
+            return 1; // end gradient descent
           }
       }
     
@@ -341,7 +340,14 @@ struct ComputeFdf {
     VLog dn (hpa.MAX_SUBTYPE + 1, Log(0));
     Log qfunc (0);
     llik_final = Log(0);
-    calc_fdf(du, dn, qfunc, llik_final, hpa, num_of_split);
+
+    int qfunc_flag = 0;
+    qfunc_flag = calc_fdf(du, dn, qfunc, llik_final, hpa, num_of_split);
+    if (qfunc_flag==1) // vf_new became zero even if vf neq zero
+      {
+        return 1; // end gradient descent
+      }
+    
     fn = -qfunc.eval(); // minimize!
     cerr << iter << "\t" << -fn << endl;
     cerr << "du_dn_total:" <<endl;
@@ -500,10 +506,28 @@ int main(int argc, char* argv[]) {
       double n_diff = 0;
       params_rmsd(u_diff, n_diff, pa_old, pa_prev, hpa);
       params_diff_f << i << "\t" << u_diff << "\t" << n_diff << endl;
-
       cerr << "u_diff: " << u_diff << "\tn_diff" << n_diff << endl;
+      
+      for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+      {
+        if (!((Log(CELL_MAX) * trs[topology][i].n) > Log(1))) // if #CELL_i <= 1
+          {
+            cerr << "Nn <= 1 !" << endl;
+            goto finalize_em;
+          }
+
+        if ((trs[topology][i].u < Log(1e-5)))
+          {
+            cerr << "u became too small" << endl;
+            goto finalize_em;
+          }
+      }
+
       if ((u_diff < 1e-6) && (n_diff < 1e-6))
-        break;
+        {
+          cerr << "converged. padiff < 1e-6" << endl;
+          goto finalize_em;
+        }
         
       VVVLog vf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
       VVVLog dtvf_old (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
@@ -519,7 +543,8 @@ int main(int argc, char* argv[]) {
       write_vf(vf_old_f, dnvf_old, hpa);
       vf_old_f.close();
     }
-  
+
+ finalize_em:
   const vector<double>& y = minimizer.best_x();
   params pa_best(hpa);
   calc_params_from_x(y, pa_best, hpa);

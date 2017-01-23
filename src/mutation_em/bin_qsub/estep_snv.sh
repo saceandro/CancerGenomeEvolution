@@ -10,7 +10,7 @@ source ~/.zshrc
 snvs=$1
 
 datafile_id=$(($SGE_TASK_ID - 1))
-filename=../data/$datafile_id
+filename=../data_snv/$datafile_id
 pa_old=../params_qsub_snv/old${snvs}
 pa_test=../params_qsub_snv/new${snvs}
 vf_dvf_old=../vf_qsub_snv/old${snvs}

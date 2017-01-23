@@ -16,13 +16,14 @@ mkdir -p ../params_qsub_snv
 mkdir -p ../rmsd_qsub_snv
 mkdir -p ../padiff_qsub_snv
 
-for ((snvs=10; snvs<=10000; snvs*=10)); do
+snvs=100
+#for ((snvs=10; snvs<=10000; snvs*=10)); do
     rm -f ../vf_qsub_snv/*
     rm -f ../du_dn_llik_qsub_snv/*
     rm -f ../params_qsub_snv/old${snvs}
     rm -f ../params_qsub_snv/new${snvs}
     rm -f ../params_qsub_snv/best${snvs}
-    rm -f ../data/* # remove data files
+    rm -f ../data_snv/* # remove data files
     rm -f ../llik_qsub_snv/llik${snvs}
     rm -f ../rmsd_qsub_snv/rmsd${snvs}
     rm -f ../padiff_qsub_snv/padiff${snvs}
@@ -32,13 +33,13 @@ for ((snvs=10; snvs<=10000; snvs*=10)); do
     
     pa_true=../../read_generation/generated/subtype2_topology0_snv/params/0.1_0.3_3.x_y_u_n
 
-    ./split.py ../../read_generation/generated/subtype2_topology0_snv/reads/0.1/0.3/3/coverage100_snv${snvs}_seed1.reads $snvs 100
+    ./split_snv.py ../../read_generation/generated/subtype2_topology0_snv/reads/0.1/0.3/3/coverage100_snv${snvs}_seed1.reads $snvs 100
     
-    fileNum=`ls -l ../data/ | wc -l`
+    fileNum=`ls -l ../data_snv/ | wc -l`
     fileNum=$(($fileNum - 1))
 
     vf0=../vf_qsub_snv/old${snvs}
     ../bin/calc_vf_dvf_multinomial 2 0 $param0 $vf0
 
     qsub -N em_snv${snvs} -sync y mstep_snv.sh $snvs $fileNum $pa_true
-done
+#done

@@ -385,6 +385,11 @@ double d_llik(READS& res, params& pa_old, VVVLog& vf_old, params& pa_new, params
               dn_st[i] += d_xi_n(tr, v[st->q], v[i], st->q, i, Log(CELL_MAX)) / tr[st->q].xi + Log(st->m[i] + st->M[i]) / tr[i].n;
             }
 
+          if (!(vf_new[st->q][eldest_ch_index][st->xq] > Log(0))) // if vf_new[st->q][eldest_ch_index][st->xq] = 0, even if vf[st->q][eldest_ch_index][st->xq] > 0
+            {
+              return 1; // 1 is the sign of param estimation fails ()
+            }
+          
           dt_st[st->q] += dtvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq];
           dt_st[eldest_ch_index] += dthvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq];
           dn_st[st->q] += dnvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq] + d_s_n(hpa, tr, st->q) *  d_h_q_n(hpa, tr, st->q, st->h) / tr[st->q].omega[eldest_ch_number];
