@@ -236,9 +236,8 @@ void write_vf(std::ofstream& f, VVVLog& vf, hyperparams& hpa)
   f << endl << endl << endl;
 }
 
-int calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int num_of_split, string& snvs)
+int calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int num_of_split, string& snvs, string& seed)
 {
-  // char str[1024];
   double a;
   
   for (int sp=0; sp<num_of_split; ++sp)
@@ -246,11 +245,7 @@ int calc_fdf(VLog& du, VLog& dn, Log& qfunc, Log& llik, hyperparams& hpa, int nu
       std::ostringstream filenum_str;
       filenum_str << sp;
 
-      // cerr << ("../du_dn_llik_qsub_snv/" + snvs + "/" + filenum_str.str()).c_str() << endl;
-      ifstream f (("../du_dn_llik_qsub_snv/" + snvs + "/" + filenum_str.str()).c_str());
-
-      // int n = sprintf(str, "../du_dn_llik_qsub_snv/" + snvs + "%d", sp); // need to change according to the estep grad files
-      // ifstream f (str);
+      ifstream f (("../du_dn_llik_qsub_snv_seed/" + snvs + "/" + seed + "/" + filenum_str.str()).c_str());
 
       for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
         {
@@ -298,7 +293,7 @@ Log d_n_s(params& pa, int i, int j) // corrected
 }
 
 struct ComputeFdf {
-  ComputeFdf(subtypes& _tr, hyperparams& _hpa, char* _pa_test_file, char* _vf_test_file, VVLog& _gegen, VLog& _gegen_int, int _num_of_split, Log& _llik_final, string& _snvs, int& _flag) : iter(0), tr(_tr), hpa(_hpa), pa_test_file(_pa_test_file), vf_test_file(_vf_test_file), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split), llik_final(_llik_final), snvs(_snvs), flag(_flag) {}
+  ComputeFdf(subtypes& _tr, hyperparams& _hpa, char* _pa_test_file, char* _vf_test_file, VVLog& _gegen, VLog& _gegen_int, int _num_of_split, Log& _llik_final, string& _snvs, string& _seed,int& _flag) : iter(0), tr(_tr), hpa(_hpa), pa_test_file(_pa_test_file), vf_test_file(_vf_test_file), gegen(_gegen), gegen_int(_gegen_int), num_of_split(_num_of_split), llik_final(_llik_final), snvs(_snvs), seed(_seed), flag(_flag) {}
   
   int operator()(const Vdouble& x, double& fn, vector<double>& gr)
   {
@@ -341,7 +336,7 @@ struct ComputeFdf {
 
     std::ostringstream filenum_str;
     filenum_str << num_of_split;
-    system(("qsub -N estep_snv" + snvs + " -e ../log_qsub_snv/estep.err -o ../log_qsub_snv/estep.log -sync y -tc 100 -t 1-" + filenum_str.str() + ":1 estep_snv.sh " + snvs).c_str());
+    system(("qsub -N estep_snv" + snvs + "_seed" + seed + " -e ../log_qsub_snv_seed/estep.err -o ../log_qsub_snv_seed/estep.log -sync y -tc 100 -t 1-" + filenum_str.str() + ":1 estep_snv_seed.sh " + snvs + " " + seed).c_str());
     
     VLog du (hpa.MAX_SUBTYPE + 1, Log(0));
     VLog dn (hpa.MAX_SUBTYPE + 1, Log(0));
@@ -349,7 +344,7 @@ struct ComputeFdf {
     llik_final = Log(0);
 
     int qfunc_flag = 0;
-    qfunc_flag = calc_fdf(du, dn, qfunc, llik_final, hpa, num_of_split, snvs);
+    qfunc_flag = calc_fdf(du, dn, qfunc, llik_final, hpa, num_of_split, snvs, seed);
     if (qfunc_flag==1) // vf_new became zero even if vf neq zero
       {
         flag = 2;
@@ -368,7 +363,7 @@ struct ComputeFdf {
       {
         cerr << dn[i].eval() << "\t";
       }
-    cerr << endl << endl;
+    cerr << endl;
     
     gr.assign(x.size(), 0);
 
@@ -390,7 +385,7 @@ struct ComputeFdf {
         gr[hpa.MAX_SUBTYPE + index-1] = -grad.eval(); // minimize!
         cerr << gr[hpa.MAX_SUBTYPE + index-1] << "\t";
       }
-    cerr << endl << endl;
+    cerr << endl << "-------------------------------------------------------------------------------" << endl << endl;
     
     ++iter;
     
@@ -407,6 +402,7 @@ struct ComputeFdf {
   int num_of_split;
   Log& llik_final;
   string& snvs;
+  string& seed;
   int& flag;
 };
 
@@ -417,9 +413,9 @@ int main(int argc, char* argv[]) {
   // feenableexcept(FE_INVALID);
   gsl_set_error_handler_off ();
   
-  if (argc != 18)
+  if (argc != 19)
     {
-      cerr << "usage: ./mstep_qsub_snv subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile) (vf_old outfile) (params log fie) (true params) (rmsd file) (param difference) (#SNV) (u lower bound) (em max iter) (grad desc max iter)" << endl;
+      cerr << "usage: ./mstep_qsub_snv_seed subtype topology num_of_split (x y init infile) (pa_test outfile) (vf_test outfile) (llik outfile) (pa_best outfile) (vf_old outfile) (params log fie) (true params) (rmsd file) (param difference) (#SNV) (seed) (u lower bound) (em max iter) (grad desc max iter)" << endl;
       exit(EXIT_FAILURE);
     }
   
@@ -459,11 +455,12 @@ int main(int argc, char* argv[]) {
   ofstream rmsd_f(argv[12]);
   ofstream params_diff_f(argv[13]);
   string snvs (argv[14]);
-  double u_lower = atof(argv[15]);
-  int em_max_iter = atoi(argv[16]);
-  int grad_desc_max_iter = atoi(argv[17]);
+  string seed (argv[15]);
+  double u_lower = atof(argv[16]);
+  int em_max_iter = atoi(argv[17]);
+  int grad_desc_max_iter = atoi(argv[18]);
 
-  cerr << "snvs: " << snvs << endl;
+  cerr << "snvs: " << snvs << "\t" << "seed: " << seed << endl;;
   
   llik_f << scientific << setprecision(10);
   pa_best_f << scientific << setprecision(10);
@@ -505,7 +502,7 @@ int main(int argc, char* argv[]) {
 
       int flag = 0;
       Log llik_final (0);
-      minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split, llik_final, snvs, flag));
+      minimizer.minimize(x0, ComputeFdf(trs[topology], hpa, pa_test_file, vf_test_file, gegen, gegen_int, num_of_split, llik_final, snvs, seed, flag));
       if (flag == 1) cerr << "minimizer Nn <= 1 !" << endl;
       else if (flag == 2) cerr << "minimizer numerically cannot calculate error" << endl;
       
@@ -534,6 +531,8 @@ int main(int argc, char* argv[]) {
       params_rmsd(u_diff, n_diff, pa_old, pa_prev, hpa);
       params_diff_f << i << "\t" << u_diff << "\t" << n_diff << endl;
       cerr << "u_diff: " << u_diff << "\tn_diff" << n_diff << endl;
+
+      cerr << "=========================================================================================" << endl;
       
       for (int j=1; j<=hpa.MAX_SUBTYPE; ++j)
       {
