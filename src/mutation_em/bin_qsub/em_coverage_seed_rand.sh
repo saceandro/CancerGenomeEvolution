@@ -13,7 +13,7 @@ grad_desc_max_iter=$3
 coverages=$4
 
 pa_true=../../read_generation/generated/subtype2_topology0_snv/params/0.5_0.4_3.x_y_u_n
-snvs=100
+snvs=1000
 
 echo "coverage: " $coverages
 for ((seed=1; seed<=10; ++seed)); do
@@ -25,7 +25,7 @@ for ((seed=1; seed<=10; ++seed)); do
     mkdir -p ../data_coverage_seed_rand/${coverages}/${seed}
     rm -f ../data_coverage_seed_rand/${coverages}/${seed}/* # remove data files
 
-    ./split_coverage_seed_rand.py ../../read_generation/generated/subtype2_topology0_snv/reads/0.5/0.4/3/coverage${coverages}_snv${snvs}_seed${seed}.reads $snvs $seed 100
+    ./split_coverage_seed_rand.py ../../read_generation/generated/subtype2_topology0_snv/reads/0.5/0.4/3/coverage${coverages}_snv${snvs}_seed${seed}.reads $snvs $seed 100 $coverages
     fileNum=`ls -l ../data_coverage_seed_rand/${coverages}/${seed} | wc -l`
     fileNum=$(($fileNum - 1))
 
