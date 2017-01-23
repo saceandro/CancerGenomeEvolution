@@ -371,6 +371,8 @@ double d_llik(READS& res, params& pa_old, VVVLog& vf_old, params& pa_new, params
           tr[st->q].x = Log(((double) st->xq) / FRACTIONS);
           calc_child_x(tr[st->q], hpa, st->h);
 
+          Log l_resp_n = responsibility_num(*st, tr, pa_new, hpa, *res[k], vf_new, eldest_ch_index, eldest_ch_number);
+          if (l_resp_n < Log(0)) l_resp_n = Log(0);
           
           llik_k += st->resp * responsibility_num(*st, tr, pa_new, hpa, *res[k], vf_new, eldest_ch_index, eldest_ch_number).take_log_Log();
 

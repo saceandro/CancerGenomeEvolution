@@ -309,6 +309,18 @@ struct ComputeFdf {
     
     calc_subtypes(pa_test, hpa, tr);
 
+    for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
+      {
+        if (!((Log(CELL_MAX) * tr[i].n) > Log(1))) // if #CELL_i <= 1
+          {
+            for (int i=0; i<2*hpa.MAX_SUBTYPE; ++i)
+              {
+                gr[i] = 0;
+              }
+            return 0;
+          }
+      }
+    
     VVVLog vf_test (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
     VVVLog dtvf_test (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));
     VVVLog dthvf_test (hpa.MAX_SUBTYPE + 1, VVLog (hpa.MAX_SUBTYPE + 1, VLog (FRACTIONS + 1, Log(0))));

@@ -18,5 +18,4 @@ vf_dvf_test=../vf_qsub_snv/new${snvs}
 du_dn_llik=../du_dn_llik_qsub_snv/$datafile_id
 
 n=`wc -l $filename`
-print "../bin/estep_mem_multinomial 2 0 $n $pa_old $pa_test $vf_dvf_old $vf_dvf_test $filename $du_dn_llik"
 ../bin/estep_mem_multinomial 2 0 $n $pa_old $pa_test $vf_dvf_old $vf_dvf_test $filename $du_dn_llik # 1> ../log/e${iteration}_${SGE_TASK_ID}.log 2> ../log/e${iteration}_${SGE_TASK_ID}.err

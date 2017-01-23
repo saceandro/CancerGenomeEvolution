@@ -64,13 +64,44 @@ double Log::get_val()
   return val;
 }
 
+// double Log::take_log()
+// {
+//   if (this->sign != 1)
+//     {
+//       std::cout << "take_log(<=0)" << std::endl;
+//       std::cout << val << "\t" << (int) sign << std::endl << std::endl;
+//       abort();
+//     }
+  
+//   return val;
+// }
+
+// Log Log::take_log_Log()
+// {
+//   if (this->sign != 1)
+//     {
+//       std::cout << "take_log(<=0)" << std::endl;
+//       std::cout << val << "\t" << (int) sign << std::endl << std::endl;
+//       abort();
+//     }
+  
+//   Log temp = Log(val);
+  
+//   return temp;
+// }
+
 double Log::take_log()
 {
-  if (this->sign != 1)
+  if (this->sign == -1)
     {
       std::cout << "take_log(<=0)" << std::endl;
       std::cout << val << "\t" << (int) sign << std::endl << std::endl;
       abort();
+    }
+  
+  else if (this->sign == 0)
+    {
+      return -HUGE_VAL; // -inf
     }
   
   return val;
@@ -78,17 +109,25 @@ double Log::take_log()
 
 Log Log::take_log_Log()
 {
-  if (this->sign != 1)
+  Log temp;
+  
+  if (this->sign == -1)
     {
       std::cout << "take_log(<=0)" << std::endl;
       std::cout << val << "\t" << (int) sign << std::endl << std::endl;
       abort();
     }
-  
-  Log temp = Log(val);
+
+  else if (this->sign == 0)
+    {
+      temp = Log(DBL_MAX, -1); // -inf
+    }
+
+  temp = Log(val);
   
   return temp;
 }
+
 
 // Log Log::take_pow(double b)
 // {
