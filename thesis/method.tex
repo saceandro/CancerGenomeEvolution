@@ -1,0 +1,539 @@
+\documentclass{article}
+\input{settings}
+
+\begin{document}
+        
+ \section{Methods}
+% Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
+
+In this section, I describe a model for the clonal evolution of cancer cell populations and the generation of NGS data from cancer.
+I assume that each cancer cells within a tumor has derived from a single founder cell, and I only modeled somatic single nucleotide variants (SNVs) which are not influenced by copy number aberrations or rearrangements. I assume, as in previous studies, that each SNVs follow infinites sites assumption; i.e. no genomic position, or locus, mutates more than once in the course of clonal evolution. Thus, all SNVs are heterozygous, and there are only two genotypes, $AA$ and $AB$ at every locus, where $A$ and $B$ each denotes the normal and variant allele.
+
+Each SNVs are divided into two types of mutations, driver mutations and passenger mutations. The former are the mutations which are subject to the natural selection and the latter are the ones which obeys neutral evolution. I modeled that a driver mutation which occurred within each subtype give rise to another subtype, thus there are ancestral relationships among subtypes. The anestral relationships could be described using a phylogenetic tree where each nodes represent different cancer subtypes and edges represent the parent-child relationships between subtypes.
+
+On the other hand, numerous passenger mutations occur within each subtypes. The variant allele frequencies (VAF) of each passenger mutations within each subtypes diffuse according to genetic drift because the cells with that passenger mutation and the cells without it divides randomly. Each passenger mutations occurred within each subtypes could be inherited by its child subtypes if and only if the driver mutation which triggers the child subtype occurs in the cells which carries that passenger mutation.
+
+I assumed that each cancer cell populations grow exponentially, and the growth rate differs from subtype to subtype but remains unchanged in the course of clonal evolution. Under these conditions, there is no clonal interference between subtypes.
+
+I denote the fraction of subtype $i$'s cells among all cells at observation time as $n_i$, the birth time of subtype $i$ as $t_i$, and the growth rate of subtype $i$ as $\alpha_i$.
+Time is defined so that observation time is $t=0$ and the time when all the cells within a tumor coalesce into a single normal cell is $t=1$.
+Then, the fraction of subtype $i$'s cells among all cells at time $t$ can be calculated as follows.
+\begin{equation}
+ n_i(t) = \frac{1}{N}\napier^{\alpha_i (t_i - t)},
+\end{equation}
+where $N$ is the number of cells at the observation time ($t=1$).
+
+And I denote the fraction of subtype $i$'s cells among all cells at the observation time as $n_i \coloneqq n_i(0) = \frac{1}{N}\napier^{\alpha_i t_i}$.
+
+\subsection{Variant allele frequency distribution under neutral evolution}
+To derive the mean and the variance of the allele frequency drift from generation $g$ to generation $g+1$, I denote the number of alleles which doubles during generation $g$ to $g+1$ as $B_g$, the number of alleles which remains unchanged as $L_g$, and the number of alleles which dissapears as $D_g$. Putting that there are $a_{B_g}$ variant alleles within $B_g$ doubling alleles, $a_{L_g}$ variant alleles within $L_g$ alleles, $a_{D_g}$ variant alleles within $D_g$ dissapearing alleles, the probability that we choose $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ among $B_g$, $L_g$, and $D_g$ obeys the following hypergeometric distribution.
+\begin{equation}
+ p(a_{B_g}, a_{L_g}, a_{D_g} | A_g, B_g, L_g, D_g) = \frac{{B_g \choose a_{B_g}}{L_g \choose a_{L_g}}{D_g \choose a_{D_g}}}{{N_g \choose A_g}},
+\end{equation}
+where $N_g$ is the number of total alleles in generation $g$ ($N_g = B_g + L_g + D_g$) and $A_g$ is the number of total variant alleles in generation $g$ ($A_g = a_{B_g} + a_{L_g} + a_{D_g}$).
+$N_g$ is equivalent to the number of subtype $i$'s cells in generation $g$.
+
+Then, the mean and the variance of $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ are derived as follows.
+\begin{equation}
+ E[a_{B_g} | A_g, B_g, L_g, D_g] = \frac{B_g}{N_g} A_g,\; E[a_{L_g} | A_g, B_g, L_g, D_g] = \frac{L_g}{N_g} A_g,\; E[a_{D_g} | A_g, B_g, L_g, D_g] = \frac{D_g}{N_g} A_g
+\end{equation}
+\begin{align*}
+ V[a_{B_g} | A_g, B_g, L_g, D_g] &= \frac{B_g}{N_g} \left(1 - \frac{B_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
+ V[a_{L_g} | A_g, B_g, L_g, D_g] &= \frac{L_g}{N_g} \left(1 - \frac{L_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}\\
+ V[a_{D_g} | A_g, B_g, L_g, D_g] &= \frac{D_g}{N_g} \left(1 - \frac{D_g}{N_g}\right) A_g \frac{N_g - A_g}{N_g - 1}.
+\end{align*}
+
+And the covariance between $a_{B_g}$ and $a_{D_g}$ is calculated as follows.
+\begin{equation}
+ Cov[a_{B_g}, a_{D_g} | A_g, B_g, L_g, D_g] = - \frac{B_g}{N_g} \frac{D_g}{N_g} A_g \frac{N_g - A_g}{N_g - 1}.
+\end{equation}
+
+I assume that there is no overlapping generation and that each allele in generation $g+1$ is drawn independently from the alleles in generation $g$. These assumptions are the same as those of the Wright-Fisher process, however, the constant population Wright-Fisher process does not apply to this clonal evolution problem because the tumor cell population grows exponentially. Thus, I must derive the mean and the variance of this variant allele frequency drift.
+
+Noting that $A_{g+1} = 2a_{B_g} + a_{L_g}$, $A_{g+1} - A_g = a_{B_g} - a_{D_g}$, $A_{g+1} - A_g$ has the following variance.
+\begin{align}
+ V[A_{g+1} - A_g | A_g, B_g, L_g, D_g] &= V[a_{B_g} - a_{D_g} | A_g, B_g, L_g, D_g]\nonumber\\
+ &= V[a_{B_g} | A_g, B_g, L_g, D_g] + V[a_{D_g} | A_g, B_g, L_g, D_g] - 2Cov[a_{B_g}, a_{D_g} | A_g, B_g, L_g, D_g]\nonumber\\
+ &= \left[ \left( \frac{B_g}{N_g} + \frac{D_g}{N_g} \right) - \left( \frac{B_g}{N_g} - \frac{D_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1}
+\end{align}
+
+When I denote the variant allele frequency (VAF) in generation $g$ as $X_g$, the difference of the VAF from generation $g$ to $g+1$ is,
+\begin{align}
+ X_{g+1} - X_g &= \frac{A_{g+1}}{N_{g+1}} - \frac{A_g}{N_g} \nonumber\\
+ & = \frac{A_g + a_{B_g} - a_{D_g}}{N_g + B_g - D_g} - \frac{A_g}{N_g} \nonumber \\
+ & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} + \frac{a_{B_g} - a_{D_g}}{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1}.
+\end{align}
+
+Thus, noting that $X_g$ is given because $A_g$ and $N_g = B_g + L_g + D_g$ are given, the mean difference of the VAF from generation $g$ to $g+1$ is calculated as follows,
+\begin{align}
+ E[X_{g+1} - x | X_{g}=x] & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} + \frac{ E\left[ a_{B_g} - a_{D_g} \right] }{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1} \nonumber\label{VAF_diff_mean}\\
+ & = \frac{A_g}{N_g} \left\{ \left(1 + \frac{B_g - D_g}{N_g}\right)^{-1} - 1 \right\} +  \frac{B_g - D_g}{N_g} \frac{A_g}{N_g} \left( 1 + \frac{B_g - D_g}{N_g} \right)^{-1} \nonumber\\
+ & = 0
+\end{align}
+
+On the other hand, the variance of the difference of the VAF from generation $g$ to $g+1$ is calculated as follows,
+\begin{align}
+ V[X_{g+1} - x | X_{g}=x] & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} V[a_{B_g} - a_{D_g}] \nonumber\\
+ & = \frac{1}{N_g^2} \left(1 + \frac{B_g - D_g}{N_g}\right)^{-2} \left[ \left( \frac{B_g}{N_g} + \frac{D_g}{N_g} \right) - \left( \frac{B_g}{N_g} - \frac{D_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1} \nonumber\\
+ & = \frac{1}{N_{g+1}^2} \left[ \frac{2B_g + N_g - N_{g+1}}{N_g} - \left( \frac{N_{g+1} - N_g}{N_g} \right)^2 \right] A_g \frac{N_g - A_g}{N_g - 1} \nonumber\\
+ & = \frac{1}{N_{g+1}} \left(1 - \frac{1}{N_g}\right)^{-1} \left( \frac{2B_g}{N_{g+1}} - \frac{N_{g+1} - N_g}{N_g} \right) \frac{A_g}{N_g} \left(1 - \frac{A_g}{N_g} \right) \nonumber\\
+ & = \frac{N_g}{N_{g+1}} \frac{1}{N_g - 1} \left( \frac{2B_g}{N_{g+1}} - \frac{N_{g+1}}{N_g} + 1 \right) X_g \left(1 - X_g \right).
+\end{align}
+
+If we assume that there are $N$ generations in total, and choose unit time $\varDelta t$ (i.e. the time between generation $g$ to $g+1$) to be $1/N$, 
+\begin{align}
+ N_g & = Nn_i ((N - g) \varDelta t)\nonumber \\
+ & = Nn_i \left(1 - \frac{g}{N}\right)\nonumber \\
+ & = \exp \left[\alpha_i \left\{ t_i - \left( 1 - \frac{g}{N} \right)\right\}\right].
+\end{align}
+
+Thus,
+\begin{equation}
+ \frac{N_{g+1}}{N_g} = \napier^{\alpha_i / N} \sim 1 \; \left(\because N >> 1\right).
+\end{equation}
+
+$2B_g/N_{g+1}$ represents the fraction of the alleles which double between the generation and we denote it as $\beta$.
+If $\beta$ is large, diffusion of the allele frequency is greater, thus $\beta$ characterize the the strength of the genetic drift.
+
+\begin{align}
+ V[X_{g+1} - x | X_g=x] & \sim \frac{\beta}{N_g} X_g \left(1 - X_g \right),\nonumber\\
+ \frac{1}{\varDelta t}V[X_{g+1} - x | X_{g}=x] & \sim \frac{\beta}{N_g/N} X_g \left(1 - X_g \right)\nonumber \\
+ & = \frac{\beta}{n_i(t)} x(t) \left(1 - x(t) \right),\label{VAF_diff_variance_inf}
+\end{align}
+where $t = (N - g) \varDelta t$.
+
+In the case of the mean difference of the VAF from generation $g$ to $g+1$, 
+\begin{equation}
+ \frac{1}{\varDelta t} E[X_{g+1} - x | X_{g}=x] = 0.\label{VAF_diff_mean_inf}
+\end{equation}
+where I used the \equationref{VAF_diff_mean}.
+
+This process of the variant allele frequency drift is a continuous Markov process because the variant allele frequency in generation $g+1$ is only dependent on that of generation $g$.
+If I denote the transition probability density that the random variable changes from $y$ to $x$ during time $t$ as $f(x|y,t)$, the diffusion equation of the continuous time Markov process is expressed as the following Kolmogorov forward equation~\cite{kolmogoroff1931analytischen,kimura1964diffusion},
+\begin{equation}
+ \henbibun{}{t} f(x|y,t) = - \henbibun{}{x} \left( \mu(x) f(x|y,t) \right) + \frac{1}{2} \frac{\partial^2}{\partial x^2} \left( V(x) f(x|y,t) \right),\label{kolmogorov_forward_eq}
+\end{equation}
+where $\mu(x)$ and $V(x)$ represents the first and the second moment of $\varDelta x$ in the infinitesimal time interval $(t,t + \varDelta t)$.
+
+In this case, $f(x|y,t)$ represents the probability density that the variant allele frequency changes from $y$ to $x$ during time $t$.
+And from \equationref{VAF_diff_mean_inf} and \equationref{VAF_diff_variance_inf}, $\mu(x) = 0$ and $V(x) = \frac{\beta}{n(t)} x(t) \left(1 - x(t) \right)$.
+Substituting them into the \equationref{kolmogorov_forward_eq} yields the following diffusion equation,
+\begin{equation}
+ \henbibun{}{t} f(x|y,t) = \frac{1}{2} \frac{\beta}{n(t)} \frac{\partial^2}{\partial x^2} \left( x(1-x) f(x|y,t) \right).\label{WF_dissusion}
+\end{equation}
+
+Changing the variable from $t$ to $\tau$ using the following equation,
+\begin{equation}
+ \tau(t) = \int_{0}^{t} \frac{\beta}{n(t')} \: dt',
+\end{equation}
+\eqref{WF_dissusion} becomes the simpler form,
+\begin{equation}
+ \henbibun{}{\tau} f(x|y,\tau) = \frac{1}{2} \frac{\partial^2}{\partial x^2} \left( x(1-x) f(x|y,\tau) \right).\label{FW_diffusion_tau}
+\end{equation}
+
+If I assume that the solution can be written in the separated form $f(x|y,\tau) = T(\tau;y) X(x;y)$,
+substituting it into \eqref{FW_diffusion_tau} and dividing both sides with $T(\tau;y) X(x;y)$ yields the following equation,
+\begin{equation}
+ \frac{1}{T}\henbibun{T}{\tau} = \frac{1}{2}\frac{1}{X}\henbibun{}{x^2} \left( x(1-x) X \right) = -\lambda,\label{hensu_bunri}
+\end{equation}
+where I put the both sides as a constant, $\lambda$, because the left and the right hand side have the same value though they are only dependent on $\tau$ or $x$ respectively.
+
+From the left hand side of \equationref{hensu_bunri},
+\begin{equation}
+ T \propto \napier^{-\lambda \tau}.
+\end{equation}
+
+On the other hand, the right hand side can be written in the following form,
+\begin{equation}
+ x(1-x)\frac{d^2 X}{d x^2} + 2(1-2x) \bibun{X}{x} - 2(1 - \lambda) X = 0.\label{hypgeo_case}
+\end{equation}
+
+This is a special case of the hypergeometric equation,
+\begin{equation}
+ x(1-x)\frac{d^2 X}{d x^2} + \left[ c - (a+b+1)x \right] \bibun{X}{x} - ab X = 0.\label{hypgeo_concrete}
+\end{equation}
+And I denote the solution of this hypergeometric equation as $F(a, b, c; x)$, which is called a hypergeometric function.
+
+Comparing \equationref{hypgeo_case} with \equationref{hypgeo_concrete},
+\begin{equation}
+ c = 2, \; a+b = 3, \; ab = 2(1-\lambda).\label{hyp_kainokoshiki}
+\end{equation}
+
+Solving the simultaneous equation \eqref{hyp_kainokoshiki},
+\begin{equation}
+ a = \frac{3 + \sqrt{1 + 8\lambda}}{2}, \; b = \frac{3 - \sqrt{1 + 8\lambda}}{2}.\label{a_b_solution}
+\end{equation}
+
+The hypergeometric function has the following relationship,
+\begin{equation}
+ F(a,b;2 ; x) = \frac{\Gamma(2) \Gamma(2-a-b)}{\Gamma(2-a) \Gamma(2-b)} F(a,b,-1+a+b, 1-x)
+  + \frac{\Gamma(2) \Gamma(a+b-2)}{\Gamma(a) \Gamma(b)} F(2-a,2-b,3-a-b, 1-x).
+\end{equation}
+
+And
+\begin{equation}
+ 2-a \leq 0 \; \text{and}\; b \leq 0 \; (a, b \in \bold{Z}),
+\end{equation}
+where $\bold{Z}$ represents the integer set, is required for $F(a,b,2,x)$ to have the finite value.
+
+Then,
+\begin{align}
+ a &= 1 + i \; (i=1,2,\cdots)\\
+ b &= 1 - j \; (j=1,2,\cdots)
+\end{align}
+
+Using \eqref{a_b_solution},
+\begin{align}
+ \lambda = \frac{(i-1)i}{2} = \frac{j(j+1)}{2}
+\end{align}
+
+Finally, noting that $j$ gives the tighter condition, $a$, $b$, and $\lambda$ are expressed as follows,
+\begin{align}
+ a = 2 + j \;, b = 1 - j \; (j=1,2,\cdots).
+\end{align}
+
+Thus,
+\begin{equation}
+ X(x;y) \propto F(2+i, 1-i, 2; x).
+\end{equation}
+
+Using the following relationship between the hypergeometric fuction and Gegenbauer polynomial $C^{(3/2)}_{i-1} (z)$,
+\begin{equation}
+ C^{(3/2)}_{i-1} (z) = \frac{i(i+1)}{2} F \left(i+2, 1-i, 2;\frac{1-z}{2}\right),
+\end{equation}
+
+\begin{equation}
+ X(x;y) \propto C^{(3/2)}_{i-1} (z)
+\end{equation}
+where $z = 1-2x$.
+
+Therefore, the overall solution can be written as follows putting the coefficient $a_i$,
+\begin{equation}
+ f(x|y,t) = \sum_{j=1}^{\infty} a_j C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}
+\end{equation}
+
+Under the initial condition $f(x|y,0) = \delta(x - y) = 2\delta(z-w)$, where $w=1-2y$,
+\begin{equation}
+ 2\delta(z-w) = \sum_{j=1}^{\infty} a_j C^{(3/2)}_{j-1} (z).
+\end{equation}
+
+When I multiply both sides with $(1-z^2) C^{(3/2)}_{k-1} (z)$, and take the integral with respect to $z$,
+\begin{equation}
+ 2\int_{-1}^{1}\delta(z-w) (1-z^2) C^{(3/2)}_{k-1} (z) dz= \sum_{j=1}^{\infty} a_j \int_{-1}^{1} (1-z^2) C^{(3/2)}_{j-1} (z) C^{(3/2)}_{k-1} (z) dz.
+\end{equation}
+
+Using the orthogonality of Gegenbauer polynomial, $\int_{-1}^{1} (1-z^2) C^{(3/2)}_{j-1} (z) C^{(3/2)}_{k-1} (z) dz = \frac{2k(k+1)}{2k+1} \delta_{jk}$,
+\begin{equation}
+ a_k = (1-w^2) \frac{2k+1}{k(k+1)} C^{(3/2)}_{k-1} (w).
+\end{equation}
+
+Therefore, the solution of the diffusion equation \eqref{FW_diffusion_tau} is,
+\begin{align}
+ f(x|y,\tau) & = (1-w^2) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = 4y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) C^{(3/2)}_{j-1} (1-2x) \napier^{-\frac{j(j+1)}{2}\tau},\label{wf_solution_x}
+\end{align}
+where $z=1-2x$, $w=1-2y$, and $\tau(t) = \int_{0}^{t} \frac{\beta}{n(t')} \: dt'$.
+
+However, allelic frequency of a variant allele might be fixed to 1 (fixation) or 0 (loss) during the diffusion process because if all the cells in generation $g$ have that variant allele, all the cells in generation $g+1$ must have that variant allele. Thus, $f(1|y,\tau)$ and $f(0|y,\tau)$ are probabilities, though $f(x|y,\tau) \; (0<x<1)$ is a probability density.
+
+From the definition of probability, the following relationship holds,
+\begin{equation}
+ \int_{0}^{1} f(x|y,\tau) dx + f(1|y,\tau) + f(0|y,\tau) = 1.
+\end{equation}
+
+If I put $P(x|y,\tau) = - \frac{1}{2} \henbibun{}{x}\left( x(1-x)f(x|y,\tau) \right)$, from \eqref{FW_diffusion_tau},
+\begin{equation}
+ \henbibun{f(x|y,\tau)}{\tau} = - \henbibun{P(x|y, \tau)}{x}.
+\end{equation}
+
+This is the continuity equation with regard to the variant allele frequency distribution.
+$\henbibun{f(x|y,\tau)}{\tau}$ is the rate of net flow of the probability density, and $P(x|y,\tau)$ corresponds to the flux of the variant allele frequency.
+Because probability flows into $x=0$ and $x=1$ at the rate $-P(0|y,\tau)$ and $P(1|y,\tau)$ respectively, and there is no outflow,
+\begin{align}
+ \henbibun{f(0|y,\tau)}{\tau} & = -P(0|y, \tau),\label{fixation_flow}\\
+ \henbibun{f(1|y,\tau)}{\tau} & = P(1|y, \tau).\label{loss_flow}
+\end{align}
+
+Integrating the differential equation \eqref{fixation_flow} and \eqref{loss_flow}, we can calculate the fixation probability $f(1|y,\tau)$ and loss probability $f(0|y,\tau)$.
+Noting that $z = 1-2x$,
+\begin{align}
+ P(x|y, \tau) & = \frac{1}{4} \henbibun{}{z} \left( (1-z^2) f(x|y,\tau)\right)\\
+ & = \frac{1-w^2}{4} \henbibun{}{z} \sum_{j=1}^{\infty} C^{(3/2)}_{j-1} (w) \frac{2j+1}{j(j+1)} (1-z^2) C^{(3/2)}_{j-1} (z) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} C^{(3/2)}_{j-1} (w) \henbibun{}{z} \left( P_{j+1}(z) - P_{j-1}(z) \right) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} C^{(3/2)}_{j-1} (w) (2j+1)P_{j}(z) \napier^{-\frac{j(j+1)}{2}\tau}
+\end{align}
+
+Thus, using equation \eqref{legendre1}, \eqref{legendre-1}, and $z=1-2x$,
+\begin{align}
+ P(0|y, \tau) & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau},\\
+ P(1|y, \tau) & = - \frac{1-w^2}{4} \sum_{j=1}^{\infty} (-1)^j (2j+1) C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}.
+\end{align}
+
+Integrating equation \eqref{fixation_flow},
+\begin{align}
+ f(0|y,\tau) & = \frac{1-w^2}{2} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \left(1 - \napier^{-\frac{j(j+1)}{2}\tau} \right)\\
+ & = \frac{1+w}{2} - \frac{1-w^2}{2} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = (1-y) - 2y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},
+\end{align}
+where we used equation \eqref{frac_1_1-z}.
+% \begin{equation}
+%  \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} \left( P_{j-1}(w) - P_{j+1}(w) \right) = P_{0}(w) + P_{1}(w) = 1+w.
+% \end{equation}
+
+On the other hand, integrating equation \eqref{loss_flow},
+\begin{align}
+ f(1|y,\tau) & = - \frac{1-w^2}{2} \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \left(1 - \napier^{-\frac{j(j+1)}{2}\tau} \right)\\
+ & = \frac{1-w}{2} + \frac{1-w^2}{2} \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}\\
+ & = y + 2y(1-y) \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},\label{loss}
+\end{align}
+where we used equation \eqref{-frac_1_1+z}.
+% \begin{equation}
+%  \sum_{j=1}^{\infty} (-1)^j \frac{2j+1}{j(j+1)}(1-w^2) C^{(3/2)}_{j-1} (w) = \sum_{j=1}^{\infty} (-1)^j \left( P_{j-1}(w) - P_{j+1}(w) \right) = -P_{0}(w) + P_{1}(w) = -1+w.
+% \end{equation}
+
+In the case of subtype $i$,
+\begin{equation}
+ \tau(t) = \int_{0}^{t} \frac{\beta}{n_i(t')} \: dt' = \frac{\beta}{\alpha_i n_i}\left(\napier^{\alpha_i t} - 1\right).
+\end{equation}
+
+Every single nucleotide mutation which occurs within one of subtype $i$'s cell at time $t$ have the allelic frequency $\frac{1}{Nn_i(t)}$.
+The probability density that the allelic frequency grows from $\frac{1}{Nn_i(t)}$ to $x_i$ during time $t$ is expressed as $f(x_i| \frac{1}{Nn_i(t)}, \tau(t'))$.
+
+The probability that the variant allele frequency $x_i$ is observed at time 0 can be calculated integrating $f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t)\right)$ weighed by the number of the cell at $t$ from the birth time of subtype $i$ to the observation time,
+\begin{equation}
+ \int_{0}^{t_i} f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t')\right) (Nn_i(t')-1)  dt'.\label{vaf_dist_unnorm}
+\end{equation}
+
+\begin{align}
+ & f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t)\right) (Nn_i(t)-1)\\
+ & = 4\frac{1}{Nn_i(t)}\left(1-\frac{1}{Nn_i(t)}\right) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} \left(1-2\frac{1}{Nn_i(t)}\right) C^{(3/2)}_{j-1} (1-2x_i) \napier^{-\frac{j(j+1)}{2}\tau} \left(Nn_i(t) - 1 \right)\\
+ & \sim 2\frac{1}{Nn_i(t)} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \exp \left( -\frac{j(j+1)}{2} \frac{\beta}{\alpha_i n_i}\left(\napier^{\alpha_i t} - 1\right) \right) \left(Nn_i(t) - 1 \right)\\
+ & = 2(1-\napier^{\alpha_i(t - t_i)}) \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \exp \left(-\gamma_j \left(\napier^{\alpha_i t} - 1\right)\right),
+\end{align}
+where I used $1 - \frac{1}{Nn_i(t)} \sim 1$ and $C^{(3/2)}_{j-1} \left(1-2\frac{1}{Nn_i(t)}\right) \sim C^{(3/2)}_{j-1} (1) = \frac{j(j+1)}{2}$ and denoted $\frac{j(j+1)}{2} \frac{\beta}{\alpha_i n_i} = \frac{j(j+1)}{2} \frac{\beta}{n_i} \frac{t_i}{\ln (Nn_i)}$ as $\gamma_j$.
+
+Using
+\begin{align}
+ \int_{0}^{t_i} \exp(-\gamma_j \napier^{\alpha_i t'}) dt' & = \frac{1}{\alpha_i} \int_{\gamma_j}^{\gamma_j \napier^{\alpha_i t_i}} \frac{\napier^{-\zeta}}{\zeta} d\zeta = \frac{1}{\alpha_i} \left[ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right]\\
+ \int_{0}^{t_i} \napier^{\alpha_i t'} \exp(-\gamma_j \napier^{\alpha_i t'}) dt' & = \frac{1}{\alpha_i \gamma_j} \int_{\gamma_j}^{\gamma_j \napier^{\alpha_i t_i}} \napier^{-\zeta} d\zeta = \frac{1}{\alpha_i \gamma_j} \left[ \napier^{-\gamma_j} - \napier^{\gamma_j Nn_i} \right],
+\end{align}
+\eqref{vaf_dist_unnorm} can be calculated as follows,
+\begin{align}
+ & \int_{0}^{t_i} f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t')\right) (Nn_i(t')-1)  dt'\\
+ & = 2 \sum_{j=1}^{\infty} (2j + 1) C^{(3/2)}_{j-1} (1-2x_i) \napier^{\gamma_j} \left[ \frac{1}{\alpha_i} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} - \frac{\napier^{-\alpha_i t_i}}{\alpha_i \gamma_j} \left( \napier^{-\gamma_j} - \napier^{\gamma_j Nn_i} \right) \right]\\
+ & = - \frac{2\napier^{-\alpha_i t_i}}{\alpha_i} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \frac{1}{\gamma_j}\nonumber\\
+ & + \frac{2}{\alpha_i} \sum_{j=1}^{\infty} (2j + 1) \frac{1}{\gamma_j} C^{(3/2)}_{j-1} (1-2x_i) \left[ \gamma_j \napier^{\gamma_j} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} \right]\label{vaf_dist_unnorm_term}
+\end{align}
+
+The first term of \eqref{vaf_dist_unnorm_term} is,
+\begin{align}
+ - \frac{2\napier^{-\alpha_i t_i}}{\alpha_i} \sum_{j=1}^{\infty} (2j+1) C^{(3/2)}_{j-1} (1-2x_i) \frac{1}{\gamma_j} & = - \frac{4}{N\beta} \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (z_i)
+ % & = - \frac{4}{N\beta} \sum_{j=1}^{\infty} \frac{1}{1-z_i^2} \left(P_{j-1}(z_i) - P_{j+1}(z_i)\right)\\
+ % & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left( P_{0}(z_i) + P_{1}(z_i) \right)\\
+ % & = - \frac{4}{N\beta} \frac{1}{1-z_i^2} \left(1 + z_i \right)\\
+ = - \frac{4}{N\beta} \frac{1}{1-z_i}
+ = - \frac{2}{N\beta} \frac{1}{x_i}\label{first_term}
+\end{align}
+
+On the other hand, the second term of \eqref{vaf_dist_unnorm_term} is,
+\begin{align}
+ \frac{4n_i}{\beta} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2x_i) \left[ \gamma_j \napier^{\gamma_j} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} \right].
+\end{align}
+
+However, the element of this series does not converge to $0$ in the limit $j \to \infty$
+because $C^{(3/2)}_{j-1} (1 - 2x_i)\to \frac{j(j+1)}{2}$ in the limit $x_i \to 0$ and
+\begin{align}
+ \gamma_j \napier^{\gamma_j} \left\{ E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right\} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} = 1 - \frac{1}{\gamma_j} + O(\gamma_j^{-2})
+ = 1 - \frac{2}{j(j+1)} \frac{n_i}{\beta} \frac{\ln (Nn_i)}{t_i} + O(j^{-4}).\label{expint_asymptotic}
+\end{align}
+
+Thus, I must evaluate the sum of the series with regard to the first and second term of \eqref{expint_asymptotic} using \eqref{frac_1_1-z} and \eqref{gegen_int} respectively.
+As a result, the second term of \eqref{vaf_dist_unnorm_term} can be expressed as follows,
+\begin{align}
+& \frac{2n_i}{\beta} \Biggl[ \frac{1}{x_i} + \frac{4n_i}{\beta}\frac{\ln(Nn_i)}{t_i} \int_{0}^{1} \frac{(1 - s) \log s}{ \left(1 -2zs + s^2 \right)^{3/2}} ds\nonumber\\
+ & + 2 \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2x_i) \left\{ \gamma_j \napier^{\gamma_j} \left( E_1(\gamma_j) - E_1(\gamma_j Nn_i) \right) -1 + \frac{1}{\gamma_j} + \frac{1}{Nn_i} \napier^{-\gamma_j (Nn_i - 1)} \right\} \Biggr].\label{second_term}
+\end{align}
+
+Finally, \eqref{vaf_dist_unnorm_term} can be expressed as the sum of \eqref{first_term} and \eqref{second_term},
+\begin{align}
+   & \int_{0}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt'\\
+   & = 2\frac{n_i}{\beta} \Biggl[(1 - \frac{1}{Nn_i})\frac{1}{x_i} + 4\frac{n_i}{\beta}\frac{\ln(Nn_i)}{t_i} \int_{0}^{1} \: ds \frac{(1-s) \log s}{(1 - 2zs + s^2)^{3/2}}\\
+   & + 2 \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} C^{(3/2)}(1-2x_i)  \biggl\{ \gamma_j \mathrm{e}^{\gamma_j} \left(E_1(\gamma_j) - E_1(\gamma_j Nn_i)\right) - 1 + \frac{1}{\gamma_j} + \frac{1}{Nn_i}  \mathrm{e}^{-\gamma_j (Nn_i - 1)}
+   \Biggr\}
+   \Biggr].\label{vaf_dist_unnorm_x}
+\end{align}
+
+In the same way, the fixation probability can be calculated as follows using \eqref{loss},
+\begin{align}
+  & \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt'\\
+ & = t_i \left(1 - \frac{1}{\ln(Nn_i)}\left(1 - \frac{1}{Nn_i}\right)\right)\\
+  & + 2\frac{n_i}{\beta} \Bigg[-(1 - \frac{1}{Nn_i}) + \sum_{j=1}^{\infty}\frac{(-1)^{j}(2j+1)}{j(j+1)} \left\{ \gamma_j \mathrm{e}^{\gamma_j} \left(E_1(\gamma_j) - E_1(\gamma_1 Nn_i)\right) - 1 + \frac{1}{Nn_i}  \mathrm{e}^{-\gamma_j (Nn_i - 1)}
+ \right\}
+ \Bigg].\label{vaf_dist_unnorm_fixation}
+\end{align}
+
+Noting that all the observed variant NGS reads are derived from SNVs whose allele frequency $x_i > \frac{1}{Nn_i}$, I should normalize \eqref{vaf_dist_unnorm_x} and \eqref{vaf_dist_unnorm_fixation} with $\mathrm{Pr}\left\{x_i > \frac{1}{Nn_i}\right\}$, which is calcuated as follows,
+\begin{align}
+ & \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\}\nonumber\\
+ & =  \int_{\frac{1}{Nn_i}}^{1} dx_i \int_{0}^{t_i} dt' f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) + \int_{0}^{t_i} dt' f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1)\nonumber\\
+ & = t_i \left(1 - \frac{1}{\ln(Nn_i)}\left(1 - \frac{1}{Nn_i}\right)\right)\nonumber\\
+ & + 2\frac{n_i}{\beta} \Bigg[(\ln(Nn_i) -1)(1 - \frac{1}{Nn_i}) + \sum_{j=1}^{\infty}\frac{2j+1}{j(j+1)} \bigl\{ \gamma_j \mathrm{e}^{\gamma_j} \left(E_1(\gamma_j) - E_1(\gamma_1 Nn_i)\right) - 1 + \frac{1}{Nn_i}  \mathrm{e}^{-\gamma_j (Nn_i - 1)}
+ \bigr\}
+ \Bigg],\label{vaf_dist_unnorm_partition}
+\end{align}
+where $C^{(3/2)}(1-2x_i)$ is integrated using equation \eqref{ledgendre_diff_to_gegen}.
+
+Finally, the variant allele frequency distribution $p(x_i | t_i, n_i)$ is calculated as follows using \eqref{vaf_dist_unnorm_x}, \eqref{vaf_dist_unnorm_fixation}, and \eqref{vaf_dist_unnorm_partition},
+\begin{align}
+ p(x_i | t_i, n_i) = \begin{cases}
+                      \int_{0}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt' \bigg/ \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\} & \left(\frac{1}{Nn_i} < x_i < 1\right)\\
+                      \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) (Nn_i(t') - 1) dt' \bigg/ \mathrm{Pr}\left\{ x_i > \frac{1}{Nn_i}\right\} & \left(x_i = 1\right).\label{vaf_dist_norm}
+                     \end{cases}
+\end{align}
+
+Above equation holds if the mutation is an isolated mutation of subtype $i$, i.e. the mutation is not inherited by descendant subtypes.
+However, in reality, the mutation is inherited to the descendant subtypes if the mutation occured in the lineage of the child subtype's founder cell.
+In this case, the variant allele frequency $x_i$ can be zero even if the variant NGS reads are observed because $x_{\mathrm{child}(i)} = 1$.
+
+Since the mutation must occur in a single lineage before the child subtype is born ($t = t_{\mathrm{child}(i)}$),
+The probability that the variant allele frequency $x_i$ is observed at time 0 can be calculated integrating $f\left(x_i| \frac{1}{Nn_i(t)}, \tau(t)\right)$ from the birth time of subtype $i$ to the birth time of the $i$'s child subtype,
+\begin{align}
+ & \int_{t_{\mathrm{child}(i)}}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt'\nonumber\\
+ & = \frac{4}{N\beta} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}(1-2x_i)
+ \mathrm{e}^{\gamma_j} \left\{ \exp\left(-\gamma_j\left(Nn_i\right)^{\frac{t_{\mathrm{child}(i)}}{t_i}}\right) - \exp(-\gamma_j Nn_i)\right\}.\label{vaf_dist_unnorm_inherited_x}
+\end{align}
+
+The fixation probability is,
+\begin{align}
+ & \int_{t_{\mathrm{child}(i)}}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt'\nonumber\\
+ & = \frac{t_i}{\ln(Nn_i)}\left(1 - (Nn_i)^{\frac{t_{\mathrm{child}(i)}}{t_i} - 1}\right)
+ + \frac{2}{N\beta} \sum_{j=1}^{\infty} \frac{(-1)^{-j}(2j+1)}{j(j+1)}
+ \mathrm{e}^{\gamma_j} \left\{ \exp\left(-\gamma_j\left(Nn_i\right)^{\frac{t_{\mathrm{child}(i)}}{t_i}}\right) - \exp(-\gamma_j Nn_i)\right\}.\label{vaf_dist_unnorm_inherited_fixation}
+\end{align}
+
+And the loss probability is,
+\begin{align}
+ & \int_{t_{\mathrm{child}(i)}}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt'\nonumber\\
+ & = t_i - t_{\mathrm{child}(i)} - \frac{t_i}{\ln(Nn_i)}\left(1 - (Nn_i)^{\frac{t_{\mathrm{child}(i)}}{t_i} - 1}\right)
+ - \frac{2}{N\beta} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)}
+ \mathrm{e}^{\gamma_j} \left\{ \exp\left(-\gamma_j\left(Nn_i\right)^{\frac{t_{\mathrm{child}(i)}}{t_i}}\right) - \exp(-\gamma_j Nn_i)\right\}.\label{vaf_dist_unnorm_inherited_loss}
+\end{align}
+
+Normalization factor is calculated using equation \eqref{vaf_dist_unnorm_inherited_x}, \eqref{vaf_dist_unnorm_inherited_fixation}, and \eqref{vaf_dist_unnorm_inherited_loss},
+\begin{align}
+& \int_{0}^{1} dx_i \int_{t_{\mathrm{child}(i)}}^{t_i} dt' f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) + \int_{t_{\mathrm{child}(i)}}^{t_i} dt f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right)\nonumber\\
+  &= t_i - t_{\mathrm{child}(i)}\label{vaf_dist_unnorm_inherited_partition}
+\end{align}
+
+Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{child}(i)}, n_i)$ is calculated as follows using \eqref{vaf_dist_unnorm_inherited_x}, \eqref{vaf_dist_unnorm_inherited_fixation}, \eqref{vaf_dist_unnorm_inherited_loss}, and \eqref{vaf_dist_unnorm_inherited_partition},
+\begin{align}
+ p(x_i | t_i, t_{\mathrm{child}(i)}, n_i) = \begin{cases}
+                      \int_{0}^{t_i} \frac{1}{}f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left( 0 < x_i < 1\right)\\
+                      \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 1\right)\\
+                      \int_{0}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 0\right).\label{vaf_dist_norm_inherited}
+                     \end{cases}
+\end{align}
+
+\subsection{Simulation of the NGS reads}
+In this section, I will explain how NGS reads are simulated in this study
+I used the the variant allele frequency transition probability 
+
+\subsection{Birth time and abundance ratio estimation using NGS reads}
+In this section, I define the problem of inferring the abundance ratio $n_i$ and the birth time $t_i$ of each subtype from NGS reads of the bulk tumor sample.
+When the number of total reads $M_k$ and the number of variant reads $m_k$ at the each SNV locus $k$, $(m, M) = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$ is given,
+the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be estimated via the maximum likelihood problem.
+
+\subsubsection{Estimation modeling using binomial distribution}
+Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that we get the read count $(m,M)$ as a result of NGS sequencing and the variant calling is,
+\begin{align}
+ p(m|M, n, t) & = \prod_{k=1}^{K} \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k-1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x) \label{binom_estimation_model}
+\end{align}
+where $p (m_k | M_k, n, x)$ represents the probability that $m_k$ variant reads are observed among $M_k$ total reads, which is expressed as the following binomial distribution.
+\begin{align}
+ p (m_k | M_k, n, x) = Bi(m_k | M_k, \mu_k) = { m_k \choose M_k } \mu_k^{m_k} \left( 1 - \mu_k \right)^{M_k - m_k}.\label{param_estimation_binomial}
+\end{align}
+$\mu_k = \sum_{i_k = 1}^{I} n_i x_i / 2$ represents the ratio of variant copies among all the copies exist in the tumor sample, assuming that all the tumor subtype is diploid and all the variants are heterozygous.
+
+And $p(i_k)$ represents the probability that the SNV $k$ originated in subtype $i_k$.
+$p(h_k | i_k)$ represents the probability that SNV $k$ is inherited to the child subtypes in the pattern $h_k$.(Figure)
+$p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})$ represents the probability that the variant allele frequency of subtype $i_k$ is $x_{i_k}$,
+which corresponds to \eqref{vaf_dist_norm} or \eqref{vaf_dist_norm_inherited} depending on whether SNV $k$ is an isolated mutation (i.e. $h_k = 0$) or not (i.e. $h_k \neq 0$).
+Though the fraction of the mutated cell $x_i$ takes any value between 0 and 1 in reality, however, I assumed that $x_i$ takes the discrete value for the estimation efficiency. That is, $x_{i_k} \in \{0.1, 0.2, \cdots, 1.0\}$ (if $h_k = 0$) and $x_{i_k} \in \{0.0, 0.1, 0.2, \cdots, 1.0\}$ (if $h_k > 0$).
+
+Then, the maximum likelihood extimation of the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be expressed as follows,
+\begin{align}
+ (t, n) = \argmax_{t, n} \ln p(m | M, n, t).\nonumber
+\end{align}
+
+\subsubsection{Estimation modeling using NGS read emission probability}
+Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that $m_k$ normal reads and $M_k - m_k$ variant reads are observed as a result of NGS sequencing is,
+\begin{align}
+ p(D | t, n) & = \prod_{k=1}^{K} \Biggl[ \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) \nonumber\\
+ & \times \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Biggr]
+\end{align}
+where the $l$ th read at the SNV locus $k$ is derived from the subtype $q_{kl}$'s copy and $D = \{D_1, \cdots D_K\} = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$.
+
+The Expectation-Maximization (EM) algorithm to derive the maximum likelihood estimate of $t$ and $n$ can be formulated as follows.
+
+For each SVN locus $k$, $i_k$, $h_k$, $x_{i_k}$, and $q_{k 0:(M_k - 1)} = ( q_{k 0}, \cdots, q_{k (M_k-1)} )$ are assumed to be hidden state because they cannot be observed.
+Then the hidden indicator variable $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ can be defined as,
+\begin{equation}
+ z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \in \{0, 1\} \text{, } \sum_{i_k=1}^{I} \sum_{h_k=0}^{H_k - 1} \sum_{x_{i_k}} \sum_{q_{k0}=1}^{I} \cdots \sum_{q_{k (M_k - 1)}=1}^{I} z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} = 1.
+\end{equation}
+
+Thus the joint probability distribution of observables $(m_k,M_k)$ and hidden variables $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ is,
+\begin{align}
+ p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| t, n\right) &= \prod_{i_k=1}^{I} \prod_{h_k=0}^{H_k - 1} \prod_{x_{i_k}} \prod_{q_{k 0:(M_k - 1)}} \Biggl\{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})\nonumber\\
+&\times \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Biggr\}^{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}}.
+\end{align}
+
+And the posterior distribution of the hidden variables $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ given observables $(m_k,M_k)$ can be calculated using Bayes theorem,
+\begin{align}
+ p\left(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| D_k, t, n\right) = \frac{p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| n, t\right)}{ \sum_{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}} p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| n, t\right) }.
+\end{align}
+
+The responsibility that the hidden state $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ takes for explaining the observation $(m_k, M_k)$ is,
+\begin{align}
+& \gamma\left(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right)\\
+ & = E_{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| D_k, t^{\mathrm{old}}, n^{\mathrm{old}}} \left[z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right]\\
+ & = \frac{\prod_{i_k=1}^{I} \prod_{h_k=0}^{H_k - 1} \prod_{x_{i_k}} \prod_{q_{k 0:(M_k - 1)}} \Bigl\{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}^{\mathrm{old}}, t_{i_k}^{\mathrm{old}}, t_{\mathrm{child}(i_k)}^{\mathrm{old}}) \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Bigr\}}
+ {\sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}^{\mathrm{old}}, t_{i_k}^{\mathrm{old}}, t_{\mathrm{child}(i_k)}^{\mathrm{old}}) \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}}^{\mathrm{old}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}}^{\mathrm{old}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right)}.
+\end{align}
+
+And the $Q$-function is defined as follows,
+\begin{align}
+ & Q(t,n;t^{\mathrm{old}},n^{\mathrm{old}})\nonumber\\
+ & = \sum_{k=1}^{K} E_{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| D_k, t^{\mathrm{old}}, n^{\mathrm{old}}}
+ \left[ \ln p\left(D_k, z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| t,n\right) \right]\nonumber\\
+ & = \sum_{k=1}^{K}\sum_{i_k=1}^{I}\sum_{h_k=0}^{H_k - 1}\sum_{x_{i_k}} \sum_{q_{k0:(M_k-1)}} \gamma(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}})\Biggl[\ln p(i_k) + \ln p(h_k | i_k) + \ln p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})\nonumber\\
+ & + \sum_{l=0}^{M_k - 1} \ln n_{q_{kl}} + \sum_{l=0}^{m_k - 1} \ln \left(\frac{x_{i_{kl}}}{2}\right) + \sum_{l=m_k}^{M_k -1} \ln \left(1 - \frac{x_{i_{kl}}}{2}\right) \Biggr]
+\end{align}
+
+The procedure of EM algorithm for estimating the birth time $t$ and abundance ratio $n$ is described as Algorithm \ref{EM_algorithm}.
+ \begin{algorithm}
+ \caption{EM algorithm for estimating the birth time $t$ and abundance ratio $n$}
+  \label{EM_algorithm}
+ 1. Select initial parameters $(t^{(0)}, n^{(0)})$ % and set $(t^{\mathrm{old}}, n^{\mathrm{old}}) \leftarrow (t^{(0)}, n^{(0)})$.
+ 
+ 2. \For{$iter = 1, 2, \cdots$}{
+   E step: Calcuate responsibility $\gamma\left(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right)$ based on $(t^{(iter-1)},n^{(iter-1)})$
+
+   M step: $(t^{(iter)},n^{(iter)}) = \argmin_{(t,n)} Q(t,n; t^{(iter-1)},n^{(iter-1)})$
+ 
+   \If{$(t^{(iter)}, n^{(iter)})$ {\rm converge}}{
+     break
+   }
+ }
+ \end{algorithm}
+
+Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the gradient descent algorithm.
+% Minimizing $Q(t,n;t^{\mathrm{old}},n^{\mathrm{old}})$ with respect to $t, n$
+
+% \begin{align}
+%  z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} = \begin{cases}
+%                                                    1 & \left(\text{if SNV $k$ is originated in subtype $i_k$, innherited to child subtypes in the pattern of $h_k$,  }\right)\\
+%                                                    0
+%                                                   \end{cases}
+% \end{align}
+
+\end{document}

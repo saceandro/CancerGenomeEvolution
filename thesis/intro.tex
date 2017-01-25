@@ -1,0 +1,54 @@
+\documentclass{article}
+\input{settings}
+
+\begin{document}
+
+\section{Introduction}
+Cancer arises as a result of the somatic mutation accumulation. Every cell within a tumor has derived from a single founder cell, whose subsequent accumulation of advantageous mutations causes clonal expansion. In the course of clonal expansion, a driver mutation gives rise to another type of clone, which is called a subtype. As a result, a tumor is a mixture of various subtypes. Such a mechanism of cancer progression is called clonal evolution~\cite{nowell1976clonal}.
+
+In the latest cancer treatment, it is important to identify what subtypes the tumor consists of and to identify the growth rates of these subtypes. For example, breast cancer subtypes have been studied well, and the clinical practice guidelines depending on each subtype have been established. Although well studied subtypes such as luminal A, luminal B, and HRE2+ could be identified biochemically and immunohistochemically~\cite{cancer2012comprehensive}, however, there is little as yet known about the growth rates of them. Furthermore, patient specific subtypes and unrevealed subtypes of other cancers cannot be identified with such chemical tests.
+
+The emergence of the next-generation sequencers (NGSs) has enabled us to analyse whole cancer genomes at a single nucleotide resolution. For example, two different clonal evolution patterns were revealed in the relapsed acute myeloid leukemia by whole-genome sequencing~\cite{ding2012clonal}, and highly individual evolutional trajectories were identified in the high-grade serous ovarian cancer using exome sequencing~\cite{bashashati2013distinct}. % However, these works were conducted manually, and computational approaces were awaited.
+
+Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor~\cite{navin2011tumour}. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor.
+
+However, the subtype reconstruction using bulk sequencing reads has many difficulties because the observed variant allele frequencies (VAFs) does not directly refrect those of each subtypes.
+The observed VAFs are interwined with the normal cell contamination, copy number alterations (CNAs), and the abundance ratio of each subtypes.
+
+One of the first computational methods which tackled the first problem mentioned above is ABSOLUTE~\cite{carter2012absolute}, which enabled the estimation of the tumor purity and the ploidy avaraged over all the subtypes.
+However, they did not attempt to decompose these subtypes.
+ % which distinguish clonal mutations (i.e. mutations that all the subtypes have in common) and subclonal mutations (i.e. mutations harbored by not all but some of the subtypes)
+Then THetA~\cite{williams2016identification} and TITAN~\cite{ha2014titan} were desined to tackle the second and third problem mentioned above.
+However, they can infer the copy number and the abundance ratio of each subtype only if the CNAs distinguish the subtypes.% , because they only use the number of mapped reads in the segmented interval of the DNA
+This is because they only use the number of reads mapped to each genomic interval in the case of tumor and normal sample as inputs.
+On the other hand, subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone~\cite{miller2014sciclone} and PyClone~\cite{roth2014pyclone}.
+They utilize Bayesian mixture modeling to cluster mutations which have similar VAF to infer the abundance ratio of each subtype.
+However, neither of them infers the phylogenetic relationship between subtypes.
+After that, LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} enabled us to reconstruct phylogenetic relationship as an acyclic directed graph using multiple spacially distinct samples from the same tumor.
+They made use of the infinite-sites assumption, which assumes that no genomic position, or locus, mutates more than once in the course of clonal evolution.
+This assumption resolves the ambiguity of the phylogenetic relationship, because the mutations harbored by smaller number of cancer cells cannot be ancestral to the mutations harbored by larger number of cancer cells in all the tumor samples.
+%They reconstruct the subtype phylogeny using variant allele frequency observed in each samples along with infinite-sites assumption.
+While LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} are deterministic algorithms, PhyloSub~\cite{jiao2014inferring} and BitPhylogeny~\cite{yuan2015bitphylogeny} are the Bayesian approaches to detect major phylogeny by sampling trees using tree-structured stick-breaking process.
+
+The subtype reconstruction from bulk sequencing reads has been progressed in this way, however, none of these methods can infer the birth time and growth rate of each subtype, which are the important subtype characteristics in the latest cancer treatment.
+This is fundamentally because they only make use of driver mutations and neglect passenger mutations.
+While the formar are the advantageous mutations which cause the phenotype of each cancer subtype, the latter have no effect in the cancer phenotype and obeys neutral evolution.
+Although driver mutations have higher VAFs compared to passenger mutations because they become fixed in each subtype as soon as they occur as a result of natural selection,
+passenger mutations account for the overwhelming majority of somatic mutation events.
+This means that we can make use of the statistical analysis of passenger mutations to reveal the more detailed characteristics of each cancer subtype.
+More particularly, the VAF distribution of the passenger mutations changes depending on the duration of their genetic drift process.
+Using this relationship conversely, we can infer the birth time of each subtype from the VAF distribution of the passenger mutations.
+
+%  which do not affect the fitness of the subtype and obey neutral evolution.
+% Although driver mutations, which are advantageous mutations harbored by all the cells within a subtype and have higher VAF compared to passenger mutations, contains the useful information to reconstruct the subtype abundance ratio and phylogeny, however, they do not inform the birth time of each subtype because they are fixed in the subtype soon after the emergence.
+% On the other hand, the duration of the neutral genetic drift of the passenger mutation affects its VAF.
+% Conversely, the VAF distribution of the passenger mutations refrects the birth time of each subtype.
+
+In a previous study, if there exists a single subtype within a tumor, we can infer the birth time using linear regression using this relationship~\cite{williams2016identification}.
+However, if there exists multiple subtypes, linear regression does not work because the VAF distribution has multiple peaks.
+More over, the VAF distribution modeling in the previous study is not acculate because it neglects the effect of loss and fixation of the VAF because they dose not consider the stochastic nature of the genetic drift.
+
+Here I provide a mixture modeling to estimate the birth time of each subtype to estimate birth time and growth rate of each subtype.
+Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process~\cite{wright1931evolution}, enabling the inference of the birth time and growth rate of each subtype.
+
+\end{document}

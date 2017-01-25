@@ -1,0 +1,170 @@
+\documentclass{article}
+\input{settings}
+
+\begin{document}
+
+\section{Supplementaly notes}
+\subsection{Hypergeometric series}
+Hypergeometric series $F(a,b;c;z)$ is defined as follows,
+\begin{equation}
+ F(a,b;c;z) = \sum_{n=0}^{\infty} \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+\end{equation}
+where
+\begin{equation}
+ (a)_n = \begin{cases}
+          1 & (n=0)\\
+          a (a+1) \cdots (a+n-1)& (n>0).
+         \end{cases}
+\end{equation}
+
+Also, $X = F(a,b;c;z)$ is the solution of the following differential equation,
+\begin{equation}
+ z(1-z)\frac{d^2 X}{d z^2} + \left[ c - (a+b+1)z \right] \bibun{X}{z} - ab X = 0.\label{hypgeo_concrete}
+\end{equation}
+
+\subsection{Jacobi polynomials}
+Jacobi polynomials $P^{(\alpha,\beta)}_{n} (z)$ is defined using the following generating function $g(t,z)$,
+\begin{equation}
+ g(t,z) = 2^{\alpha+\beta} R^{-1} (1-t+R)^{-\alpha} (1+t+R)^{-\beta} = \sum_{n=0}^{\infty} P^{(\alpha,\beta)}_{n} (z) t^n,
+\end{equation}
+where $R = R(t,z) = \left(1 - 2zt + t^2\right)^{1/2}$.
+
+The general form of the Jacobi Polynomials can be expressed as follows,
+\begin{equation}
+ P^{(\alpha, \beta)}_n (z) = \frac{(-1)^n}{2^n n!} (1-z)^{-\alpha} (1+z)^{-\beta} \frac{d^n}{dz^n}\left[(1-z)^{\alpha+n} (1+z)^{\beta+n}\right].
+\end{equation}
+
+Also, Jacobi polynomials are expressed using Hypergeometric series,
+\begin{equation}
+ P^{(\alpha,\beta)}_{n} (z) = \frac{(\alpha+1)_n}{n!} F \left(-n, 1+\alpha+\beta+n; \alpha+1; \frac{1-z}{2}\right).
+\end{equation}
+
+\subsection{Gegenbauer polynomials}
+Gegenbauer polynomials $C^{(\alpha)}_{n} (z)$ is defined using the following generating function $g(t,z)$,
+\begin{equation}
+ g(t,z) = \frac{1}{\left(1 - 2zt + t^2\right)^\alpha} = \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n.\label{gegen_def}
+\end{equation}
+
+Gegenbauer polynomials are expressed using Hypergeometric series or Jacobi polynomials,
+\begin{equation}
+ C^{(\alpha)}_{n} (z) = \frac{(2\alpha)_n}{n!} F \left(-n, 2\alpha + n; \alpha+\frac{1}{2}; \frac{1-z}{2}\right) = \frac{(2\alpha)_n}{\left(\alpha + \frac{1}{2}\right)_n} P^{(\alpha - 1/2,\alpha - 1/2)}_{n} (z)
+\end{equation}
+
+When $\alpha=3/2$,
+\begin{equation}
+ C^{(3/2)}_{n} (z) = \frac{n+2}{2} P^{(1,1)}_{n} (z).
+\end{equation}
+
+Equating $\henbibun{g}{t} = \frac{2\alpha (z-t)}{1 - 2zt + t^2} g = \frac{2\alpha (z-t)}{1 - 2zt + t^2} \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n$ and
+$\henbibun{g}{t} = \sum_{n=1}^{\infty} nC^{(\alpha)}_{n} (z) t^{n-1}$ as an identical equation with respect to $t$,
+\begin{equation}
+ 2(n+\alpha)z C^{(\alpha)}_{n} (z) = (n+1) C^{(\alpha)}_{n+1}(z) + (n+2\alpha - 1) C^{(\alpha)}_{n-1}(z).
+\end{equation}
+
+Differentiating both sides with respect to z yields the following equation,
+\begin{equation}
+ 2(n+\alpha) \left( C^{(\alpha)}_{n} (z) +  z \bibun{C^{(\alpha)}_{n} (z)}{z} \right) = (n+1) \bibun{C^{(\alpha)}_{n+1}(z)}{z} + (n+2\alpha - 1) \bibun{C^{(\alpha)}_{n-1}(z)}{z}.\label{gegen_dg_dt}
+\end{equation}
+
+On the other hand, equating $\henbibun{g}{z} = \frac{2\alpha t}{1-2zt+t^2} g = \frac{2\alpha t}{1-2zt+t^2} \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n$ and
+$\henbibun{g}{z} = \sum_{n=1}^{\infty} \bibun{C^{(\alpha)}_{n} (z)}{z} t^{n}$ with respect to $t$ as an identical equation with respect to $t$,
+\begin{equation}
+ 2\alpha C^{(\alpha)}_{n} (z) = \bibun{C^{(\alpha)}_{n+1} (z)}{z} - 2z \bibun{C^{(\alpha)}_{n} (z)}{z} + \bibun{C^{(\alpha)}_{n-1} (z)}{z}.\label{gegen_dg_dz}
+\end{equation}
+
+Cancelling the term $\bibun{C^{(\alpha)}_{n} (z)}{z}$ using equation \eqref{gegen_dg_dt} and \eqref{gegen_dg_dz} yields the following relationship,
+\begin{equation}
+ 2(n+\alpha) C^{(\alpha)}_{n} = \bibun{}{z} \left( C^{(\alpha)}_{n+1} (z) - C^{(\alpha)}_{n-1} (z) \right).\label{gegen_diff}
+\end{equation}
+
+$C^{(\alpha)}_n (1)$ and $C^{(\alpha)}_n (-1)$ can be calculated as follows.
+Noting that $g(t,1) = (1-t)^{-2\alpha}$ and $\frac{d^n g(t,1)}{dt^n} = (2\alpha)_n (1-t)^{-2\alpha - n}$,
+\begin{equation}
+ g(t,1) = \sum_{n=0}^{\infty} \frac{1}{n!} \frac{d^n g(0,1)}{dt^n} t^n = \sum_{n=0}^{\infty} \frac{(2\alpha)_n}{n!} t^n = \sum_{n=0}^{\infty} C^{(\alpha)}_n (1) t^n.
+\end{equation}
+Thus, $C^{(\alpha)}_n (1) = \frac{(2\alpha)_n}{n!}$. In the same way, $C^{(\alpha)}_n (-1) = \frac{(-1)^{n} (2\alpha)_n}{n!}$.
+Especially, when $\alpha=3/2$,
+$C^{(3/2)}_n (1) = \frac{(n+1)(n+2)}{2}$ and $C^{(3/2)}_n (-1) = \frac{(-1)^n (n+1)(n+2)}{2}$.
+
+And the following series can be calculated as follows,
+\begin{align}
+ \sum_{n=1}^{\infty}\frac{2n+1}{n^2(n+1)^2} C^{(\alpha)}_{n-1} (z) & = \sum_{n=1}^{\infty} \left( \frac{1}{n^2} - \frac{1}{(n+1)^2} \right) C^{(\alpha)}_{n-1} (z)\\
+ & = \sum_{n=1}^{\infty} \left( \int_{0}^{\infty} x \napier^{-nx} dx - \int_{0}^{\infty} x \napier^{-(n+1)x} dx \right) C^{(\alpha)}_{n-1} (z)\\
+ & = \int_{0}^{\infty} x \napier^{-x} \left( 1 - \napier^{-x} \right) \sum_{n=1}^{\infty} C^{(\alpha)}_{n-1} (z) \left( \napier^{-x} \right)^{n-1} dx\\
+ & = \int_{0}^{\infty} \frac{x \napier^{-x} \left( 1 - \napier^{-x} \right)}{ \left(1 -2z\napier^{-x} + \napier^{-2x}\right)^{\alpha}} dx\\
+ & = - \int_{0}^{1} \frac{(1 - s) \log s}{ \left(1 -2zs + s^2 \right)^{\alpha}} ds,\label{gegen_int}
+\end{align}
+where I used $\int_{0}^{\infty} x \napier^{-nx} dx = 1/n^2$ and equation \eqref{gegen_def}.
+
+\subsection{Legendre polynomials}
+Legendre polynomials $P_n(z)$ is defined using the following generating function $g(t,z)$,
+\begin{equation}
+ g(t,z) = \frac{1}{\sqrt{1 - 2zt + t^2}} = \sum_{n=0}^{\infty} P_n(z) t^n.
+\end{equation}
+
+The general form of the Legendre Polynomials can be expressed as follows,
+\begin{equation}
+ P_n (z) = \frac{1}{2^n n!} \frac{d^n}{dz^n}\left[ (z^2 - 1)^n \right].
+\end{equation}
+And the first and second term are calculated as follows,
+\begin{equation}
+ P_0(z) = 1, \; P_1(z) = z.
+\end{equation}
+
+Also, Legendre polynomials are expressed using Hypergeometric series or Jacobi polynomials, or Gegenbauer polynomials,
+\begin{equation}
+ P_n(z) = C^{(1/2)}_n(z) = P^{(0, 0)}_n (z) = F\left(-n, 1+n; 1; \frac{1-z}{2}\right).
+\end{equation}
+
+$P_n(1)$ and $P_n(-1)$ can be calculated as follows,
+\begin{align}
+ P_n(1) &= C^{(1/2)}_n(1) = \frac{1_n}{n!} = 1,\label{legendre1}\\
+ P_n(-1) &= C^{(1/2)}_n(-1) = \frac{(-1)^n 1_n}{n!} = (-1)^n.\label{legendre-1}
+\end{align}
+
+% Thus, $X = P_n(z)$ is the solution of the following differential equation,
+% \begin{equation}
+%  (1-z^2) \frac{d^2 P_n(z)}{dz^2} + 4z\bibun{P_n(z)}{z} + n(n+1)P_n(z) = 0
+% \end{equation}
+
+Using the following relationship,
+\begin{equation}
+ \frac{d^2}{dz^2}\left[ (z^2 - 1)^{n+2} \right] = 2(n+2)\left[ (2n+3) (z^2 - 1)^{n+1} + 2(n+1) (z^2 - 1)^n \right],
+\end{equation}
+There is a relationship,
+\begin{align}
+ P_{n+2}(z) - P_n(z) & = \frac{2n+3}{2(n+1)} \frac{1}{2^n n!} \frac{d^n}{dz^n}\left[ (z^2 - 1)^{n+1} \right]\nonumber\\
+ & = -\frac{2n+3}{2(n+1)} (1-z^2) P^{(1,1)}_n(z)\nonumber\\
+ & = -\frac{2n+3}{(n+1)(n+2)} (1-z^2) C^{(3/2)}_n(z),\label{gegen_legendre_relation}
+\end{align}
+between the Legendre polynomials and Gegenbauer polynomials.
+
+The following series can be calculated using equation \eqref{gegen_legendre_relation}.
+\begin{gather}
+ \sum_{n=1}^{\infty}\frac{2n+1}{n(n+1)} C^{(3/2)}_{n-1} (z) = \sum_{n=1}^{\infty} \frac{P_{n-1}(z) - P_{n+1}(z)}{1-z^2} = \frac{P_{0}(z) + P_{1}(z)}{1-z^2} = \frac{1}{1-z}.\label{frac_1_1-z}\\
+ \sum_{n=1}^{\infty}  \frac{(-1)^n(2n+1)}{n(n+1)} C^{(3/2)}_{n-1} (z) = \sum_{n=1}^{\infty} \frac{(-1)^n (P_{n-1}(z) - P_{n+1}(z))}{1-z^2} = \frac{-P_{0}(z) + P_{1}(z)}{1-z^2} = -\frac{1}{1+z}\label{-frac_1_1+z}.
+\end{gather}
+
+Also, using equation \eqref{gegen_diff},
+\begin{equation}
+ (2n+1)P_n(z) = \bibun{}{z} \left( P_{n+1} (z) - P_{n-1} (z) \right).\label{legendre_diff}
+\end{equation}
+
+Using equation \eqref{hypgeo_concrete}, $X = P_n(z)$ is the solution of the following differential equation,
+\begin{equation}
+ \bibun{}{z} \left[ (1-z^2) \bibun{}{z} P_n(z) \right] = - n(n+1)P_n(z).\label{legendre_concrete}
+\end{equation}
+
+Integrating both sides of \eqref{legendre_concrete} and dividing by $1-z^2$,
+\begin{align}
+ \bibun{}{z} P_n(z) = -\frac{n(n+1)}{(1 - z^2)} \int P_n(z) dz = -\frac{n(n+1)}{(1-z^2) (2n+1)} \left(P_{n+1} (z) - P_{n-1}(z)\right) = C^{(3/2)}_{n-1} (z),\label{ledgendre_diff_to_gegen}
+\end{align}
+where I used equation \eqref{legendre_diff} and \eqref{gegen_legendre_relation}.
+
+\subsection{Exponential integral}
+The first order exponential integral in defined as follows,
+\begin{equation}
+ E_1(z) = \int_{z}^{\infty} \frac{\napier^{-z}}{z} dz \sim \frac{\napier^{-z}}{z} \left( 1 - \frac{1!}{z} + \frac{2!}{z^2} - \cdots \right) \; (\text{if } z \gg 1 ).
+\end{equation}
+
+\end{document}
