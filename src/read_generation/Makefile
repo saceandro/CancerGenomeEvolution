@@ -39,6 +39,9 @@ generate_reads_em_estimate_model_mu_separate_subtype: generate_reads_em_estimate
 generate_reads_em_estimate_model_mu_separate_subtype_haploid_snv: generate_reads_em_estimate_model_mu_separate_subtype_haploid_snv.cc variant_fraction.cc setting.hh ../../util/loglib_header.hh ../../util/enumtree_mutation_em_vf.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ generate_reads_em_estimate_model_mu_separate_subtype_haploid_snv.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
+generate_reads_em_estimate_model_mu_separate_subtype_diploid_snv: generate_reads_em_estimate_model_mu_separate_subtype_diploid_snv.cc variant_fraction.cc setting.hh ../../util/loglib_header.hh ../../util/enumtree_mutation_em_vf.hh
+	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ generate_reads_em_estimate_model_mu_separate_subtype_diploid_snv.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
+
 generate_reads_em_estimate_model_mu_separate_subtype_haploid: generate_reads_em_estimate_model_mu_separate_subtype_haploid.cc variant_fraction.cc setting.hh ../../util/loglib_header.hh ../../util/enumtree_mutation_em_vf.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ generate_reads_em_estimate_model_mu_separate_subtype_haploid.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
