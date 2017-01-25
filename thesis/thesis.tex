@@ -66,7 +66,7 @@
 \section*{Abstract}
 Cancer arises as a result of the somatic mutation accumulation. Every cell within a tumor has derived from a single founder cell, whose subsequent accumulation of advantageous mutations causes clonal expansions (Figure 1). In the course of clonal expansion, a driver mutation gives rise to another type of clone, which is called a subtype. As a result, a tumor is a mixture of various subtypes. In the latest cancer treatment, it is important to identify what subtypes the tumor consists of and to identify the growth rates of these subtypes. For example, breast cancer subtypes have been studied well, and the clinical practice guidelines depending on each subtype have been established. Although well studied subtypes such as luminal A, luminal B, and HRE2+ could be identified biochemically, however, there is little as yet known about the growth rates of them. Furthermore, patient specific subtypes and unrevealed subtypes of other cancers cannot be identified with such chemical tests.
 
-The emergence of the next-generation sequencers (NGSs) has enabled us to analyse whole cancer genomes at a single nucleotide resolution. Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor. To solve this problem, several methods such as PyClone~\cite{roth2014pyclone} and AncesTree~\cite{el2015reconstruction} have been proposed in previous works. However, we cannot estimate how rapidly each subtype proliferates and when these subtypes arose using these methods. Here we provide a Bayesian statistical model to estimate birth time and growth rate of each subtype.
+The emergence of the next-generation sequencers (NGSs) has enabled us to analyse whole cancer genomes at a single nucleotide resolution. Furthermore, using the latest single-cell sequencing technology, we can investigate the copy number and the genotype of each cell to identify whole subtypes in a tumor. However, sequencing a bulk tumor is still common because of technical difficulties and high cost of the single cell sequencing. Thus, our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor. To solve this problem, several methods such as PyClone~\cite{roth2014pyclone} and AncesTree~\cite{el2015reconstruction} have been proposed in previous works. However, we cannot estimate how rapidly each subtype proliferates and when these subtypes arose using these methods. Here we provide a statistical model to estimate birth time and growth rate of each subtype.
 
 \newpage
 \tableofcontents
@@ -119,11 +119,11 @@ In a previous study, if there exists a single subtype within a tumor, we can inf
 However, if there exists multiple subtypes, linear regression does not work because the VAF distribution has multiple peaks.
 More over, the VAF distribution modeling in the previous study is not acculate because it neglects the effect of loss and fixation of the VAF because they dose not consider the stochastic nature of the genetic drift.
 
-Here I provide a Bayesian mixture modeling to estimate the birth time of each subtype to estimate birth time and growth rate of each subtype.
+Here I provide a mixture modeling to estimate the birth time of each subtype to estimate birth time and growth rate of each subtype.
 Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process~\cite{wright1931evolution}, enabling the inference of the birth time and growth rate of each subtype.
 
 \section{Methods}
-Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
+% Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
 
 In this section, I describe a model for the clonal evolution of cancer cell populations and the generation of NGS data from cancer.
 I assume that each cancer cells within a tumor has derived from a single founder cell, and I only modeled somatic single nucleotide variants (SNVs) which are not influenced by copy number aberrations or rearrangements. I assume, as in previous studies, that each SNVs follow infinites sites assumption; i.e. no genomic position, or locus, mutates more than once in the course of clonal evolution. Thus, all SNVs are heterozygous, and there are only two genotypes, $AA$ and $AB$ at every locus, where $A$ and $B$ each denotes the normal and variant allele.
@@ -211,7 +211,9 @@ Thus,
  \frac{N_{g+1}}{N_g} = \napier^{\alpha_i / N} \sim 1 \; \left(\because N >> 1\right).
 \end{equation}
 
-Therefore, if we assume that $2B_g/N_{g+1}$ is constant and denote it as $\beta$, which characterize the strength of the genetic drift,
+$2B_g/N_{g+1}$ represents the fraction of the alleles which double between the generation and we denote it as $\beta$.
+If $\beta$ is large, diffusion of the allele frequency is greater, thus $\beta$ characterize the the strength of the genetic drift.
+
 \begin{align}
  V[X_{g+1} - x | X_g=x] & \sim \frac{\beta}{N_g} X_g \left(1 - X_g \right),\nonumber\\
  \frac{1}{\varDelta t}V[X_{g+1} - x | X_{g}=x] & \sim \frac{\beta}{N_g/N} X_g \left(1 - X_g \right)\nonumber \\
@@ -551,6 +553,10 @@ Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{chil
                      \end{cases}
 \end{align}
 
+\subsection{Simulation of the NGS reads}
+In this section, I will explain how NGS reads are simulated in this study
+I used the the variant allele frequency transition probability 
+
 \subsection{Birth time and abundance ratio estimation using NGS reads}
 In this section, I define the problem of inferring the abundance ratio $n_i$ and the birth time $t_i$ of each subtype from NGS reads of the bulk tumor sample.
 When the number of total reads $M_k$ and the number of variant reads $m_k$ at the each SNV locus $k$, $(m, M) = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$ is given,
@@ -559,11 +565,11 @@ the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be estima
 \subsubsection{Estimation modeling using binomial distribution}
 Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that we get the read count $(m,M)$ as a result of NGS sequencing and the variant calling is,
 \begin{align}
- p(m|M, n, t) & = \prod_{k=1}^{K} \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k-1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x)
+ p(m|M, n, t) & = \prod_{k=1}^{K} \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k-1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x) \label{binom_estimation_model}
 \end{align}
 where $p (m_k | M_k, n, x)$ represents the probability that $m_k$ variant reads are observed among $M_k$ total reads, which is expressed as the following binomial distribution.
 \begin{align}
- p (m_k | M_k, n, x) = Bi(m_k | M_k, \mu_k) = { m_k \choose M_k } \mu_k^{m_k} \left( 1 - \mu_k \right)^{M_k - m_k}.
+ p (m_k | M_k, n, x) = Bi(m_k | M_k, \mu_k) = { m_k \choose M_k } \mu_k^{m_k} \left( 1 - \mu_k \right)^{M_k - m_k}.\label{param_estimation_binomial}
 \end{align}
 $\mu_k = \sum_{i_k = 1}^{I} n_i x_i / 2$ represents the ratio of variant copies among all the copies exist in the tumor sample, assuming that all the tumor subtype is diploid and all the variants are heterozygous.
 
@@ -571,6 +577,7 @@ And $p(i_k)$ represents the probability that the SNV $k$ originated in subtype $
 $p(h_k | i_k)$ represents the probability that SNV $k$ is inherited to the child subtypes in the pattern $h_k$.(Figure)
 $p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})$ represents the probability that the variant allele frequency of subtype $i_k$ is $x_{i_k}$,
 which corresponds to \eqref{vaf_dist_norm} or \eqref{vaf_dist_norm_inherited} depending on whether SNV $k$ is an isolated mutation (i.e. $h_k = 0$) or not (i.e. $h_k \neq 0$).
+Though the fraction of the mutated cell $x_i$ takes any value between 0 and 1 in reality, however, I assumed that $x_i$ takes the discrete value for the estimation efficiency. That is, $x_{i_k} \in \{0.1, 0.2, \cdots, 1.0\}$ (if $h_k = 0$) and $x_{i_k} \in \{0.0, 0.1, 0.2, \cdots, 1.0\}$ (if $h_k > 0$).
 
 Then, the maximum likelihood extimation of the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be expressed as follows,
 \begin{align}
@@ -648,18 +655,20 @@ Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the gradi
 %                                                   \end{cases}
 % \end{align}
 
-\section{Results}
-For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
+\section{Results and Discussion}
+\subsection{Growth rate estimation using linear regression}
+% For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
 
 First, I conducted the double check of the neutral tumor evolution which is identified in the previous work~\cite{williams2016identification}.
 In their study, if neutral evolution theory applies to passenger mutation, the number of passenger mutations per allelic frequency $M(f)$ follows $1/f$ power law,
 \begin{equation}
- M(f) = \mu_e \left( \frac{1}{f} - \frac{1}{f_{max}}\right),
+ M(f) = \mu_e \left( \frac{1}{f} - \frac{1}{f_{max}}\right),\label{neutral_evolution}
 \end{equation}
 where $\mu_e$ denotes the mutation rate per effective cell division.
+And they set $R^2 \leq 0.98$ as the stringent criteria to decide whether each tumor sample obeys neutral evolution or not.
 If we consider that we cannot estimate the mutation rate and the birth time of a subtype at the same time as long as only a single time point data is available
 because there is a trade-off between the mutation rate and the birth time, the inverse of $\mu_e$ has a information about the birth time of the subtype.
-Thus we can estimate the birth time and growth rate using linear regression, which is conducted as \figref{TB_linear_regression}.
+Thus, if a tumor sample obeys neutral evolution, we can estimate the birth time and growth rate of the tumor sample using linear regression, which is conducted as \figref{TB_linear_regression}.
 
 \begin{figure}[H]
  \begin{minipage}[c]{0.47\hsize}
@@ -679,13 +688,93 @@ Thus we can estimate the birth time and growth rate using linear regression, whi
    \caption{
   The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$
   using the sample TB~\cite{williams2016identification}.
-  The red line represents the result of the linear regression. From the $R^2$ value, this tumor almost obeys the neutral evolution.
+  The red line represents the result of the linear regression.
+ Though $R^2 = 0.976 < 0.98$ deviates from the stringent criteria~\cite{williams2016identification}, this tumor almost obeys the neutral evolution.
   }
  \label{TB_linear_regression}
 \end{minipage}
 \end{figure}
 
-However, 
+However, if there are multiple subtypes, $M(f)$ generally does not follow $1/f$ power law as the previous work showed using simulated data~\cite{williams2016identification}.
+We conducted double check of this result using our simulated reads. As a result, our simulation also showed deviation from the $1/f$ power law.
+
+\begin{figure}[H]
+ \begin{minipage}[c]{0.47\hsize}
+ \begin{center}
+  \includegraphics[bb=4 18 467 481,width=0.9\hsize]{../src/read_generation/generated/subtype2_topology0_snv_diploid/vaf_coverage100/0.5/0.3/5/coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ \end{center}
+    \caption{
+  Variant allelic frequency distribution of the simulated reads ($t_1 = 0.5, t_2=0.15, n_1=0.5, n_2=0.5, N=10^6, \beta=0.5, \text{\#snvs}=1000$).
+  Variant allelic frequency distribution has multiple peaks if there are two subtypes in the tumor.
+  }\label{simulated_vaf}
+\end{minipage}
+ \hspace{1truecm}
+\begin{minipage}[c]{0.47\hsize}
+ \begin{center}
+  \includegraphics[bb=3 28 487 471,width=0.9\hsize]{../src/read_generation/generated/subtype2_topology0_snv_diploid/neutral_evolution_plot/0.5/0.3/5/coverage100_snv1000_seed1.reads.vaf.filtered.reverse.pdf}
+ \end{center}
+   \caption{
+  The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$
+  using the simulated reads ($t_1 = 0.5, t_2=0.15, n_1=0.5, n_2=0.5, \text{\#snvs}=1000$).
+  The red line represents the result of the linear regression.
+ The tumor which consists of multiple subtypes cause deviation from the $1/f$ power law though each subtype follows neutral evolution.
+  }
+ \label{simulated_linear_regression}
+\end{minipage}
+\end{figure}
+
+Therefore, if a tumor sample consists of multiple subtypes, we cannot estimate the growth rate of each subtype using linear regression.
+I resolved this problem using probabilistic modeling mentioned in the method section.
+
+\subsection{Relationship between the birth time and the variant allele frequency distribution}
+VAF distribution of subtype $i$, $p(x_i | t_i, n_i)$ can be calculated given the birth time $t_i$ and the abundance ratio $n_i$ using equation \eqref{vaf_dist_norm} mentioned in the method section. To investigate the time ($t_i$) dependency and the drift strength ($\beta_i$) dependency of the VAF distribution, I showed the violin plots against these variables (\figref{fig: vaf_against_time}, \figref{vaf_against_strength}). From these plots, we can see that the VAF is more likely to be fixed ($x_i = 1$) in the tumor cell population if the subtype arose earlier. Also, the VAF is more likely to be fixed ($x_i = 1$) in the tumor cell population if the effect of the genetic drift is stronger.
+
+Using this relationship conversely, we can estimate the birth time of each subtype from the observed VAF distribution.
+However, the observed VAF frequency is a mixture of various subtypes as the \figref{simulated_vaf}.
+Thus, we must conduct the subtype decomposition using mixture modeling mentioned in the method section.
+
+\begin{figure}[H]
+ \begin{minipage}[c]{0.47\hsize}
+ \begin{center}
+  \includegraphics[bb=5 15 669 581,width=0.9\hsize]{../../dc1/figures/drift_time_all_annotated_shrinked2_jp.pdf}
+ \end{center}
+    \caption{
+  VAF distribution $p(x_i | t_i, n_i)$ plotted against pseudo time $t_i$ ($n_i=0.1, N=10^6, \beta_i=0.5$).
+  We can see that the earlier the subtype arose, the higher VAF fixation probability is.
+  }
+    \label{fig: vaf_against_time}
+\end{minipage}
+ \hspace{1truecm}
+\begin{minipage}[c]{0.47\hsize}
+ \begin{center}
+\includegraphics[bb=28 2 476 663,width=0.5\hsize]{../../cge/dc_plot/drift_strength.pdf}
+ \end{center}
+   \caption{
+ VAF distribution $p(x_i | t_i, n_i)$ plotted against the drift strength $\beta_i$ ($t_i= n_i=0.1, N=10^6$).
+ We can see that the earlier the subtype arose, the higher VAF fixation probability is.
+  }
+   \label{vaf_against_strength}
+\end{minipage}
+\end{figure}
+
+\subsection{Estimation of the birth time and the abundance ratio of each subtype using binomial distribution}
+Using the parameter estimation modeling represented as equation \ref{param_estimation_binomial}, I conducted the estimation of the birth time $t_i$ and the abundance ratio $n_i$ of each subtype.
+
+First, I started with solving more easier problem than presented in the method section (equation \ref{binom_estimation_model}).
+I assumed that we know the subtype $i_k$ in which each SNV $k$ is originated and the inheritance pattern to its descendants $h_k$ along side with the number of variant and total reads ($m, M$).
+In this case, the probability that we get the read count along with additional information $(m,M,i,h) = \left\{(m_1, M_1, i_1, h_1), \cdots, (m_K, M_K, i_K, h_K) \right\}$ as a result of NGS sequencing and the variant calling is,
+\begin{equation}
+ p(m_{1:K}|M_{1:K}, i_{1:K}, h_{1:K}, n_{1:I}, t_{1:I}) = \prod_{k=1}^{K} \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x).
+\end{equation}
+
+I conducted the maximum likelihood estimation of the birth time $t$ and abundance ratio $n$ using Fletcher-Reeves conjugate gradient algorithm~\cite{fletcher1964function} according to the following equation,
+\begin{equation}
+  (t_{1:I}, n_{1:I}) = \argmax_{t_{1:I}, n_{1:I}} \ln p(m_{1:K} | M_{1:K}, i_{1:K}, h_{1:K}, n_{1:I}, t_{1:I}).
+\end{equation}
+
+\begin{figure}[H]
+ \includegraphics[bb=3 15 475 446,width=0.5\hsize]{../src/alpha_n_inherited/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.n.pdf}
+\end{figure}
 
 \section{Discussion}
 For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
