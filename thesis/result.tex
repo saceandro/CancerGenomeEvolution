@@ -115,13 +115,48 @@ In this case, the probability that we get the read count along with additional i
  p(m_{1:K}|M_{1:K}, i_{1:K}, h_{1:K}, n_{1:I}, t_{1:I}) = \prod_{k=1}^{K} \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x).
 \end{equation}
 
-I conducted the maximum likelihood estimation of the birth time $t$ and abundance ratio $n$ using Fletcher-Reeves conjugate gradient algorithm~\cite{fletcher1964function} according to the following equation,
+Using this marginal probability, I estimated the birth time $t$ and abundance ratio $n$ using Fletcher-Reeves conjugate gradient algorithm~\cite{fletcher1964function} according to the following maximum likelihood estimation,
 \begin{equation}
-  (t_{1:I}, n_{1:I}) = \argmax_{t_{1:I}, n_{1:I}} \ln p(m_{1:K} | M_{1:K}, i_{1:K}, h_{1:K}, n_{1:I}, t_{1:I}).
+ (t_{1:I}, n_{1:I}) = \argmax_{t_{1:I}, n_{1:I}} \ln p(m_{1:K} | M_{1:K}, i_{1:K}, h_{1:K}, n_{1:I}, t_{1:I}).
 \end{equation}
 
+Simulated data was generated using the method mentioned in the method section.% write!
+For each number of SNVs, sequencing data was generated 10 times independently. And for each simulated data, maximum likelihood estimation was conducted 10 times using randomly selected initial parameters $t, n$. The parameters with the least Root-mean-square deviation (RMSD) was selected as the best estimate for that simulated data.
+RMSD is calculated as $\mathrm{RMSD}_t = \sqrt{\sum_{i=1}^{I} (t_{i}^{(est)} - t_{i}^{(true)})^2 / I}, \mathrm{RMSD}_n = \sqrt{\sum_{i=1}^{I} (n_{i}^{(est)} - n_{i}^{(true)})^2 / I}$, where the superscript $est$ means the best estimate and $true$ means the parameter which is used to generate simulated reads. Normal cell population birth time is defined as $t_{0}=1$, and the abundance ratio $n_{0}$ is given as 0.1.
+
+\begin{table}[H]
+\begin{center}
+ \caption{True parameters which is used to generate sequencing data}
+ \label{tab: true_parameters_4_2_original}
+  \begin{tabular}[t]{lcccc}\toprule
+  Population type & Tumor subtype 1 & Tumor subtype 2 & Tumor subtype 3 & Tumor subtype 4\\\midrule
+  Birth time & 9.000460e-01 & 8.100828e-01 & 6.481035e-01 & 7.291118e-01\\
+  Abundance ratio & 1.000000e-01 & 2.000000e-01 & 4.000000e-01 & 2.000000e-01\\\bottomrule
+ \end{tabular}
+\end{center}
+\end{table}
+
+$N = 10^6, \beta = 0.5$. % write!
+
 \begin{figure}[H]
- \includegraphics[bb=3 15 475 446,width=0.5\hsize]{../src/alpha_n_inherited/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.n.pdf}
+ \subfigure[Accuracy of the birth time estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/alpha_n_inherited/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.t.snv.pdf}}
+ \subfigure[Accuracy of the abundance ratio estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/alpha_n_inherited/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.n.snv.pdf}}
+   \caption{
+ Accuracy of the birth time (t) and abundance ratio (n) estimation against the number of SNVs. Outliers are detected by means of deviation from the $1.5 \times IQR$, where $IQR$ is the interquartile range. Whiskers show the maximum and minimum estimate except for the outliers. We can see that if there are sufficient number of SNVs, we can accurately estimate the birth time and the growth rate as long as $(i,h)$ are given.
+  }
+ \label{fig: binom_subtype_inheritance}
 \end{figure}
+
+The results of the parameter estimation shows that we can infer the birth time and growth rate accurately if there are thousands of SNVs, which corresponds to the number of mutations detected in the whole genome sequencing (\figref{fig: binom_subtype_inheritance}).
+In reality, however, we cannot tell the subtype in which each SNV is originated and the inheritance pattern to its descendants only from the sequencing reads.
+To move on to the next step, I investigated whether we can remove the latter assumption by marginalizing unknown inheritance patterns with equal probability, which is formulated as follows,
+
+\begin{gather}
+ p(m_{1:K}|M_{1:K}, i_{1:K}, n_{1:I}, t_{1:I}) = \prod_{k=1}^{K} \sum_{h_k=0}^{H_k-1} \frac{1}{H_{i_k}} \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x),\\
+ (t_{1:I}, n_{1:I}) = \argmax_{t_{1:I}, n_{1:I}} \ln p(m_{1:K} | M_{1:K}, i_{1:K}, n_{1:I}, t_{1:I}),
+\end{gather}
+where I put $p(h_k | i_k) = \frac{1}{H_{i_k}}$ in the \eqref{binom_estimation_model}.
+True parameters of $t$ and $n$ and the simulated reads are the same as that of mentioned above (\tabref{table: true_parameters_4_2_original}).
+The result of the parater estimation shows that
 
 \end{document}

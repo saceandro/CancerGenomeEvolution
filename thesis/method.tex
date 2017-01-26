@@ -455,7 +455,8 @@ where $p (m_k | M_k, n, x)$ represents the probability that $m_k$ variant reads 
 $\mu_k = \sum_{i_k = 1}^{I} n_i x_i / 2$ represents the ratio of variant copies among all the copies exist in the tumor sample, assuming that all the tumor subtype is diploid and all the variants are heterozygous.
 
 And $p(i_k)$ represents the probability that the SNV $k$ originated in subtype $i_k$.
-$p(h_k | i_k)$ represents the probability that SNV $k$ is inherited to the child subtypes in the pattern $h_k$.(Figure)
+$p(h_k | i_k)$ represents the probability that SNV $k$ is inherited to the child subtypes in the pattern $h_k \in \{(0,\cdots,0), (0,\cdots,1), \cdots, (1,\cdots,1)\}$.(Figure)
+$H_{i_k}$ denotes the number of possible inheritance patterns, which is equal to $2^{\kappa_{i_k}}$ where $\kappa_{i_k} = $ ( number of subtype $i_k$'s children ) because we can choose wheter each $i_k$'s child inherits the mutation or not.
 $p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})$ represents the probability that the variant allele frequency of subtype $i_k$ is $x_{i_k}$,
 which corresponds to \eqref{vaf_dist_norm} or \eqref{vaf_dist_norm_inherited} depending on whether SNV $k$ is an isolated mutation (i.e. $h_k = 0$) or not (i.e. $h_k \neq 0$).
 Though the fraction of the mutated cell $x_i$ takes any value between 0 and 1 in reality, however, I assumed that $x_i$ takes the discrete value for the estimation efficiency. That is, $x_{i_k} \in \{0.1, 0.2, \cdots, 1.0\}$ (if $h_k = 0$) and $x_{i_k} \in \{0.0, 0.1, 0.2, \cdots, 1.0\}$ (if $h_k > 0$).
