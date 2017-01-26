@@ -24,7 +24,7 @@ This is because they only use the number of reads mapped to each genomic interva
 On the other hand, subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone~\cite{miller2014sciclone} and PyClone~\cite{roth2014pyclone}.
 They utilize Bayesian mixture modeling to cluster mutations which have similar VAF to infer the abundance ratio of each subtype.
 However, neither of them infers the phylogenetic relationship between subtypes.
-After that, LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} enabled us to reconstruct phylogenetic relationship as an acyclic directed graph using multiple spacially distinct samples from the same tumor.
+After that, SCHISM~\cite{niknafs2015subclonal}, LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} enabled us to reconstruct phylogenetic relationship as an acyclic directed graph using multiple spacially distinct samples from the same tumor.
 They made use of the infinite-sites assumption, which assumes that no genomic position, or locus, mutates more than once in the course of clonal evolution.
 This assumption resolves the ambiguity of the phylogenetic relationship, because the mutations harbored by smaller number of cancer cells cannot be ancestral to the mutations harbored by larger number of cancer cells in all the tumor samples.
 %They reconstruct the subtype phylogeny using variant allele frequency observed in each samples along with infinite-sites assumption.
@@ -33,9 +33,14 @@ While LICHeE~\cite{popic2015fast} and AncesTree~\cite{el2015reconstruction} are 
 The subtype reconstruction from bulk sequencing reads has been progressed in this way, however, none of these methods can infer the birth time and growth rate of each subtype, which are the important subtype characteristics in the latest cancer treatment.
 This is fundamentally because they only make use of driver mutations and neglect passenger mutations.
 While the formar are the advantageous mutations which cause the phenotype of each cancer subtype, the latter have no effect in the cancer phenotype and obeys neutral evolution.
-Although driver mutations have higher VAFs compared to passenger mutations because they become fixed in each subtype as soon as they occur as a result of natural selection,
-passenger mutations account for the overwhelming majority of somatic mutation events.
-This means that we can make use of the statistical analysis of passenger mutations to reveal the more detailed characteristics of each cancer subtype.
+Although driver mutations have higher VAFs compared to passenger mutations because they are fixed in each subtype,
+passenger mutations account for the overwhelming majority of somatic mutation events~\cite{bozic2010accumulation}.
+
+Theoretical studies of the passenger mutations is carried out using population genetics. Wright-Fisher process~\cite{wright1931evolution}, in which each offspring's allele is drawn at random from its parent's allele, is the basis of the allelic frequency drift. However, it cannot be directly applied to the exponentially growing tumor cell population because Wright-Fisher process assumes that the population is constant. The fraction of the variant cells in the exponentially growing tumor cell population is calculated using branching process~\cite{iwasa2006evolution}.
+After that, the intratumor heterogeneity in the clonal evolution is simulated by the multitype brancing process~\cite{durrett2011intratumor}. Mathematical framework of the passenger mutation in exponentially growing cell population is given in~\cite{durrett2013population}.
+
+However, these theoretical studies ended up with simulation, thus these studies could not exploit the sequencing data to infer the model parameters.
+Here we can make use of the statistical analysis of passenger mutations to reveal the more detailed characteristics of each cancer subtype.
 More particularly, the VAF distribution of the passenger mutations changes depending on the duration of their genetic drift process.
 Using this relationship conversely, we can infer the birth time of each subtype from the VAF distribution of the passenger mutations.
 

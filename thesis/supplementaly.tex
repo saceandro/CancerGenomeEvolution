@@ -5,7 +5,7 @@
 
 \section{Supplementaly notes}
 \subsection{Hypergeometric series}
-Hypergeometric series $F(a,b;c;z)$ is defined as follows,
+Hypergeometric series $F(a,b;c;z)$ is defined as follows~\cite{olver2010nist},
 \begin{equation}
  F(a,b;c;z) = \sum_{n=0}^{\infty} \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
 \end{equation}
@@ -23,7 +23,7 @@ Also, $X = F(a,b;c;z)$ is the solution of the following differential equation,
 \end{equation}
 
 \subsection{Jacobi polynomials}
-Jacobi polynomials $P^{(\alpha,\beta)}_{n} (z)$ is defined using the following generating function $g(t,z)$,
+Jacobi polynomials $P^{(\alpha,\beta)}_{n} (z)$ is defined using the following generating function $g(t,z)$~\cite{olver2010nist},
 \begin{equation}
  g(t,z) = 2^{\alpha+\beta} R^{-1} (1-t+R)^{-\alpha} (1+t+R)^{-\beta} = \sum_{n=0}^{\infty} P^{(\alpha,\beta)}_{n} (z) t^n,
 \end{equation}
@@ -40,7 +40,7 @@ Also, Jacobi polynomials are expressed using Hypergeometric series,
 \end{equation}
 
 \subsection{Gegenbauer polynomials}
-Gegenbauer polynomials $C^{(\alpha)}_{n} (z)$ is defined using the following generating function $g(t,z)$,
+Gegenbauer polynomials $C^{(\alpha)}_{n} (z)$ is defined using the following generating function $g(t,z)$~\cite{olver2010nist},
 \begin{equation}
  g(t,z) = \frac{1}{\left(1 - 2zt + t^2\right)^\alpha} = \sum_{n=0}^{\infty} C^{(\alpha)}_{n} (z) t^n.\label{gegen_def}
 \end{equation}
@@ -97,7 +97,7 @@ And the following series can be calculated as follows,
 where I used $\int_{0}^{\infty} x \napier^{-nx} dx = 1/n^2$ and equation \eqref{gegen_def}.
 
 \subsection{Legendre polynomials}
-Legendre polynomials $P_n(z)$ is defined using the following generating function $g(t,z)$,
+Legendre polynomials $P_n(z)$ is defined using the following generating function $g(t,z)$~\cite{olver2010nist},
 \begin{equation}
  g(t,z) = \frac{1}{\sqrt{1 - 2zt + t^2}} = \sum_{n=0}^{\infty} P_n(z) t^n.
 \end{equation}
@@ -162,7 +162,7 @@ Integrating both sides of \eqref{legendre_concrete} and dividing by $1-z^2$,
 where I used equation \eqref{legendre_diff} and \eqref{gegen_legendre_relation}.
 
 \subsection{Exponential integral}
-The first order exponential integral in defined as follows,
+The first order exponential integral in defined as follows~\cite{olver2010nist},
 \begin{equation}
  E_1(z) = \int_{z}^{\infty} \frac{\napier^{-z}}{z} dz \sim \frac{\napier^{-z}}{z} \left( 1 - \frac{1!}{z} + \frac{2!}{z^2} - \cdots \right) \; (\text{if } z \gg 1 ).
 \end{equation}
