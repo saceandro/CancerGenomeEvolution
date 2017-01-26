@@ -469,7 +469,7 @@ Then, the maximum likelihood extimation of the abundance ratio $n_i$ and the bir
 \subsubsection{Estimation modeling using NGS read emission probability}
 Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that $m_k$ normal reads and $M_k - m_k$ variant reads are observed as a result of NGS sequencing is,
 \begin{align}
- p(D | t, n) & = \prod_{k=1}^{K} \Biggl[ \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) \nonumber\\
+ p(D | t, n) & = \prod_{k=1}^{K} \Biggl[ \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) \nonumber\label{read_emission_modeling}\\
  & \times \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Biggr]
 \end{align}
 where the $l$ th read at the SNV locus $k$ is derived from the subtype $q_{kl}$'s copy and $D = \{D_1, \cdots D_K\} = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$.
