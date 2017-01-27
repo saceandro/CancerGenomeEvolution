@@ -231,11 +231,7 @@ Simulated reads were generated with the true parameter shown in \tabref{tab: tru
 \end{center}
 \end{table}
 
-The result of the birth time and abundance ratio estimation varying the number of SNVs from 1000 to 5000 is shown in (\ref{fig: read_emission_snv}).
-
-From this result, we can inferr the birth time and abundance ratio accurately if there are thousands of SNVs.
-Though the birth time estimation requires greater number of SNVs, 1000 SNVs is sufficient for the abundance ratio estimation.
-I suppose this is because abundance ratio $n$ appears explicitly in the equation \ref{read_emission_modeling} while the birth time $t$ affect the likelihood through VAF distribution.
+The result of the birth time and abundance ratio estimation varying the number of SNVs from 1000 to 5000 while the sequencing depth is fixed to 100 is shown in (\ref{fig: read_emission_snv}).
 
 \begin{figure}[H]
  \subfigure[Accuracy of the birth time ($t$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/mutation_em/rmsd_qsub_snv_seed_rand_marged/rmsd.t.pdf}}
@@ -246,7 +242,9 @@ I suppose this is because abundance ratio $n$ appears explicitly in the equation
  \label{fig: read_emission_snv}
 \end{figure}
 
-Finally, we estimated the birth time and abundance ratio estimation varying the sequencing depth from 10 to 100 is shown in (\ref{fig: read_emission_snv}).
+From this result, we can inferr the birth time and abundance ratio accurately if there are thousands of SNVs.
+Though the birth time estimation requires greater number of SNVs, 1000 SNVs is sufficient for the abundance ratio estimation.
+I suppose this is because abundance ratio $n$ appears explicitly in the equation \ref{read_emission_modeling} while the birth time $t$ affect the likelihood through VAF distribution.
 
 \begin{figure}[H]
  \subfigure[Accuracy of the birth time ($t$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/mutation_em/rmsd_qsub_coverage_seed_rand_marged/rmsd.t.pdf}}
@@ -256,9 +254,24 @@ Finally, we estimated the birth time and abundance ratio estimation varying the 
  However, the effect of the sequencing depth to the estimation of the birth time cannot be decided from this high variance result. I suppose that more replicates are needed to verify this effect.
   }
  \label{fig: read_emission_snv}
+\end{figure}
 
-%closing
+Finally, I estimated the birth time and abundance ratio estimation varying the sequencing depth from 10 to 100 while the number of SNVs is fixed to 1000 is shown in (\figref{fig: read_emission_snv}).
+Though accuracy of the abundance ratio estimation improved as the sequencing depth gets higher, the accuracy of the birth time estimation highly varied.
+To assess the effect of sequencing depth more accurately, I must conduct this experiment with larger number of SNVs and the larger number of replicates.
+
+
+\section{Conclusions}
  For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
 
-\end{figure}
+ Particulary, circulating tumor DNA (ctDNA) has got much attention in recent years.
+ Clinical application of ctDNA is awaited because it is more reliable tool in the cancer diagnosis than the conventional tumor markers. 
+ Moreover, it can be corrected non-invasive manner and we can detect single nucleotide variation by sequencing ctDNA, thus it can be used to mutational analysis of a tumor~\cite{lohr2014whole}.
+ That is why ctDNA is easier to correct in the time course than the conventional tumor samples, and the time course sequencing data of ctDNA is increasing~\cite{murtaza2013non}.
+ Using the time course data of ctDNA, we will be able to reveal the more detailed dynamics of tumor clonal evolution.
+ 
+ On the other hand, the drug resistance is the problem widely observed in the chemotherapy of various cancers. The mechanism of the drug resistance acquisition is closely related to the clonal evolution of the tumor; Even if we could decrease the major tumor subtype by chemotherapy, resistant subtype becomes predominant and prolifereates~\cite{landau2014clonal}.
+ That is why complete recovery from a cancer is difficult. There are some studies which propose the control system for the suppression of prostate cancer using tumor biomarker PSA~\cite{ideta2008mathematical}, however, abundance ratio estimation of the multiple subtypes using biomarker is difficult, and it cannot be applicable to the unknown tumor subtypes and patient specific subtypes.
+ Thus, if we integrate our method with the control engineering, we might be able to optimize the dosage of anti-cancer drugs to suppress tumor growth by estimating the abundance ratio and the growth rate in each time point using ctDNA sequencing and feedback control.
+ I will tackle this sequencing data driven anti-cancer drug dosage optimization in the future work.
 \end{document}

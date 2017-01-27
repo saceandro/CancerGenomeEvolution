@@ -18,7 +18,7 @@ The observed VAFs are interwined with the normal cell contamination, copy number
 One of the first computational methods which tackled the first problem mentioned above is ABSOLUTE~\cite{carter2012absolute}, which enabled the estimation of the tumor purity and the ploidy avaraged over all the subtypes.
 However, they did not attempt to decompose these subtypes.
  % which distinguish clonal mutations (i.e. mutations that all the subtypes have in common) and subclonal mutations (i.e. mutations harbored by not all but some of the subtypes)
-Then THetA~\cite{williams2016identification} and TITAN~\cite{ha2014titan} were desined to tackle the second and third problem mentioned above.
+Then THetA~\cite{oesper2013inferring} and TITAN~\cite{ha2014titan} were desined to tackle the second and third problem mentioned above.
 However, they can infer the copy number and the abundance ratio of each subtype only if the CNAs distinguish the subtypes.% , because they only use the number of mapped reads in the segmented interval of the DNA
 This is because they only use the number of reads mapped to each genomic interval in the case of tumor and normal sample as inputs.
 On the other hand, subtype abundance ratio estimation using the single nucleotide variations (SNVs) was conducted by SciClone~\cite{miller2014sciclone} and PyClone~\cite{roth2014pyclone}.

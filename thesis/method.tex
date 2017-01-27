@@ -273,7 +273,7 @@ Integrating equation \eqref{fixation_flow},
 \begin{align}
  f(0|y,\tau) & = \frac{1-w^2}{2} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \left(1 - \napier^{-\frac{j(j+1)}{2}\tau} \right)\\
  & = \frac{1+w}{2} - \frac{1-w^2}{2} \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (w) \napier^{-\frac{j(j+1)}{2}\tau}\\
- & = (1-y) - 2y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},
+ & = (1-y) - 2y(1-y) \sum_{j=1}^{\infty} \frac{2j+1}{j(j+1)} C^{(3/2)}_{j-1} (1-2y) \napier^{-\frac{j(j+1)}{2}\tau},\label{fixation}
 \end{align}
 where we used equation \eqref{frac_1_1-z}.
 % \begin{equation}
@@ -435,9 +435,59 @@ Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{chil
 \end{align}
 
 \subsection{Simulation of the NGS reads}
-In this section, I will explain how NGS reads are simulated in this study
-I used the the variant allele frequency transition probability 
+In this section, I will explain how NGS reads are simulated in this study.
 
+First, I discretized the time to $H$ time points, thus time difference $\varDelta t = \frac{1}{H}$
+Then I put the length of the captured region as $B$. The mutation rate of each subtype is denoted as $r_i$.
+The algorithm of NGS read count simulation is written as Algorithm \ref{algo: read_simulation} using the the variant allele frequency transition probability \eqref{wf_solution_x}, \eqref{loss}, and \eqref{fixation}, where mark\_inherited($child(j)$) denotes the recursive subroutine to set $x = 1$ for all the subtype $j$'s descendants.
+I generated the reads using $H=1000, N=10^6, r_i = 1.67\times 10^{-7}$ with varying $B$.
+
+ \begin{algorithm}[H]
+  \caption{NGS read count simulation algorithm}
+  \label{algo: read_simulation}
+  Reads = \{\}
+  
+  \For{$h = H-1 \to 1$}{
+  $t = h\varDelta t$
+  
+      \For{$\text{Subtype } i \in \{ t_i > t \}$}{
+          $\lambda_i = Nn_i(t) \times B \times r_i\varDelta t$\\
+          $s_i \sim Poisson(s_i | \lambda_i)$
+
+              \For{\text{SNVs } $k_i \in \{1, \cdots, s_i\}$}{
+                  $x_{k_i} \sim f(x_{k_i} | 1/Nn_i(t), t)$
+
+                  \For{\text{Subtype } $j \in \text{child}(i)$}{
+                      \If{$t_j < t$}{
+                          $x_{k_j} \sim Bernoulli(x_{k_j} | 1/Nn_i(t))$
+
+                          \If{$x_{k_j} == 1$}{
+                             mark\_inherited($child(j)$)
+                             }
+                         }
+                   }
+                 $\mu_{k_i} = \sum_{i=1}^{I} n_i x_{k_i} / 2$
+  
+                 $m_{i,k_j} \sim Binom(m_{i,k_j} | M, \mu_{k_i})$
+
+                 Reads.append($(m_{i,k_i}, M)$)
+               }
+      }
+  }
+  return Reads
+\end{algorithm}
+  
+\begin{figure}[H]
+\begin{center}
+   \includegraphics[bb=39 1 525 361,width=0.5\hsize]{master_figures/cancer_evolution_inherit20161215.pdf}
+ \caption{Schematic diagram to show how the passenger mutation which originated in subtype $i$ is inherited to its descendant subtypes.
+ If the passenger mutation occurs on the lineage of the subtype $j$'s founder cell, that mutation is inherited to subtype $j$ and all the descendants of subtype $j$.
+ Thus, all the subtype $j$'s cells and some fraction of subtype $i$'s cells harbor the passenger mutation at sequencing time.
+ However, if the passenger mutation occurs in other lineages, that mutation is not inherited to its desendants.
+ }
+\end{center}     
+\end{figure}
+ 
 \subsection{Birth time and abundance ratio estimation using NGS reads}
 In this section, I define the problem of inferring the abundance ratio $n_i$ and the birth time $t_i$ of each subtype from NGS reads of the bulk tumor sample.
 When the number of total reads $M_k$ and the number of variant reads $m_k$ at the each SNV locus $k$, $(m, M) = \left\{(m_1, M_1), \cdots, (m_K, M_K) \right\}$ is given,
@@ -511,7 +561,8 @@ And the $Q$-function is defined as follows,
 \end{align}
 
 The procedure of EM algorithm for estimating the birth time $t$ and abundance ratio $n$ is described as Algorithm \ref{EM_algorithm}.
- \begin{algorithm}
+
+ \begin{algorithm}[H]
  \caption{EM algorithm for estimating the birth time $t$ and abundance ratio $n$}
   \label{EM_algorithm}
  1. Select initial parameters $(t^{(0)}, n^{(0)})$ % and set $(t^{\mathrm{old}}, n^{\mathrm{old}}) \leftarrow (t^{(0)}, n^{(0)})$.
@@ -527,7 +578,7 @@ The procedure of EM algorithm for estimating the birth time $t$ and abundance ra
  }
  \end{algorithm}
 
-Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the gradient descent algorithm.
+Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the L-BFGS-B gradient descent algorithm~\cite{zhu1997algorithm}.
 % Minimizing $Q(t,n;t^{\mathrm{old}},n^{\mathrm{old}})$ with respect to $t, n$
 
 % \begin{align}

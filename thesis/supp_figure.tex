@@ -5,39 +5,62 @@
 
 \section*{Supplementary Figures}
 \begin{figure}[H]
- \includegraphics[bb=0 0 707 551,width=0.45\hsize]{../../cnvkit/TB-scatter.jpg}
- \caption{$log(2)$ copy ratio between the tumor and the normal sample detected using copy number detection tool CNVkit~\cite{talevich2016cnvkit}}
+\begin{center}
+  \includegraphics[bb=0 0 707 551,width=0.45\hsize]{../../cnvkit/TB-scatter.jpg}
+ \caption{$log(2)$ copy ratio of the tumor TB against the normal sample TN detected using copy number detection tool CNVkit~\cite{talevich2016cnvkit}.}
+ \label{log2_cn}
+\end{center}
 \end{figure}
 
 \begin{figure}[H]
-  \includegraphics[bb=16 6 838 212,width=0.7\hsize]{../../THetA/TB.n2.graph.pdf}
- \caption{Abundance ratio estimation of the normal ant tumor subtypes using THetA}
+\begin{center}
+   \includegraphics[bb=16 6 838 212,width=0.7\hsize]{../../THetA/TB.n2.graph.pdf}
+ \caption{Abundance ratio estimation of the normal and tumor subtypes and tumor copy number estimation of the sample TB using THetA~\cite{oesper2013inferring}.}
+ \label{theta_result}
+\end{center}
 \end{figure}
 
 \begin{figure}[H]
- \subfigure[]{\includegraphics[bb=1 15 467 480,width=0.4\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.sorted.pdf}}
-% \subfigure[]{\includegraphics[bb=1 15 479 480,width=0.4\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.keep.tumor_f.sorted.pdf}}
+\begin{center}
+ \includegraphics[bb=1 15 467 480,width=0.4\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.sorted.pdf}
+ \caption{Variant allelic frequency distribution of the mutations detected using a variant caller MuTect~\cite{cibulskis2013sensitive}. In this figure, non significant SNVs are not excluded.}
+ % \subfigure[]{\includegraphics[bb=1 15 479 480,width=0.4\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.keep.tumor_f.sorted.pdf}}
+\end{center}
 \end{figure}
 
 \begin{figure}[H]
- \subfigure{\includegraphics[bb=0 0 700 700,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.jpg}}
+\begin{center}
+  \subfigure{\includegraphics[bb=0 0 700 700,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.jpg}}
  \subfigure{\includegraphics[bb=0 0 700 700,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.1-100.jpg}}
  \subfigure{\includegraphics[bb=0 0 700 700,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.0.12-0.25.jpg}}
-% \subfigure[]{\includegraphics[bb=1 15 481 480,width=0.45\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.pdf}}
-% \subfigure[]{\includegraphics[bb=1 15 475 480,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.1-100.pdf}}
-% \subfigure[]{\includegraphics[bb=1 15 475 480,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.0.12-0.25.pdf}}
+ % \subfigure[]{\includegraphics[bb=1 15 481 480,width=0.45\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.pdf}}
+ % \subfigure[]{\includegraphics[bb=1 15 475 480,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.1-100.pdf}}
+ % \subfigure[]{\includegraphics[bb=1 15 475 480,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.0.12-0.25.pdf}}
+ \caption{The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$ using the sample TB.
+ Left figure is the result plotted against all the inverse allelic frequency. Middle figure is the magnified in to the $0 < 1/f < 100$ region. Plateau region can be seen around $1/f = 10$. Further magnifying this region we can see the linear relationship. The red line represents the result of the linear regression. From $R^2 > 0.98$, This tumor obeys the neutral evolution.}
+\end{center}
 \end{figure}
 
 \begin{figure}[H]
- \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf.pdf}
- \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.2.vaf.pdf}
- \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ % \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf.pdf}
+ % \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ % \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ \includegraphics[bb=3 28 461 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.1.vaf.pdf}
+ \includegraphics[bb=3 28 461 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ \includegraphics[bb=3 28 461 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ \caption{The VAF distribution of the sequencing data which is generated by our probabilistic modeling. Higher allelic frequency peaks seen in subtype 1 and 2 correspond to the fixed variant alleles. However, only the VAF distribution of subtype 1+2 can be observed in the bulk sequencing. (Birth time t1=0.5, t2=0.2, and abundance ratio n1=0.3,  n2=0.7.)}
+ \label{VAF_distribution_generated}
 \end{figure}
 
 \begin{figure}[H]
- \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf.filtered_0.05_0.2.reverse.pdf}
- \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.2.vaf.filtered_0.1_0.5.reverse.pdf}
- \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.vaf.filtered_0.12_0.24_with_grad.reverse.pdf}
+ % \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf.filtered_0.05_0.2.reverse.pdf}
+ % \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.2.vaf.filtered_0.1_0.5.reverse.pdf}
+ % \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.vaf.filtered_0.12_0.24_with_grad.reverse.pdf}
+ \includegraphics[bb=3 28 460 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.1.vaf.filtered_0.05_0.2.reverse.pdf}
+ \includegraphics[bb=3 28 460 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.2.vaf.filtered_0.1_0.5.reverse.pdf}
+ \includegraphics[bb=3 28 460 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.vaf.filtered_0.12_0.24.reverse.pdf}
+ \caption{The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$ using the sequencing data which is generated by our probabilistic modeling (Birth time t1=0.5, t2=0.2, and abundance ratio n1=0.3,  n2=0.7). If we exclude fixation region which can be seen in \figref{VAF_distribution_generated}, subtype 1 and 2 obeys neutral evolution. (I plotetd $M(f)$ against $0.05 < f < 0.2$ for subtype 1, and $0.1 < f < 0.5$ for subtype 2.) This is a concordant result with the previous study~\cite{williams2016identification}. Subtype 1 + 2 also shows linear relationsip between $M(f)$ and $1/f$ with $\mu_e = 32.523$.  However, in reality, this is a mixture of two subtypes having different mutation rates per effective cell division ($\mu_e = 9.081$ and $\mu_e=18.230$). This suggests that growth rate estimation using linear regression can cause wrong estimation about the subtype structure and the growth rate.}
+ \label{inverse_VAF_cumulative_generated}
 \end{figure}
 
 \begin{figure}[H]
