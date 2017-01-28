@@ -8,15 +8,15 @@
 % For the sake of simplicity, we assumed that there is no copy number aberrations or rearrangements in the cancer genome. Furthermore, we also assumed that every single nucleotide variant (SNV) is unique to each subtype and not inherited by its descendants. Under these conditions, we simulated sequencing reads under some birth time parameters (Figure 3). Given the number of reference and variant reads in each SNV locus, which subtype is responsible for that mutation, and the abundance ratio of each subtype, we could estimate the birth time parameters of all subtypes. Pseudo time parameters could be estimated precisely if there is a sufficient number of SNV loci (Figure 4).
 
 First, I conducted the double check of the neutral tumor evolution which is identified in the previous work~\cite{williams2016identification}.
-In their study, if neutral evolution theory applies to passenger mutation, the number of passenger mutations per allelic frequency $M(f)$ follows $1/f$ power law,
+In their study, ``if neutral evolution theory applies to passenger mutation, the number of passenger mutations per allelic frequency $M(f)$ follows $1/f$ power law,
 \begin{equation}
  M(f) = \mu_e \left( \frac{1}{f} - \frac{1}{f_{max}}\right),\label{neutral_evolution}
 \end{equation}
 where $\mu_e$ denotes the mutation rate per effective cell division.
-And they set $R^2 \leq 0.98$ as the stringent criteria to decide whether each tumor sample obeys neutral evolution or not.
+And they set $R^2 \leq 0.98$ as the stringent criteria to decide whether each tumor sample obeys neutral evolution or not.''
 If we consider that we cannot estimate the mutation rate and the birth time of a subtype at the same time as long as only a single time point data is available
 because there is a trade-off between the mutation rate and the birth time, the inverse of $\mu_e$ has a information about the birth time of the subtype.
-Thus, if a tumor sample obeys neutral evolution, we can estimate the birth time and growth rate of the tumor sample using linear regression, which is conducted as \figref{TB_linear_regression}.
+Thus, ``if a tumor sample obeys neutral evolution, we can estimate the birth time and growth rate of the tumor sample using linear regression'', which is conducted as \figref{TB_vaf}, \ref{TB_linear_regression}.
 
 \begin{figure}[H]
  \begin{minipage}[c]{0.47\hsize}
@@ -24,8 +24,8 @@ Thus, if a tumor sample obeys neutral evolution, we can estimate the birth time 
   \includegraphics[bb=3 4 479 489, width=0.9\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.keep.tumor_f.sorted.bold.pdf}
  \end{center}
     \caption{
-  Variant allelic frequency distribution of the sample TB~\cite{williams2016identification}.
-  Mutations with higher frequency ($>0.4$) and lower frequency ($<0.4$) correspond to driver mutations and passenger mutations respectively.
+  Variant allelic frequency distribution of the colorectal tumor sample TB~\cite{williams2016identification}.
+  Mutations with higher frequency and lower frequency each correspond to driver mutations and passenger mutations respectively.
   }\label{TB_vaf}
 \end{minipage}
  \hspace{1truecm}
@@ -43,17 +43,16 @@ Thus, if a tumor sample obeys neutral evolution, we can estimate the birth time 
 \end{minipage}
 \end{figure}
 
-However, if there are multiple subtypes, $M(f)$ generally does not follow $1/f$ power law as the previous work showed using simulated data~\cite{williams2016identification}.
-We conducted double check of this result using our simulated reads. As a result, our simulation also showed deviation from the $1/f$ power law.
+However, ``if there are multiple subtypes, $M(f)$ generally does not follow $1/f$ power law as the previous work showed using simulated data''~\cite{williams2016identification}.
+We conducted double check of this result using our simulated reads using Algorithm \ref{algo: read_simulation}. As a result, our simulation also showed deviation from the $1/f$ power law~\figref{simulated_vaf}, \ref{simulated_linear_regression}.
 
 \begin{figure}[H]
  \begin{minipage}[c]{0.47\hsize}
  \begin{center}
-  \includegraphics[bb=4 18 467 481,width=0.9\hsize]{../src/read_generation/generated/subtype2_topology0_snv_diploid/vaf_coverage100/0.5/0.3/5/coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
+  \includegraphics[bb=4 18 467 481,width=0.9\hsize]{./coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
  \end{center}
     \caption{
-  Variant allelic frequency distribution of the simulated reads ($t_1 = 0.5, t_2=0.15, n_1=0.5, n_2=0.5, N=10^6, \beta=0.5, \text{\#snvs}=1000$).
-  Variant allelic frequency distribution has multiple peaks if there are two subtypes in the tumor.
+  Variant allelic frequency distribution of the simulated reads ($t_1 = 0.5, t_2=0.15, n_1=0.5, n_2=0.5, N=10^6, \beta=0.5, \text{\#SNVs}=1000$).
   }\label{simulated_vaf}
 \end{minipage}
  \hspace{1truecm}
@@ -63,7 +62,7 @@ We conducted double check of this result using our simulated reads. As a result,
  \end{center}
    \caption{
   The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$
-  using the simulated reads ($t_1 = 0.5, t_2=0.15, n_1=0.5, n_2=0.5, \text{\#snvs}=1000$).
+  using the simulated reads ($t_1 = 0.5, t_2=0.15, n_1=0.5, n_2=0.5, \text{\#SNVs}=1000$).
   The red line represents the result of the linear regression.
  The tumor which consists of multiple subtypes cause deviation from the $1/f$ power law though each subtype follows neutral evolution.
   }
@@ -74,8 +73,37 @@ We conducted double check of this result using our simulated reads. As a result,
 Therefore, if a tumor sample consists of multiple subtypes, we cannot estimate the growth rate of each subtype using linear regression.
 I resolved this problem using probabilistic modeling mentioned in the method section.
 
+Moreover, there was a case that the tumor consists of two subtypes though the $M(f)$ and $1/f$ have the linear relationship in our simulated data (\figref{VAF_distribution_generated}, \ref{inverse_VAF_cumulative_generated}).
+
+\begin{figure}[H]
+ % \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf.pdf}
+ % \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ % \includegraphics[bb=1 15 467 481,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/vaf_coverage100/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ \includegraphics[bb=3 28 461 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.1.vaf.pdf}
+ \includegraphics[bb=3 28 461 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ \includegraphics[bb=3 28 461 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.1.vaf_coverage100_snv1000_seed1.reads.2.vaf.pdf}
+ \caption{The VAF distribution of the sequencing data which is generated by our probabilistic modeling. Higher allelic frequency peaks seen in subtype 1 and 2 correspond to the fixed variant alleles. However, only the VAF distribution of subtype 1+2 can be observed in the bulk sequencing. (Birth time t1=0.5, t2=0.2, and abundance ratio n1=0.3,  n2=0.7.)}
+ \label{VAF_distribution_generated}
+\end{figure}
+
+\begin{figure}[H]
+ % \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.1.vaf.filtered_0.05_0.2.reverse.pdf}
+ % \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.2.vaf.filtered_0.1_0.5.reverse.pdf}
+ % \includegraphics[bb=3 28 487 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/neutral_evolution_plot/0.5/0.4/3/coverage100_snv1000_seed1.reads.vaf.filtered_0.12_0.24_with_grad.reverse.pdf}
+ \includegraphics[bb=3 28 460 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.1.vaf.filtered_0.05_0.2.reverse.pdf}
+ \includegraphics[bb=3 28 460 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.2.vaf.filtered_0.1_0.5.reverse.pdf}
+ \includegraphics[bb=3 28 460 471,width=0.3\hsize]{../src/read_generation/generated/subtype2_topology0_snv_forvaf/coverage100_snv1000_seed1.reads.vaf.filtered_0.12_0.24.reverse.pdf}
+ \caption{The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$ using the sequencing data which is generated by our probabilistic modeling (Birth time t1=0.5, t2=0.2, and abundance ratio n1=0.3,  n2=0.7). If we exclude fixation region which can be seen in \figref{VAF_distribution_generated}, subtype 1 and 2 obeys neutral evolution. (I plotetd $M(f)$ against $0.05 < f < 0.2$ for subtype 1, and $0.1 < f < 0.5$ for subtype 2.) This is a concordant result with the previous study~\cite{williams2016identification}. Subtype 1 + 2 also shows linear relationsip between $M(f)$ and $1/f$ with $\mu_e = 32.523$.  However, in reality, this is a mixture of two subtypes having different mutation rates per effective cell division ($\mu_e = 9.081$ and $\mu_e=18.230$). This suggests that growth rate estimation using linear regression can cause wrong estimation about the subtype structure and the growth rate.}
+ \label{inverse_VAF_cumulative_generated}
+\end{figure}
+
+When we consider the SNVs originated in subtype 1 and those originated in subtype 2 separately, each subtypes follows the neutral evolution.
+This shows that our probabilistic modeling of the VAF distribution is concordant with that of the previous work~\cite{williams2016identification} if the fixation and loss region in the VAF disrtibution is excluded. In the previous work, the effect of the genetic drift is not considered, thus the fixation and loss probability is not considered. Thus our Wright-Fisher modeling includes that of the previous study.
+
+However when we consider these SNVs altogether, $\mu_e$ different from that of each subtype is estimated. Thus, This suggests that growth rate estimation using linear regression can cause wrong estimation about the subtype structure and the growth rate.
+
 \subsection{Relationship between the birth time and the variant allele frequency distribution}
-VAF distribution of subtype $i$, $p(x_i | t_i, n_i)$ can be calculated given the birth time $t_i$ and the abundance ratio $n_i$ using equation \eqref{vaf_dist_norm} mentioned in the method section. To investigate the time ($t_i$) dependency and the drift strength ($\beta_i$) dependency of the VAF distribution, I showed the violin plots against these variables (\figref{fig: vaf_against_time}, \figref{vaf_against_strength}). From these plots, we can see that the VAF is more likely to be fixed ($x_i = 1$) in the tumor cell population if the subtype arose earlier. Also, the VAF is more likely to be fixed ($x_i = 1$) in the tumor cell population if the effect of the genetic drift is stronger.
+VAF distribution of subtype $i$, $p(x_i | t_i, n_i)$ can be calculated given the birth time $t_i$ and the abundance ratio $n_i$ using equation \eqref{vaf_dist_norm} mentioned in the method section. To investigate the time ($t_i$) dependency and the drift strength ($\beta_i$) dependency of the VAF distribution, I showed the violin plots against these variables (\figref{fig: vaf_against_time}, \ref{vaf_against_strength}). From these plots, we can see that the VAF is more likely to be fixed ($x_i = 1$) in the tumor cell population if the subtype arose earlier. Also, the VAF is more likely to be fixed ($x_i = 1$) in the tumor cell population if the effect of the genetic drift is stronger.
 
 Using this relationship conversely, we can estimate the birth time of each subtype from the observed VAF distribution.
 However, the observed VAF frequency is a mixture of various subtypes as the \figref{simulated_vaf}.
@@ -106,7 +134,7 @@ Thus, we must conduct the subtype decomposition using mixture modeling mentioned
 \end{figure}
 
 \subsection{Estimation of the birth time and the abundance ratio of each subtype using binomial distribution}
-Using the parameter estimation modeling represented as equation \ref{param_estimation_binomial}, I conducted the estimation of the birth time $t_i$ and the abundance ratio $n_i$ of each subtype.
+Using the parameter estimation modeling represented as equation \ref{binom_estimation_model}, I conducted the estimation of the birth time $t_i$ and the abundance ratio $n_i$ of each subtype.
 
 % First, I started with solving more easier problem than presented in the method section (equation \ref{binom_estimation_model}).
 % I assumed that we know the subtype $i_k$ in which each SNV $k$ is originated and the inheritance pattern to its descendants $h_k$ along side with the number of variant and total reads ($m, M$).
@@ -165,9 +193,9 @@ Using this marginal probability, I estimated the birth time $t$ and abundance ra
  (t_{1:I}, n_{1:I}) = \argmax_{t_{1:I}, n_{1:I}} \ln p(m_{1:K} | M_{1:K}, i_{1:K}, n_{1:I}, t_{1:I})
 \end{equation}
 
-Simulated data was generated using the method mentioned in the method section.% write!
-For each number of SNVs, sequencing data was generated 10 times independently. And for each simulated data, maximum likelihood estimation was conducted 10 times using randomly selected initial parameters $t, n$. The parameters with the least Root-mean-square deviation (RMSD) was selected as the best estimate for that simulated data.
-RMSD is calculated as $\mathrm{RMSD}_t = \sqrt{\sum_{i=1}^{I} (t_{i}^{(est)} - t_{i}^{(true)})^2 / I}, \mathrm{RMSD}_n = \sqrt{\sum_{i=1}^{I} (n_{i}^{(est)} - n_{i}^{(true)})^2 / I}$, where the superscript $est$ means the best estimate and $true$ means the parameter which is used to generate simulated reads. Normal cell population birth time is defined as $t_{0}=1$, and the abundance ratio $n_{0}$ is given as 0.1.
+Simulated data was generated using Algorithm \ref{algo: read_simulation} mentioned in the method section.
+For each number of SNVs, sequencing data was generated 10 times independently. And for each simulated data, maximum likelihood estimation was conducted 10 times using randomly selected initial parameters $t, n$. The parameters with the least Root-Mean-Square deviation (RMSD) was selected as the best estimate for that simulated data.
+Normal cell population birth time is defined as $t_{0}=1$, and the abundance ratio $n_{0}$ is given as 0.1.
 
 \begin{table}[H]
 \begin{center}
@@ -181,8 +209,6 @@ RMSD is calculated as $\mathrm{RMSD}_t = \sqrt{\sum_{i=1}^{I} (t_{i}^{(est)} - t
 \end{center}
 \end{table}
 
-$N = 10^6, \beta = 0.5$. % write!
-
 \begin{figure}[H]
  \subfigure[Accuracy of the birth time ($t$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/alpha_n_pattern_multinomial/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.t_snv.pdf}}
  \subfigure[Accuracy of the abundance ratio ($n$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/alpha_n_pattern_multinomial/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.n_snv.pdf}}
@@ -192,7 +218,7 @@ $N = 10^6, \beta = 0.5$. % write!
  \label{fig: binom_subtype_given}
 \end{figure}
 
-The results of the parameter estimation shows that we can infer the birth time and growth rate accurately if there are thousands of SNVs, which corresponds to the number of mutations detected in the whole genome sequencing (\figref{fig: binom_subtype_inheritance}).
+The results of the parameter estimation shows that we can infer the birth time and growth rate accurately if there are thousands of SNVs, which corresponds to the number of mutations detected in the whole genome sequencing (\figref{fig: binom_subtype_given}).
 In reality, however, we cannot tell the subtype in which each SNV is originated only from the sequencing reads.
 To move on to the next step, I investigated whether we can remove this unrealistic assumption by marginalizing the subtypes with equal probabilities, which is formulated as follows,
 \begin{gather}
@@ -200,8 +226,8 @@ To move on to the next step, I investigated whether we can remove this unrealist
  (t_{1:I}, n_{1:I}) = \argmax_{t_{1:I}, n_{1:I}} \ln p(m_{1:K} | M_{1:K}, n_{1:I}, t_{1:I}),
 \end{gather}
 where I put $p(i_k) = \frac{1}{I}$ and $p(h_k | i_k) = \frac{1}{H_{i_k}}$ in the \eqref{binom_estimation_model}.
-True parameters of $t$ and $n$ and the simulated reads are the same as that of mentioned above (\tabref{table: true_parameters_4_2_original}).
-As a result of parameter estimation using equation \eqref{eq: binom_subtype_ungiven}, I could not estimate the true birth time and abundance ratio even if there are thousands of SNVs (\figref{fig: binom_subtype_ungiven}).
+True parameters of $t$ and $n$ and the simulated reads are the same as that of mentioned above (\tabref{tab: true_parameters_4_2_original}).
+As a result of parameter estimation using equation \eqref{eq: binom_subtype_ungiven}, I could not estimate the true birth time and abundance ratio even if there are thousands of SNVs (Supplementary \figref{fig: binom_subtype_ungiven}).
 This is because gradient descent estimates fall into the optima which are different from the true parameters.
 
 Also, I tried to estimate the birth time and abundance ratio by adding only the maximum probability component with regard to the subtype in which each SNV is originated.
@@ -210,7 +236,7 @@ The formulation is given as follows.
  p(m_{1:K}|M_{1:K}, n_{1:I}, t_{1:I}) = \prod_{k=1}^{K} \max_{i_k=1}^{I} \left[\sum_{h_k=0}^{H_k-1} \frac{1}{H_{i_k}} \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) p (m_k | M_k, n, x)\right],\label{eq: binom_subtype_ungiven}\\
  (t_{1:I}, n_{1:I}) = \argmax_{t_{1:I}, n_{1:I}} \ln p(m_{1:K} | M_{1:K}, n_{1:I}, t_{1:I}),
 \end{gather}
-In this case too, the gradient descent estimates fall into the optima which are different from the true parameters, thus I could not infer the true birth time and abundance ratio even if there are thousands of SNVs (\figref{fig: binom_subtype_ungiven}).
+In this case too, the gradient descent estimates fall into the optima which are different from the true parameters, thus I could not infer the true birth time and abundance ratio even if there are thousands of SNVs (Supplementary \figref{fig: binom_subtype_ungiven_mle}).
 These problems was essentially caused by the miss subtype-labeling of each SNV, that is, the subtype which gives the maximum probabilistic component does not match the true subtype.
 Though we cannot expect the perfect subtype-labeling because we only have a single data with regard to each SNV, systematic labeling error cause the estimation failure.
 In the next subsection, I conducted the estimation of the birth time and abundance ratio using the generative model \eqref{read_emission_modeling}, which is concordant with the read simulation in this study, thus there is a guarantee that the maximum likelihood estimate converges to the true parameters given sufficient number of data.
@@ -231,7 +257,7 @@ Simulated reads were generated with the true parameter shown in \tabref{tab: tru
 \end{center}
 \end{table}
 
-The result of the birth time and abundance ratio estimation varying the number of SNVs from 1000 to 5000 while the sequencing depth is fixed to 100 is shown in (\ref{fig: read_emission_snv}).
+The result of the birth time and abundance ratio estimation varying the number of SNVs from 1000 to 5000 while the sequencing depth is fixed to 100 is shown in (\figref{fig: read_emission_snv}).
 
 \begin{figure}[H]
  \subfigure[Accuracy of the birth time ($t$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/mutation_em/rmsd_qsub_snv_seed_rand_marged/rmsd.t.pdf}}
@@ -246,6 +272,8 @@ From this result, we can inferr the birth time and abundance ratio accurately if
 Though the birth time estimation requires greater number of SNVs, 1000 SNVs is sufficient for the abundance ratio estimation.
 I suppose this is because abundance ratio $n$ appears explicitly in the equation \ref{read_emission_modeling} while the birth time $t$ affect the likelihood through VAF distribution.
 
+Finally, I estimated the birth time and abundance ratio estimation varying the sequencing depth from 10 to 100 while the number of SNVs is fixed to 1000 is shown in (\figref{fig: read_emission_coverage}).
+
 \begin{figure}[H]
  \subfigure[Accuracy of the birth time ($t$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/mutation_em/rmsd_qsub_coverage_seed_rand_marged/rmsd.t.pdf}}
  \subfigure[Accuracy of the abundance ratio ($n$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/mutation_em/rmsd_qsub_coverage_seed_rand_marged/rmsd.n.pdf}}
@@ -253,25 +281,24 @@ I suppose this is because abundance ratio $n$ appears explicitly in the equation
  Accuracy of the birth time (t) and abundance ratio (n) estimation against the sequencing depth. Outliers are detected by means of deviation from the $1.5 \times IQR$, where $IQR$ is the interquartile range. Whiskers show the maximum and minimum estimate except for the outliers. The abundance ratio can be estimated more acculately if higher sequencing depth can be obtained.
  However, the effect of the sequencing depth to the estimation of the birth time cannot be decided from this high variance result. I suppose that more replicates are needed to verify this effect.
   }
- \label{fig: read_emission_snv}
+ \label{fig: read_emission_coverage}
 \end{figure}
 
-Finally, I estimated the birth time and abundance ratio estimation varying the sequencing depth from 10 to 100 while the number of SNVs is fixed to 1000 is shown in (\figref{fig: read_emission_snv}).
 Though accuracy of the abundance ratio estimation improved as the sequencing depth gets higher, the accuracy of the birth time estimation highly varied.
 To assess the effect of sequencing depth more accurately, I must conduct this experiment with larger number of SNVs and the larger number of replicates.
 
-
 \section{Conclusions}
- For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
+ For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential tumor growth.
+ %Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
 
- Particulary, circulating tumor DNA (ctDNA) has got much attention in recent years.
- Clinical application of ctDNA is awaited because it is more reliable tool in the cancer diagnosis than the conventional tumor markers. 
- Moreover, it can be corrected non-invasive manner and we can detect single nucleotide variation by sequencing ctDNA, thus it can be used to mutational analysis of a tumor~\cite{lohr2014whole}.
- That is why ctDNA is easier to correct in the time course than the conventional tumor samples, and the time course sequencing data of ctDNA is increasing~\cite{murtaza2013non}.
+ When we consider the applicable target of our birth time estimation method, circulating tumor DNA (ctDNA) is getting much more attention in recent years.
+ Clinical application of ctDNA is awaited because it is more reliable tool in the cancer diagnosis than the conventional tumor markers.
+ Moreover, it can be collected non-invasive manner and we can detect single nucleotide variation by sequencing ctDNA, thus it can be used to mutational analysis of a tumor~\cite{lohr2014whole}.
+ That is why ctDNA is easier to collect in the time course than the conventional tumor samples, and the time course sequencing data of ctDNA is increasing~\cite{murtaza2013non}.
  Using the time course data of ctDNA, we will be able to reveal the more detailed dynamics of tumor clonal evolution.
  
- On the other hand, the drug resistance is the problem widely observed in the chemotherapy of various cancers. The mechanism of the drug resistance acquisition is closely related to the clonal evolution of the tumor; Even if we could decrease the major tumor subtype by chemotherapy, resistant subtype becomes predominant and prolifereates~\cite{landau2014clonal}.
- That is why complete recovery from a cancer is difficult. There are some studies which propose the control system for the suppression of prostate cancer using tumor biomarker PSA~\cite{ideta2008mathematical}, however, abundance ratio estimation of the multiple subtypes using biomarker is difficult, and it cannot be applicable to the unknown tumor subtypes and patient specific subtypes.
+ On the other hand, the drug resistance is the problem widely observed in the chemotherapy of various tumors. The mechanism of the drug resistance acquisition is closely related to the clonal evolution of the tumor; Even if we could decrease the major tumor subtype by chemotherapy, resistant subtype becomes predominant and prolifereates~\cite{landau2014clonal}.
+ That is why complete recovery from a cancer is difficult. There are some studies which propose the control systems for the suppression of prostate cancer using tumor biomarker PSA~\cite{ideta2008mathematical}, however, abundance ratio estimation of the multiple subtypes using biomarker is difficult, and it cannot be applicable to the unknown tumor subtypes and patient specific subtypes.
  Thus, if we integrate our method with the control engineering, we might be able to optimize the dosage of anti-cancer drugs to suppress tumor growth by estimating the abundance ratio and the growth rate in each time point using ctDNA sequencing and feedback control.
  I will tackle this sequencing data driven anti-cancer drug dosage optimization in the future work.
 \end{document}

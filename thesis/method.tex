@@ -7,7 +7,7 @@
 % Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype. According to our model, The earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability is (Figure 2). Thus, the VAF distribution reflects the birth time of its subtype. Conversely, we can exploit the shape of VAF distribution to estimate the birth time of each subtype. We integrated this population genetics model with mixture modeling to infer the birth time of each subtype.
 
 In this section, I describe a model for the clonal evolution of cancer cell populations and the generation of NGS data from cancer.
-I assume that each cancer cells within a tumor has derived from a single founder cell, and I only modeled somatic single nucleotide variants (SNVs) which are not influenced by copy number aberrations or rearrangements. I assume, as in previous studies, that each SNVs follow infinites sites assumption; i.e. no genomic position, or locus, mutates more than once in the course of clonal evolution. Thus, all SNVs are heterozygous, and there are only two genotypes, $AA$ and $AB$ at every locus, where $A$ and $B$ each denotes the normal and variant allele.
+I assume that each cancer cells within a tumor has derived from a single founder cell (\figref{fig: clonal_expansion}), and I only modeled somatic single nucleotide variants (SNVs) which are not influenced by copy number aberrations or rearrangements. I assume, as in previous studies, that each SNVs follow infinites sites assumption; i.e. no genomic position, or locus, mutates more than once in the course of clonal evolution. Thus, all SNVs are heterozygous, and there are only two genotypes, $AA$ and $AB$ at every locus, where $A$ and $B$ each denotes the normal and variant allele.
 
 Each SNVs are divided into two types of mutations, driver mutations and passenger mutations. The former are the mutations which are subject to the natural selection and the latter are the ones which obeys neutral evolution. I modeled that a driver mutation which occurred within each subtype give rise to another subtype, thus there are ancestral relationships among subtypes. The anestral relationships could be described using a phylogenetic tree where each nodes represent different cancer subtypes and edges represent the parent-child relationships between subtypes.
 
@@ -21,9 +21,17 @@ Then, the fraction of subtype $i$'s cells among all cells at time $t$ can be cal
 \begin{equation}
  n_i(t) = \frac{1}{N}\napier^{\alpha_i (t_i - t)},
 \end{equation}
-where $N$ is the number of cells at the observation time ($t=1$).
+where $N$ is the number of cells at the observation time ($t=0$).
 
 And I denote the fraction of subtype $i$'s cells among all cells at the observation time as $n_i \coloneqq n_i(0) = \frac{1}{N}\napier^{\alpha_i t_i}$.
+
+\begin{figure}[H]
+\begin{center}
+  \includegraphics[bb=9 8 626 373,width=0.4\hsize]{../../dc1/figures/cancer_evolution_one_shrink_jp.pdf}
+ \caption{Clonal evolution of the tumor. A driver mutation gives rise to another subtype, causing a clonal expansion.}
+ \label{fig: clonal_expansion}
+\end{center}
+\end{figure}
 
 \subsection{Variant allele frequency distribution under neutral evolution}
 To derive the mean and the variance of the allele frequency drift from generation $g$ to generation $g+1$, I denote the number of alleles which doubles during generation $g$ to $g+1$ as $B_g$, the number of alleles which remains unchanged as $L_g$, and the number of alleles which dissapears as $D_g$. Putting that there are $a_{B_g}$ variant alleles within $B_g$ doubling alleles, $a_{L_g}$ variant alleles within $L_g$ alleles, $a_{D_g}$ variant alleles within $D_g$ dissapearing alleles, the probability that we choose $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ among $B_g$, $L_g$, and $D_g$ obeys the following hypergeometric distribution.
@@ -440,6 +448,7 @@ In this section, I will explain how NGS reads are simulated in this study.
 First, I discretized the time to $H$ time points, thus time difference $\varDelta t = \frac{1}{H}$
 Then I put the length of the captured region as $B$. The mutation rate of each subtype is denoted as $r_i$.
 The algorithm of NGS read count simulation is written as Algorithm \ref{algo: read_simulation} using the the variant allele frequency transition probability \eqref{wf_solution_x}, \eqref{loss}, and \eqref{fixation}, where mark\_inherited($child(j)$) denotes the recursive subroutine to set $x = 1$ for all the subtype $j$'s descendants.
+How passenger mutation is inherited to its descendants is explained in \figref{fig: mutation inheritance}.
 I generated the reads using $H=1000, N=10^6, r_i = 1.67\times 10^{-7}$ with varying $B$.
 
  \begin{algorithm}[H]
@@ -447,7 +456,7 @@ I generated the reads using $H=1000, N=10^6, r_i = 1.67\times 10^{-7}$ with vary
   \label{algo: read_simulation}
   Reads = \{\}
   
-  \For{$h = H-1 \to 1$}{
+  \For{$h = H-1,\cdots, 1$}{
   $t = h\varDelta t$
   
       \For{$\text{Subtype } i \in \{ t_i > t \}$}{
@@ -485,6 +494,7 @@ I generated the reads using $H=1000, N=10^6, r_i = 1.67\times 10^{-7}$ with vary
  Thus, all the subtype $j$'s cells and some fraction of subtype $i$'s cells harbor the passenger mutation at sequencing time.
  However, if the passenger mutation occurs in other lineages, that mutation is not inherited to its desendants.
  }
+ \label{fig: mutation inheritance}
 \end{center}     
 \end{figure}
  
