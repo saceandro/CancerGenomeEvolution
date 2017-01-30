@@ -11,10 +11,10 @@ u_lower=$1
 em_max_iter=$2
 grad_desc_max_iter=$3
 snvs=$4
-
-u1=$5
-u2=$6
-n=$7
+seed=$5
+u1=$6
+u2=$7
+n=$8
 
 pa_true=../../read_generation/generated/subtype2_topology0_snv/params/${u1}_${u2}_${n}.x_y_u_n
 read_data=../../read_generation/generated/subtype2_topology0_snv/reads/${u1}/${u2}/${n}/coverage100_snv${snvs}_seed${seed}.reads

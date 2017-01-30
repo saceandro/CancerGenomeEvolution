@@ -7,9 +7,13 @@
 # $1: snvs
 source ~/.zshrc
 
-snvs=$1
-seed=$2
-iter=$3
+u1=$1
+u2=$2
+n=$3
+
+snvs=$4
+seed=$5
+iter=$6
 
 datafile_id=$(($SGE_TASK_ID - 1))
 filename=../data_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${datafile_id}
@@ -19,5 +23,5 @@ vf_dvf_old=../vf_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${ite
 vf_dvf_test=../vf_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}/new
 du_dn_llik=../du_dn_llik_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}/$datafile_id
 
-n=`wc -l $filename`
-../bin/estep_mem_multinomial 2 0 $n $pa_old $pa_test $vf_dvf_old $vf_dvf_test $filename $du_dn_llik # 1> ../log/e${iteration}_${SGE_TASK_ID}.log 2> ../log/e${iteration}_${SGE_TASK_ID}.err
+filelen=`wc -l $filename`
+../bin/estep_mem_multinomial 2 0 $filelen $pa_old $pa_test $vf_dvf_old $vf_dvf_test $filename $du_dn_llik # 1> ../log/e${iteration}_${SGE_TASK_ID}.log 2> ../log/e${iteration}_${SGE_TASK_ID}.err
