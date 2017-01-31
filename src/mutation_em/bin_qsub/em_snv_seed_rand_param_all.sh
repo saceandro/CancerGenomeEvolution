@@ -18,12 +18,12 @@ rm -f ../log_qsub_snv_seed_rand_param/esteplog
 rm -f ../log_qsub_snv_seed_rand_param/esteperr
 
 u1=0.5
-u2=0.1
+u2=0.9
 n=3
 
 snvs=3000
 for ((seed=1; seed<=10; ++seed)); do
-        qsub -N em_snv${snvs}_seed_rand_param_all -l ljob em_snv_seed_rand_param.sh $u_lower $em_max_iter $grad_desc_max_iter $snvs $seed $u1 $u2 $n
+        qsub -N em_snv${snvs}_seed_rand_param${u1}_${u2}_${n} -l ljob em_snv_seed_rand_param.sh $u_lower $em_max_iter $grad_desc_max_iter $snvs $seed $u1 $u2 $n
 done
 echo "========================================================================="
 

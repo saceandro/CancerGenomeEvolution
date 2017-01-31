@@ -27,7 +27,7 @@ echo "snv: " $snvs
     mkdir -p ../rmsd_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}
     mkdir -p ../padiff_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}
     mkdir -p ../data_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}
-#    rm -f ../data_snv_seed_rand_param/${snvs}/${seed}/* # remove data files
+    rm -f ../data_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/* # remove data files
 
     ./split_snv_seed_rand_param.py $read_data $snvs $seed 100 $u1 $u2 $n
     fileNum=`ls -l ../data_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed} | wc -l`
@@ -64,6 +64,7 @@ echo "snv: " $snvs
         vf0=../vf_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}/old
         ../bin/calc_vf_dvf_multinomial 2 0 $param0 $vf0
 
-        qsub -N em_snv${snvs}_seed${seed}_rand_param_iter${iter} -sync y mstep_snv_seed_rand_param.sh $u1 $u2 $n $snvs $seed $iter $fileNum $pa_true $u_lower $em_max_iter $grad_desc_max_iter
+#        qsub -N em_snv${snvs}_seed${seed}_rand_param${u1}_${u2}_${n}_iter${iter} -sync y mstep_snv_seed_rand_param.sh $u1 $u2 $n $snvs $seed $iter $fileNum $pa_true $u_lower $em_max_iter $grad_desc_max_iter
+        qsub -N em_snv${snvs}_seed${seed}_rand_param${u1}_${u2}_${n}_iter${iter} -hold_jid em_snv${snvs}_seed${seed}_rand_param${u1}_${u2}_${n}_iter$(($iter-1)) mstep_snv_seed_rand_param.sh $u1 $u2 $n $snvs $seed $iter $fileNum $pa_true $u_lower $em_max_iter $grad_desc_max_iter
     done
     echo "-------------------------------------------------------------------------"
