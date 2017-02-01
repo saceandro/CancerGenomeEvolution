@@ -336,7 +336,7 @@ struct ComputeFdf {
 
     std::ostringstream filenum_str;
     filenum_str << num_of_split;
-    system(("qsub -N estep_snv" + snvs + "_seed" + seed + "_rand" + est_iter + "_param" + u1 + "_" + u2 + "_" + n + " -e ../log_qsub_snv_seed_rand_param/estep.err -o ../log_qsub_snv_seed_rand_param/estep.log -sync y -tc 100 -t 1-" + filenum_str.str() + ":1 estep_snv_seed_rand_param.sh " + u1 + " " + u2 + " " + n + " " + snvs + " " + seed + " " + est_iter).c_str());
+    system(("qsub -N estep_snv" + snvs + "_seed" + seed + "_rand" + est_iter + "_param" + u1 + "_" + u2 + "_" + n + " -e ../log_qsub_snv_seed_rand_param/esteperr -o ../log_qsub_snv_seed_rand_param/esteplog -sync y -tc 100 -t 1-" + filenum_str.str() + ":1 estep_snv_seed_rand_param.sh " + u1 + " " + u2 + " " + n + " " + snvs + " " + seed + " " + est_iter).c_str());
     
     VLog du (hpa.MAX_SUBTYPE + 1, Log(0));
     VLog dn (hpa.MAX_SUBTYPE + 1, Log(0));

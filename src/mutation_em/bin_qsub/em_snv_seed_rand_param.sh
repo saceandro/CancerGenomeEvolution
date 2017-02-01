@@ -35,6 +35,9 @@ echo "snv: " $snvs
 
     for ((iter=1; iter<=10; ++iter)); do
         echo "iter: " $iter
+
+#        mkdir -p ../log_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}
+        
         mkdir -p ../vf_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}
         mkdir -p ../params_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}
         mkdir -p ../du_dn_llik_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}
@@ -52,6 +55,10 @@ echo "snv: " $snvs
         rm -f ../log_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}.log
         rm -f ../log_qsub_snv_seed_rand_param/${u1}/${u2}/${n}/${snvs}/${seed}/${iter}.err
 
+        # initu1=0.2
+        # initu2=0.8
+        # initn=4
+        
         initu1=0.$(($RANDOM % 9 + 1))
         initu2=0.$(($RANDOM % 9 + 1))
         initn=$(($RANDOM % 9 + 1))

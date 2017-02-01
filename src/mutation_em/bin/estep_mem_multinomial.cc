@@ -365,17 +365,18 @@ double d_llik(READS& res, params& pa_old, VVVLog& vf_old, params& pa_new, params
 
       for (states::iterator _st = _states.begin(); _st != _states.end(); ++_st)
         {
+          Log llik_k_st (0);
+          
           state* st = *_st;
           int eldest_ch_index = calc_eldest_child_index(tr[st->q], st->h);
           int eldest_ch_number = calc_eldest_child_number(tr[st->q], st->h);
           tr[st->q].x = Log(((double) st->xq) / FRACTIONS);
           calc_child_x(tr[st->q], hpa, st->h);
 
-          Log l_resp_n = responsibility_num(*st, tr, pa_new, hpa, *res[k], vf_new, eldest_ch_index, eldest_ch_number);
-          if (l_resp_n < Log(0)) l_resp_n = Log(0);
+          // Log l_resp_n = responsibility_num(*st, tr, pa_new, hpa, *res[k], vf_new, eldest_ch_index, eldest_ch_number);
+          // if (l_resp_n < Log(0)) l_resp_n = Log(0);
+          llik_k_st = st->resp * responsibility_num(*st, tr, pa_new, hpa, *res[k], vf_new, eldest_ch_index, eldest_ch_number).take_log_Log();
           
-          llik_k += st->resp * responsibility_num(*st, tr, pa_new, hpa, *res[k], vf_new, eldest_ch_index, eldest_ch_number).take_log_Log();
-
           VLog dt_st (hpa.MAX_SUBTYPE + 1, Log(0));
           VLog dn_st (hpa.MAX_SUBTYPE + 1, Log(0));
 
@@ -387,19 +388,24 @@ double d_llik(READS& res, params& pa_old, VVVLog& vf_old, params& pa_new, params
 
           if (!(vf_new[st->q][eldest_ch_index][st->xq] > Log(0))) // if vf_new[st->q][eldest_ch_index][st->xq] = 0, even if vf[st->q][eldest_ch_index][st->xq] > 0
             {
-              return 1; // 1 is the sign of param estimation fails ()
+              continue;
+              // return 1; // 1 is the sign of param estimation fails ()
+            }
+          else
+            {
+              dt_st[st->q] += dtvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq];
+              dt_st[eldest_ch_index] += dthvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq];
+              dn_st[st->q] += dnvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq] + d_s_n(hpa, tr, st->q) *  d_h_q_n(hpa, tr, st->q, st->h) / tr[st->q].omega[eldest_ch_number];
             }
           
-          dt_st[st->q] += dtvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq];
-          dt_st[eldest_ch_index] += dthvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq];
-          dn_st[st->q] += dnvf_new[st->q][eldest_ch_index][st->xq] / vf_new[st->q][eldest_ch_index][st->xq] + d_s_n(hpa, tr, st->q) *  d_h_q_n(hpa, tr, st->q, st->h) / tr[st->q].omega[eldest_ch_number];
-
           for (int i=1; i<=hpa.MAX_SUBTYPE; ++i)
             {
               dt_k[i] += st->resp * dt_st[i];
               dn_k[i] += st->resp * dn_st[i];
             }
           clear_x(tr, hpa);
+          
+          llik_k += llik_k_st;
         }
 
       llik += llik_k;
