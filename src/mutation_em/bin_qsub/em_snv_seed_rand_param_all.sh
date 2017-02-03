@@ -18,8 +18,8 @@ rm -f ../log_qsub_snv_seed_rand_param/esteplog
 rm -f ../log_qsub_snv_seed_rand_param/esteperr
 
 u1=0.5
-u2=0.9
-n=3
+u2=0.4
+n=1
 
 snvs=3000
 for ((seed=1; seed<=10; ++seed)); do

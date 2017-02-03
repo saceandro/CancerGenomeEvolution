@@ -286,6 +286,8 @@ void responsibility_m(states& _states, state _state, subtypes& _subtypes, params
       // if (!st->resp.iszero()) // might be negative due to the accumulation of numerical error
       if (Log(0) < st->resp)
         _states.push_back(st);
+      else
+        delete st;
     }
 
   else

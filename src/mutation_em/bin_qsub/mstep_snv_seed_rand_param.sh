@@ -3,6 +3,7 @@
 #$ -cwd
 #$ -e ../log_qsub_snv_seed_rand_param/msteplog
 #$ -o ../log_qsub_snv_seed_rand_param/msteperr
+#$ -l s_vmem=1G,mem_req=1G
 
 source ~/.zshrc
 

@@ -4,6 +4,7 @@
 #$ -N em_qsub_snv_seed_rand_param
 #$ -e ../log_qsub_snv_seed_rand_param/em.err
 #$ -o ../log_qsub_snv_seed_rand_param/em.log
+#$ -l s_vmem=1G,mem_req=1G
 
 source ~/.zshrc
 

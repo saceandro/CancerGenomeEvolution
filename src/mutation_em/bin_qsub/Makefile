@@ -75,11 +75,17 @@ mstep_qsub_snv_seed_rand: mstep_qsub_snv_seed_rand.cc ../variant_fraction.cc ../
 mstep_qsub_snv_seed_rand_param: mstep_qsub_snv_seed_rand_param.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_multinomial.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ mstep_qsub_snv_seed_rand_param.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
+mstep_qsub_snv_seed_rand_param_singleprocess: mstep_qsub_snv_seed_rand_param_singleprocess.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_multinomial.hh
+	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ mstep_qsub_snv_seed_rand_param_singleprocess.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
+
 mstep_qsub_coverage: mstep_qsub_coverage.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_multinomial.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ mstep_qsub_coverage.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
 mstep_qsub_coverage_seed_rand: mstep_qsub_coverage_seed_rand.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_multinomial.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ mstep_qsub_coverage_seed_rand.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
+
+mstep_qsub_coverage_seed_rand_param_singleprocess: mstep_qsub_coverage_seed_rand_param_singleprocess.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_multinomial.hh
+	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ mstep_qsub_coverage_seed_rand_param_singleprocess.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
 grad_desc_llik: grad_desc_llik.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em_vf.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -Ofast -o $@ grad_desc_llik.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
@@ -149,6 +155,12 @@ calc_vf_dvf_multinomial: calc_vf_dvf_multinomial.cc ../variant_fraction.cc ../se
 
 calc_reverse_param: calc_reverse_param.cc variant_fraction.cc setting.hh ../../util/loglib.hh ../../util/enumtree_mutation_em.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ calc_reverse_param.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
+
+calc_reverse_param_rand: calc_reverse_param_rand.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em.hh
+	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ calc_reverse_param_rand.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
+
+calc_reverse_param_rand_n: calc_reverse_param_rand_n.cc ../variant_fraction.cc ../setting.hh ../../../util/loglib_header.hh ../../../util/enumtree_mutation_em.hh
+	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ calc_reverse_param_rand_n.cc ../variant_fraction.cc ../../../util/loglib_header.cc -lgsl -lgslcblas -lm
 
 calc_gsl2param: calc_gsl2param.cc variant_fraction.cc setting.hh ../../util/loglib.hh ../../util/enumtree_mutation_em.hh
 	$(CXX) -I/usr/local/include -L/usr/local/lib -g -o $@ calc_gsl2param.cc variant_fraction.cc ../../util/loglib_header.cc -lgsl -lgslcblas -lm
