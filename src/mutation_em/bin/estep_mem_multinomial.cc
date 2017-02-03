@@ -280,14 +280,15 @@ void responsibility_m(states& _states, state _state, subtypes& _subtypes, params
     {
       _state.m[i] = current_m;
       _state.M[i] = current_M;
-      state* st = new state(_state);
-      st->resp = responsibility_num(_state, _subtypes, pa_old, hpa, re, vf, eldest_ch_index, eldest_ch_number) / denominator;
+      Log resp = responsibility_num(_state, _subtypes, pa_old, hpa, re, vf, eldest_ch_index, eldest_ch_number) / denominator;
       
       // if (!st->resp.iszero()) // might be negative due to the accumulation of numerical error
-      if (Log(0) < st->resp)
-        _states.push_back(st);
-      else
-        delete st;
+      if (Log(0) < resp)
+        {
+          state* st = new state(_state);
+          st->resp = resp;
+          _states.push_back(st);
+        }
     }
 
   else
