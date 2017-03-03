@@ -3,7 +3,21 @@
 
 \begin{document}
 
-\section{Discussion}
-For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
+\section{Conclusions}
+ For the precise birth time parameter estimation, larger number of SNVs were required. On the other hand, abundance ratio could be estimated using smaller number of SNVs. From the inferred abundance ratio and birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential tumor growth using equation \eqref{n_i}.
+ %Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
 
+ When we consider the applicable target of our birth time estimation method, circulating tumor DNA (ctDNA) is getting much more attention in recent years.
+ Clinical application of ctDNA is awaited because it is more reliable tool in the cancer diagnosis than the conventional tumor markers.
+ Moreover, it can be collected in non-invasive manner and we can detect single nucleotide variation by sequencing ctDNA, thus it can be used to mutational analysis of a tumor~\cite{lohr2014whole}.
+ That is why ctDNA is easier to collect in the time course than the conventional tumor samples, and the time course sequencing data of ctDNA is increasing~\cite{murtaza2013non}.
+ Using the time course data of ctDNA, we will be able to reveal the more detailed dynamics of tumor clonal evolution.
+ 
+ On the other hand, the drug resistance is the problem widely observed in the chemotherapy of various tumors. The mechanism of the drug resistance acquisition is closely related to the clonal evolution of the tumor; Even if we could decrease the major tumor subtype by chemotherapy, resistant subtype becomes predominant and prolifereates~\cite{landau2014clonal}.
+ That is why complete recovery from a cancer is difficult. There are some studies which propose the control systems for the suppression of prostate cancer using tumor biomarker PSA~\cite{ideta2008mathematical}, however, abundance ratio estimation of the multiple subtypes using biomarker is difficult, and it cannot be applicable to the unknown tumor subtypes and patient specific subtypes.
+ Thus, if we integrate our method with the control engineering, we might be able to optimize the dosage of anti-cancer drugs to suppress tumor growth by estimating the abundance ratio and the growth rate in each time point using ctDNA sequencing and feedback control.
+ Sequencing data driven anti-cancer drug dosage optimization would be useful in the future tailor-made cancer treatment.
+
+% \section{Discussion}
+% For the precise birth time parameter estimation, thousands of SNV loci are required, which is equivalent to the number of SNVs identified in the whole-genome sequencing. From the abundance ratio and inferred birth time of each subtype, we can estimate the growth rate of each subtype assuming exponential growth. Given one time point, we can only estimate the relative growth rate of the subtype compared to one another. In the future work, however, given sequential time point data, we would predict how each subtype will proliferate in the future. It is a notable advantage of our method which would be useful in the future cancer prognosis and treatment.
 \end{document}

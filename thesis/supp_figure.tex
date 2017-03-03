@@ -3,11 +3,11 @@
 
 \begin{document}
 
-\section*{Supplementary Figures}
+\section{Supplementary Figures}
 \begin{figure}[H]
 \begin{center}
   \includegraphics[bb=0 0 707 551,width=0.45\hsize]{../../cnvkit/TB-scatter.jpg}
- \caption{$log(2)$ copy ratio of the tumor TB against the normal sample TN detected using copy number detection tool CNVkit~\cite{talevich2016cnvkit}.}
+ \caption{$\log2$ copy ratio of the tumor TB against the normal sample TN detected using copy number detection tool CNVkit~\cite{talevich2016cnvkit}.}
  \label{log2_cn}
 \end{center}
 \end{figure}
@@ -36,8 +36,8 @@
  % \subfigure[]{\includegraphics[bb=1 15 481 480,width=0.45\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.pdf}}
  % \subfigure[]{\includegraphics[bb=1 15 475 480,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.1-100.pdf}}
  % \subfigure[]{\includegraphics[bb=1 15 475 480,width=0.3\hsize]{../../mutect/mutect/TB_nextera_3/TB.call_stats.extract.tumor_f.inverse.sorted.0.12-0.25.pdf}}
- \caption{The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$ using the sample TB.
- Left figure is the result plotted against all the inverse allelic frequency. Middle figure is the magnified in to the $0 < 1/f < 100$ region. Plateau region can be seen around $1/f = 10$. Further magnifying this region we can see the linear relationship. The red line represents the result of the linear regression. From $R^2 > 0.98$, This tumor obeys the neutral evolution.}
+ \caption{The cumulative number of mutations $M(f)$ plotted against the inverse allelic frequency $1/f$ using the sample TB (non significant SNVs are not excluded).
+ Left figure is the result plotted against all the inverse allelic frequency. In the middle figure, we magnified into the $0 < 1/f < 100$ region. Plateau region can be seen around $1/f = 10$. Further magnifying this region yields the right figure, from which we can see the linear relationship between $M(f)$ and $1/f$. The red line represents the result of the linear regression. From $R^2 > 0.98$, This tumor obeys the neutral evolution.}
 \end{center}
 \end{figure}
 
@@ -46,7 +46,7 @@
  \subfigure[Accuracy of the birth time ($t$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/alpha_n_subtype_pattern_multinomial/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.t_snv.pdf}}
  \subfigure[Accuracy of the abundance ratio ($n$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/alpha_n_subtype_pattern_multinomial/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.n_snv.pdf}}
    \caption{
- Accuracy of the birth time (t) and abundance ratio (n) estimation against the number of SNVs. Outliers are detected by means of deviation from the $1.5 \times IQR$, where $IQR$ is the interquartile range. Whiskers show the maximum and minimum estimate except for the outliers. If we do not know the subtypein which each SNV is originated, gradient descent estimations fall into the optima which are different from the true parameters. Thus, I could not estimate the true birth time and abundance ratio even if there are thousands of SNVs by marginalizing the subtypes with equal probabilities.
+ Accuracy of the birth time ($t$) and abundance ratio ($n$) estimation against the number of SNVs. Outliers are detected by means of deviation from the $1.5 \times IQR$, where $IQR$ is the interquartile range. Whiskers show the maximum and minimum estimates except for the outliers. If we do not know the subtype in which each SNV was originated, gradient descent estimations fall into the optima which are different from the true parameters. Thus, I could not estimate the true birth time and abundance ratio even if there are thousands of SNVs by marginalizing the subtypes with equal probabilities.
   }
  \label{fig: binom_subtype_ungiven}
 \end{figure}
@@ -55,7 +55,7 @@
  \subfigure[Accuracy of the birth time ($t$) estimation]{\includegraphics[bb=3 15 475 453,width=0.45\hsize]{../src/alpha_n_subtype_pattern_multinomial_mle/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.t_snv.pdf}}
   \subfigure[Accuracy of the abundance ratio ($n$) estimation]{\includegraphics[bb=3 15 475 446,width=0.45\hsize]{../src/alpha_n_subtype_pattern_multinomial_mle/accuracy_result_seed_poisson/4_2_original_total1000000_td1000_cell1000000.rmsd.all.n_snv.pdf}}
    \caption{
- Accuracy of the birth time (t) and abundance ratio (n) estimation against the number of SNVs. Outliers are detected by means of deviation from the $1.5 \times IQR$, where $IQR$ is the interquartile range. Whiskers show the maximum and minimum estimate except for the outliers. If we do not know the subtypein which each SNV is originated, gradient descent estimations fall into the optima which are different from the true parameters. Thus, I could not estimate the true birth time and abundance ratio even if there are thousands of SNVs by adding only the maximum probability component with regard to the subtype in which each SNV is originated.
+ Accuracy of the birth time ($t$) and abundance ratio ($n$) estimation against the number of SNVs. Outliers are detected by means of deviation from the $1.5 \times IQR$, where $IQR$ is the interquartile range. Whiskers show the maximum and minimum estimates except for the outliers. If we do not know the subtypein which each SNV was originated, gradient descent estimations fall into the optima which are different from the true parameters. Thus, I could not estimate the true birth time and abundance ratio even if there are thousands of SNVs by adding only the maximum probability component with regard to the subtype in which each SNV was originated.
   }
  \label{fig: binom_subtype_ungiven_mle}
 \end{figure}

@@ -9,21 +9,24 @@
 In this section, I describe a model for the clonal evolution of cancer cell populations and the generation of NGS data from cancer.
 I assume that each cancer cells within a tumor has derived from a single founder cell (\figref{fig: clonal_expansion}), and I only modeled somatic single nucleotide variants (SNVs) which are not influenced by copy number aberrations or rearrangements. I assume, as in previous studies, that each SNVs follow infinites sites assumption; i.e. no genomic position, or locus, mutates more than once in the course of clonal evolution. Thus, all SNVs are heterozygous, and there are only two genotypes, $AA$ and $AB$ at every locus, where $A$ and $B$ each denotes the normal and variant allele.
 
-Each SNVs are divided into two types of mutations, driver mutations and passenger mutations. The former are the mutations which are subject to the natural selection and the latter are the ones which obeys neutral evolution. I modeled that a driver mutation which occurred within each subtype give rise to another subtype, thus there are ancestral relationships among subtypes. The anestral relationships could be described using a phylogenetic tree where each nodes represent different cancer subtypes and edges represent the parent-child relationships between subtypes.
+Each SNVs are divided into two types of mutations, driver mutations and passenger mutations. The former are the mutations which are subject to the natural selection and the latter are the ones which obey neutral evolution. I modeled that a driver mutation which occurred within each subtype give rise to another subtype, thus there are ancestral relationships among subtypes. The anestral relationships could be described using a phylogenetic tree where each nodes represent different cancer subtypes and edges represent the parent-child relationships between subtypes.
 
-On the other hand, numerous passenger mutations occur within each subtypes. The variant allele frequencies (VAF) of each passenger mutations within each subtypes diffuse according to genetic drift because the cells with that passenger mutation and the cells without it divides randomly. Each passenger mutations occurred within each subtypes could be inherited by its child subtypes if and only if the driver mutation which triggers the child subtype occurs in the cells which carries that passenger mutation.
+On the other hand, numerous passenger mutations occur within each subtypes. The variant allele frequency (VAF) of each passenger mutation within each subtypes diffuses according to genetic drift because the cells with that passenger mutation and the cells without it divide randomly. Each passenger mutation occurred within each subtypes could be inherited by its child subtypes if and only if the driver mutation which triggers the child subtype occurs in the cells which carries that passenger mutation.
 
 I assumed that each cancer cell populations grow exponentially, and the growth rate differs from subtype to subtype but remains unchanged in the course of clonal evolution. Under these conditions, there is no clonal interference between subtypes.
 
 I denote the fraction of subtype $i$'s cells among all cells at observation time as $n_i$, the birth time of subtype $i$ as $t_i$, and the growth rate of subtype $i$ as $\alpha_i$.
 Time is defined so that observation time is $t=0$ and the time when all the cells within a tumor coalesce into a single normal cell is $t=1$.
-Then, the fraction of subtype $i$'s cells among all cells at time $t$ can be calculated as follows.
+Then, the subtype $i$'s population at time $t$, $Nn_i(t)$, can be calculated as follows.
 \begin{equation}
  n_i(t) = \frac{1}{N}\napier^{\alpha_i (t_i - t)},
 \end{equation}
 where $N$ is the number of cells at the observation time ($t=0$).
 
-And I denote the fraction of subtype $i$'s cells among all cells at the observation time as $n_i \coloneqq n_i(0) = \frac{1}{N}\napier^{\alpha_i t_i}$.
+And I denote the fraction of subtype $i$'s cells among all cells at the observation time as $n_i$, which is defined as follows,
+\begin{equation}
+n_i \coloneqq n_i(0) = \frac{1}{N}\napier^{\alpha_i t_i}.\label{n_i}
+\end{equation}
 
 \begin{figure}[H]
 \begin{center}
@@ -34,7 +37,7 @@ And I denote the fraction of subtype $i$'s cells among all cells at the observat
 \end{figure}
 
 \subsection{Variant allele frequency distribution under neutral evolution}
-To derive the mean and the variance of the allele frequency drift from generation $g$ to generation $g+1$, I denote the number of alleles which doubles during generation $g$ to $g+1$ as $B_g$, the number of alleles which remains unchanged as $L_g$, and the number of alleles which dissapears as $D_g$. Putting that there are $a_{B_g}$ variant alleles within $B_g$ doubling alleles, $a_{L_g}$ variant alleles within $L_g$ alleles, $a_{D_g}$ variant alleles within $D_g$ dissapearing alleles, the probability that we choose $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ among $B_g$, $L_g$, and $D_g$ obeys the following hypergeometric distribution.
+To derive the mean and the variance of the allelic frequency drift from generation $g$ to generation $g+1$, I denote the number of alleles which double during generation $g$ to $g+1$ as $B_g$, the number of alleles which remain unchanged as $L_g$, and the number of alleles which dissapear as $D_g$. Putting that there are $a_{B_g}$ variant alleles within $B_g$ doubling alleles, $a_{L_g}$ variant alleles within $L_g$ alleles, $a_{D_g}$ variant alleles within $D_g$ dissapearing alleles, the probability that we choose $a_{B_g}$, $a_{L_g}$, and $a_{D_g}$ among $B_g$, $L_g$, and $D_g$ obeys the following hypergeometric distribution.
 \begin{equation}
  p(a_{B_g}, a_{L_g}, a_{D_g} | A_g, B_g, L_g, D_g) = \frac{{B_g \choose a_{B_g}}{L_g \choose a_{L_g}}{D_g \choose a_{D_g}}}{{N_g \choose A_g}},
 \end{equation}
@@ -156,10 +159,10 @@ On the other hand, the right hand side can be written in the following form,
  x(1-x)\frac{d^2 X}{d x^2} + 2(1-2x) \bibun{X}{x} - 2(1 - \lambda) X = 0.\label{hypgeo_case}
 \end{equation}
 
-This is a special case of the hypergeometric equation,
-\begin{equation}
- x(1-x)\frac{d^2 X}{d x^2} + \left[ c - (a+b+1)x \right] \bibun{X}{x} - ab X = 0.\label{hypgeo_concrete}
-\end{equation}
+This is a special case of the hypergeometric equation \eqref{hypgeo_concrete}.
+% \begin{equation}
+%  x(1-x)\frac{d^2 X}{d x^2} + \left[ c - (a+b+1)x \right] \bibun{X}{x} - ab X = 0.\label{hypgeo_concrete}
+% \end{equation}
 And I denote the solution of this hypergeometric equation as $F(a, b, c; x)$, which is called a hypergeometric function.
 
 Comparing \equationref{hypgeo_case} with \equationref{hypgeo_concrete},
@@ -436,7 +439,7 @@ Normalization factor is calculated using equation \eqref{vaf_dist_unnorm_inherit
 Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{child}(i)}, n_i)$ is calculated as follows using \eqref{vaf_dist_unnorm_inherited_x}, \eqref{vaf_dist_unnorm_inherited_fixation}, \eqref{vaf_dist_unnorm_inherited_loss}, and \eqref{vaf_dist_unnorm_inherited_partition},
 \begin{align}
  p(x_i | t_i, t_{\mathrm{child}(i)}, n_i) = \begin{cases}
-                      \int_{0}^{t_i} \frac{1}{}f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left( 0 < x_i < 1\right)\\
+                      \int_{0}^{t_i} f\left(x_i\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left( 0 < x_i < 1\right)\\
                       \int_{0}^{t_i} f\left(1\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 1\right)\\
                       \int_{0}^{t_i} f\left(0\Big|\frac{1}{Nn_i(t')}, \tau(t')\right) dt' \bigg/ ( t_i - t_{\mathrm{child}(i)} ) & \left(x_i = 0\right).\label{vaf_dist_norm_inherited}
                      \end{cases}
@@ -445,41 +448,42 @@ Finally, the variant allele frequency distribution $p(x_i | t_i, t_{\mathrm{chil
 \subsection{Simulation of the NGS reads}
 In this section, I will explain how NGS reads are simulated in this study.
 
-First, I discretized the time to $H$ time points, thus time difference $\varDelta t = \frac{1}{H}$
+First, I discretized the time to $H$ time points, thus time difference $\varDelta t = \frac{1}{H}$.
 Then I put the length of the captured region as $B$. The mutation rate of each subtype is denoted as $r_i$.
 The algorithm of NGS read count simulation is written as Algorithm \ref{algo: read_simulation} using the the variant allele frequency transition probability \eqref{wf_solution_x}, \eqref{loss}, and \eqref{fixation}, where mark\_inherited($child(j)$) denotes the recursive subroutine to set $x = 1$ for all the subtype $j$'s descendants.
-How passenger mutation is inherited to its descendants is explained in \figref{fig: mutation inheritance}.
-I generated the reads using $H=1000, N=10^6, r_i = 1.67\times 10^{-7}$ with varying $B$.
+How each passenger mutation is inherited to descendant subtypes is explained in \figref{fig: mutation inheritance}.
+I generated the reads using $H=1000, N=10^6, r_i = 1.67\times 10^{-7}$ with varying $B$.\\
+
 
  \begin{algorithm}[H]
-  \caption{NGS read count simulation algorithm}
+  \caption{NGS read count simulation}
   \label{algo: read_simulation}
   Reads = \{\}
   
   \For{$h = H-1,\cdots, 1$}{
   $t = h\varDelta t$
   
-      \For{$\text{Subtype } i \in \{ t_i > t \}$}{
+      \For{$\text{Subtype } i \in \{i | t_i > t \}$}{
           $\lambda_i = Nn_i(t) \times B \times r_i\varDelta t$\\
           $s_i \sim Poisson(s_i | \lambda_i)$
 
               \For{\text{SNVs } $k_i \in \{1, \cdots, s_i\}$}{
-                  $x_{k_i} \sim f(x_{k_i} | 1/Nn_i(t), t)$
+                  $x_{i} \sim f(x_{i} | 1/Nn_i(t), t)$
 
                   \For{\text{Subtype } $j \in \text{child}(i)$}{
                       \If{$t_j < t$}{
-                          $x_{k_j} \sim Bernoulli(x_{k_j} | 1/Nn_i(t))$
+                          $x_{j} \sim Bernoulli(x_{j} | 1/Nn_i(t))$
 
-                          \If{$x_{k_j} == 1$}{
+                          \If{$x_{j} = 1$}{
                              mark\_inherited($child(j)$)
                              }
                          }
                    }
-                 $\mu_{k_i} = \sum_{i=1}^{I} n_i x_{k_i} / 2$
+                 $\mu_{k_i} = \sum_{i=1}^{I} n_i x_{i} / 2$
   
-                 $m_{i,k_j} \sim Binom(m_{i,k_j} | M, \mu_{k_i})$
+                 $m_{k_i} \sim Binom(m_{k_i} | M, \mu_{k_i})$
 
-                 Reads.append($(m_{i,k_i}, M)$)
+                 Reads.append($(m_{k_i}, M)$)
                }
       }
   }
@@ -490,6 +494,7 @@ I generated the reads using $H=1000, N=10^6, r_i = 1.67\times 10^{-7}$ with vary
 \begin{center}
    \includegraphics[bb=39 1 525 361,width=0.5\hsize]{master_figures/cancer_evolution_inherit20161215.pdf}
  \caption{Schematic diagram to show how the passenger mutation which originated in subtype $i$ is inherited to its descendant subtypes.
+ The yellow line represents the lineage of the subtype $j$'s founder cell.
  If the passenger mutation occurs on the lineage of the subtype $j$'s founder cell, that mutation is inherited to subtype $j$ and all the descendants of subtype $j$.
  Thus, all the subtype $j$'s cells and some fraction of subtype $i$'s cells harbor the passenger mutation at sequencing time.
  However, if the passenger mutation occurs in other lineages, that mutation is not inherited to its desendants.
@@ -510,16 +515,16 @@ Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1,
 \end{align}
 where $p (m_k | M_k, n, x)$ represents the probability that $m_k$ variant reads are observed among $M_k$ total reads, which is expressed as the following binomial distribution.
 \begin{align}
- p (m_k | M_k, n, x) = Bi(m_k | M_k, \mu_k) = { m_k \choose M_k } \mu_k^{m_k} \left( 1 - \mu_k \right)^{M_k - m_k}.\label{param_estimation_binomial}
+ p (m_k | M_k, n, x) = Binom(m_k | M_k, \mu_k) = { m_k \choose M_k } \mu_k^{m_k} \left( 1 - \mu_k \right)^{M_k - m_k}.\label{param_estimation_binomial}
 \end{align}
-$\mu_k = \sum_{i_k = 1}^{I} n_i x_i / 2$ represents the ratio of variant copies among all the copies exist in the tumor sample, assuming that all the tumor subtype is diploid and all the variants are heterozygous.
+$\mu_k = \sum_{i_k = 1}^{I} n_i x_i / 2$ represents the ratio of variant copies among all the copies exist in the tumor sample, assuming that all the tumor subtype are diploids and all the variants are heterozygous.
 
 And $p(i_k)$ represents the probability that the SNV $k$ originated in subtype $i_k$.
-$p(h_k | i_k)$ represents the probability that SNV $k$ is inherited to the child subtypes in the pattern $h_k \in \{(0,\cdots,0), (0,\cdots,1), \cdots, (1,\cdots,1)\}$.(Figure)
+$p(h_k | i_k)$ represents the probability that SNV $k$ is inherited to the child subtypes in the pattern $h_k \in \{(0,\cdots,0), (0,\cdots,1), \cdots, (1,\cdots,1)\}$, where the $j$ th element of $h_k$ represents whether the $j$ th child of subtype $i$ inherits the numation or not.
 $H_{i_k}$ denotes the number of possible inheritance patterns, which is equal to $2^{\kappa_{i_k}}$ where $\kappa_{i_k} = $ ( number of subtype $i_k$'s children ) because we can choose wheter each $i_k$'s child inherits the mutation or not.
 $p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)})$ represents the probability that the variant allele frequency of subtype $i_k$ is $x_{i_k}$,
-which corresponds to \eqref{vaf_dist_norm} or \eqref{vaf_dist_norm_inherited} depending on whether SNV $k$ is an isolated mutation (i.e. $h_k = 0$) or not (i.e. $h_k \neq 0$).
-Though the fraction of the mutated cell $x_i$ takes any value between 0 and 1 in reality, however, I assumed that $x_i$ takes the discrete value for the estimation efficiency. That is, $x_{i_k} \in \{0.1, 0.2, \cdots, 1.0\}$ (if $h_k = 0$) and $x_{i_k} \in \{0.0, 0.1, 0.2, \cdots, 1.0\}$ (if $h_k > 0$).
+which corresponds to equation \eqref{vaf_dist_norm} or \eqref{vaf_dist_norm_inherited} depending on whether SNV $k$ is an isolated mutation (i.e. $h_k = (0,\cdots,0)$) or not.
+Though the fraction of the mutated cell $x_i$ takes any value between 0 and 1 in reality, however, I assumed that $x_i$ takes the discrete value for the estimation efficiency. That is, $x_{i_k} \in \{0.1, 0.2, \cdots, 1.0\}$ if $h_k = (0,\cdots,0)$ and $x_{i_k} \in \{0.0, 0.1, 0.2, \cdots, 1.0\}$ otherwise. $x_{i_k}$ starts from $0.1$ in the case of $h_k = (0,\cdots,0)$ because at least one subtype must have a positive variant allele frequency for the mutated reads to be observed.
 
 Then, the maximum likelihood extimation of the abundance ratio $n_i$ and the birth time $t_i$ of each subtype can be expressed as follows,
 \begin{align}
@@ -527,7 +532,7 @@ Then, the maximum likelihood extimation of the abundance ratio $n_i$ and the bir
 \end{align}
 
 \subsubsection{Estimation modeling using NGS read emission probability}
-Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that $m_k$ normal reads and $M_k - m_k$ variant reads are observed as a result of NGS sequencing is,
+Given the birth time $t = (t_1, \cdots, t_I)$ and the abundance ratio $n = (n_1, \cdots, n_I)$, the probability that $m_k$ variant reads and $M_k - m_k$ normal reads are observed as a result of NGS sequencing is,
 \begin{align}
  p(D | t, n) & = \prod_{k=1}^{K} \Biggl[ \sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}, t_{i_k}, t_{\mathrm{child}(i_k)}) \nonumber\label{read_emission_modeling}\\
  & \times \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Biggr]
@@ -536,7 +541,7 @@ where the $l$ th read at the SNV locus $k$ is derived from the subtype $q_{kl}$'
 
 The Expectation-Maximization (EM) algorithm to derive the maximum likelihood estimate of $t$ and $n$ can be formulated as follows.
 
-For each SVN locus $k$, $i_k$, $h_k$, $x_{i_k}$, and $q_{k 0:(M_k - 1)} = ( q_{k 0}, \cdots, q_{k (M_k-1)} )$ are assumed to be hidden state because they cannot be observed.
+For each SVN locus $k$, $i_k$, $h_k$, $x_{i_k}$, and $q_{k 0:(M_k - 1)} = ( q_{k 0}, \cdots, q_{k (M_k-1)} )$ are assumed to be hidden states because they cannot be observed.
 Then the hidden indicator variable $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}$ can be defined as,
 \begin{equation}
  z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \in \{0, 1\} \text{, } \sum_{i_k=1}^{I} \sum_{h_k=0}^{H_k - 1} \sum_{x_{i_k}} \sum_{q_{k0}=1}^{I} \cdots \sum_{q_{k (M_k - 1)}=1}^{I} z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} = 1.
@@ -557,7 +562,7 @@ The responsibility that the hidden state $z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_
 \begin{align}
 & \gamma\left(z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right)\\
  & = E_{z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}} \big| D_k, t^{\mathrm{old}}, n^{\mathrm{old}}} \left[z^{(k)}_{i_k, h_k, x_{i_k}, q_{k 0:(M_k - 1)}}\right]\\
- & = \frac{\prod_{i_k=1}^{I} \prod_{h_k=0}^{H_k - 1} \prod_{x_{i_k}} \prod_{q_{k 0:(M_k - 1)}} \Bigl\{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}^{\mathrm{old}}, t_{i_k}^{\mathrm{old}}, t_{\mathrm{child}(i_k)}^{\mathrm{old}}) \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) \Bigr\}}
+ & = \frac{p(i_k) p(h_k | i_k) p(x_{i_k} | i_k, h_k, n_{i_k}^{\mathrm{old}}, t_{i_k}^{\mathrm{old}}, t_{\mathrm{child}(i_k)}^{\mathrm{old}}) \prod_{l=0}^{m_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( n_{q_{kl}}^{\mathrm{old}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right) }
  {\sum_{i_k=1}^{I} p(i_k) \sum_{h_k=0}^{H_k - 1} p(h_k | i_k) \sum_{x_{i_k}} p(x_{i_k} | i_k, h_k, n_{i_k}^{\mathrm{old}}, t_{i_k}^{\mathrm{old}}, t_{\mathrm{child}(i_k)}^{\mathrm{old}}) \prod_{l=0}^{m_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}}^{\mathrm{old}} \frac{x_{q_{kl}}}{2} \right) \prod_{l=m_k}^{M_k - 1} \left( \sum_{q_{kl}=1}^{I} n_{q_{kl}}^{\mathrm{old}} \left(1-\frac{x_{q_{kl}}}{2} \right) \right)}.
 \end{align}
 
@@ -588,7 +593,8 @@ The procedure of EM algorithm for estimating the birth time $t$ and abundance ra
  }
  \end{algorithm}
 
-Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ is conducted using the L-BFGS-B gradient descent algorithm~\cite{zhu1997algorithm}.
+\vspace{2ex}
+Minimization of $Q(t,n; t^{(iter-1)},n^{(iter-1)})$ in each M step is conducted using the L-BFGS-B gradient descent algorithm~\cite{zhu1997algorithm}.
 % Minimizing $Q(t,n;t^{\mathrm{old}},n^{\mathrm{old}})$ with respect to $t, n$
 
 % \begin{align}
