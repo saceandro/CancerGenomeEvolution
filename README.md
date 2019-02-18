@@ -1,29 +1,13 @@
-# README #
+# CancerGenomeEvolution #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+## Inferring tumor clonal evolution utilizing population genetics ##
 
-### What is this repository for? ###
-
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
-
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+Tumor is caused by the somatic mutation accumulation. Every cell within a tumor has derived from a single founder cell, whose subsequent accumulation of advantageous mutations causes clonal expansions. In the course of clonal expansion, a driver mutation gives rise to another type of clone, which is called a subtype. As a result, a tumor is a mixture of various subtypes.
+The emergence of the next-generation sequencers (NGSs) has enabled us to analyse whole cancer genomes at a single nucleotide resolution. However, the subtype reconstruction using bulk sequencing reads has many difficulties because the observed variant allele frequencies (VAFs) does not directly reflect those of each subtypes.
+The observed VAFs are intertwined with the abundance ratio of each subtypes.
+ Thus our problem is to identify what kinds of subtypes the tumor consists of and to identify the characteristics of each subtype from NGS reads of the bulk tumor. To solve this problem, several methods such as PyClone and AncesTree have been proposed in previous works. However, we cannot estimate how rapidly each subtype proliferates and when these subtypes arose using these methods. Here we provide a statistical model to estimate birth time and growth rate of each subtype.
+ Our method models the allele frequency drift in each subtype with diffusion equation applying Wright-Fisher process, enabling the inference of the birth time and growth rate of each subtype.
+ From the model observation varying the birth time parameters, the earlier the subtype arose, the higher the variant allele frequency (VAF) fixation probability was.
+ Conversely, we exploit the shape of VAF distribution to estimate the birth time and abundance ratio of each subtype.
+ We integrated this population genetics model with mixture modeling to infer the birth time of each subtype. Maximum likelihood estimates of the birth time and abundance ratio can be obtained using Expectation-Maximization algorithm.
+Using the simulated NGS reads, we could estimate the birth time and abundance ratio of all subtypes if there are large number of SNVs in the given data.
